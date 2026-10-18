@@ -3,52 +3,105 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Workout Calendar</title>
+  <meta name="color-scheme" content="dark light">
+  <title>Training Log</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23ff6a3d' d='M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header class="topbar">
-    <div class="month-nav">
-      <button id="prev" class="icon-btn" aria-label="Previous month">‹</button>
-      <h1 id="month-title">—</h1>
-      <button id="next" class="icon-btn" aria-label="Next month">›</button>
-      <button id="today" class="btn">Today</button>
+  <header class="appbar">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-flame"/></svg>
+      <div>
+        <div class="brand-name">Training Log</div>
+        <div class="brand-sub" id="brand-sub">&nbsp;</div>
+      </div>
     </div>
-    <div class="topbar-right">
-      <span id="sync-status" class="sync-status">Loading…</span>
-      <label class="btn" title="Import a Health Auto Export JSON file">
-        Import JSON
+    <div class="appbar-right">
+      <span id="sync-status" class="sync-pill"><i></i><span>Loading…</span></span>
+      <label class="btn btn-ghost" title="Import a Health Auto Export JSON file">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-upload"/></svg><span>Import</span>
         <input id="import-file" type="file" accept=".json,application/json" hidden>
       </label>
     </div>
   </header>
 
-  <section id="summary" class="summary" aria-label="Month summary"></section>
-
-  <main class="layout">
-    <section class="calendar-wrap">
-      <div class="calendar" id="calendar" role="grid" aria-labelledby="month-title"></div>
-      <div id="legend" class="legend"></div>
+  <main class="page">
+    <section class="hero" aria-label="Highlights">
+      <article class="card hero-card last-card" id="last-card" tabindex="0"></article>
+      <article class="card hero-card streak-card" id="streak-card"></article>
+      <article class="card hero-card week-card" id="week-card"></article>
     </section>
 
-    <aside id="detail" class="detail" hidden>
-      <button id="detail-close" class="icon-btn detail-close" aria-label="Close details">×</button>
-      <div id="detail-body"></div>
-    </aside>
+    <section class="card heatmap-card" aria-labelledby="heatmap-title">
+      <div class="card-head">
+        <div>
+          <h2 id="heatmap-title">Last 12 months</h2>
+          <div class="card-sub" id="heatmap-sub"></div>
+        </div>
+        <div class="heat-legend" aria-hidden="true">
+          <span>Less</span><i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i><span>More</span>
+        </div>
+      </div>
+      <div class="heatmap-scroll" id="heatmap-scroll"><svg id="heatmap" role="img"></svg></div>
+    </section>
+
+    <section class="main-grid">
+      <div class="card calendar-card">
+        <div class="card-head calendar-head">
+          <div class="month-nav">
+            <button id="prev" class="icon-btn" aria-label="Previous month"><svg viewBox="0 0 24 24"><use href="#i-left"/></svg></button>
+            <h2 id="month-title">—</h2>
+            <button id="next" class="icon-btn" aria-label="Next month"><svg viewBox="0 0 24 24"><use href="#i-right"/></svg></button>
+          </div>
+          <button id="today" class="btn btn-ghost">Today</button>
+        </div>
+        <div class="calendar" id="calendar" role="grid" aria-labelledby="month-title"></div>
+      </div>
+
+      <aside class="side">
+        <div class="card" id="month-stats"></div>
+        <div class="card" id="mix"></div>
+      </aside>
+    </section>
+
+    <section id="empty" class="card empty" hidden>
+      <h2>No workouts yet</h2>
+      <p>Point a Health Auto Export <strong>REST API</strong> automation at this computer:</p>
+      <ul>
+        <li>URL: <code id="empty-url"></code></li>
+        <li>Header: <code>Authorization: Bearer &lt;token from data/ingest_token.txt&gt;</code></li>
+        <li>Data type: Workouts · Format: JSON · Export Version 2</li>
+      </ul>
+      <p>Or use <strong>Import</strong> above with a manual export.</p>
+    </section>
   </main>
 
-  <div id="empty" class="empty" hidden>
-    <h2>No workouts yet</h2>
-    <p>Point a Health Auto Export <strong>REST API</strong> automation at this computer:</p>
-    <ul>
-      <li>URL: <code id="empty-url"></code></li>
-      <li>Header: <code>Authorization: Bearer &lt;token from data/ingest_token.txt&gt;</code></li>
-      <li>Data type: Workouts · Format: JSON · Export Version 2</li>
-    </ul>
-    <p>Or use <strong>Import JSON</strong> above with a manual export.</p>
-  </div>
+  <div class="drawer-backdrop" id="drawer-backdrop" hidden></div>
+  <aside class="drawer" id="detail" aria-label="Workout details" hidden>
+    <button id="detail-close" class="icon-btn drawer-close" aria-label="Close details"><svg viewBox="0 0 24 24"><use href="#i-close"/></svg></button>
+    <div id="detail-body"></div>
+  </aside>
 
   <div id="toast" class="toast" role="status" hidden></div>
+
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <linearGradient id="g-flame" x1="0" y1="1" x2="0.6" y2="0">
+        <stop offset="0" stop-color="#ff3d77"/><stop offset="0.55" stop-color="#ff6a3d"/><stop offset="1" stop-color="#ffb23d"/>
+      </linearGradient>
+      <linearGradient id="g-ring" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#34d399"/><stop offset="1" stop-color="#22d3ee"/>
+      </linearGradient>
+    </defs>
+    <symbol id="i-flame" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></symbol>
+    <symbol id="i-left" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-right" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V4m0 0l-4 4m4-4l4 4M5 15v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 0 1-8 0V4zm0 2H5a3 3 0 0 0 3 4m8-4h3a3 3 0 0 1-3 4M12 13v4m-4 3h8m-6-3h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  </svg>
   <script src="app.js"></script>
 </body>
 </html>

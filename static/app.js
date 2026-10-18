@@ -1,4 +1,5 @@
-// Workout calendar: reads the local cache via /api/v1 and renders a month grid.
+// Training Log dashboard: streaks, last workout, weekly goal, year heatmap and a
+// month calendar, all read from the local cache via /api/v1.
 (() => {
   "use strict";
 
@@ -9,17 +10,33 @@
     strength: "Strength", hiit: "HIIT", mobility: "Mobility", cardio: "Cardio", sport: "Sport", other: "Other",
   };
   const MAX_CHIPS = 3;
+  const DOW = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
   const $ = (id) => document.getElementById(id);
-  const state = { month: startOfMonth(new Date()), workouts: [], selectedId: null };
+  const state = {
+    month: startOfMonth(new Date()),
+    goal: readGoal(),
+    overview: null,
+    yearDays: new Map(),     // local date -> {workouts, duration_s, categories}
+    workouts: [],            // workouts in the visible calendar grid
+    selectedId: null,
+  };
 
-  // ---- date helpers (local calendar dates as YYYY-MM-DD strings) ----------
+  // ---- storage (per-viewer convenience only) ------------------------------
+  function readGoal() {
+    try { const g = Number(localStorage.getItem("weeklyGoal")); return g >= 1 && g <= 7 ? g : 3; } catch { return 3; }
+  }
+  function saveGoal(g) { try { localStorage.setItem("weeklyGoal", String(g)); } catch { /* ignore */ } }
+
+  // ---- dates --------------------------------------------------------------
   function startOfMonth(d) { return new Date(d.getFullYear(), d.getMonth(), 1); }
   function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
   function iso(d) {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   }
-  function gridStart(month) { return addDays(month, -((month.getDay() + 6) % 7)); } // Monday-first
+  function parseIso(s) { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); }
+  function monday(d) { return addDays(new Date(d.getFullYear(), d.getMonth(), d.getDate()), -((d.getDay() + 6) % 7)); }
+  const todayIso = () => iso(new Date());
 
   // ---- formatting ---------------------------------------------------------
   function fmtDuration(s) {
@@ -27,14 +44,13 @@
     const h = Math.floor(s / 3600), m = Math.round((s % 3600) / 60);
     return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`;
   }
+  function fmtHours(s) { return s >= 36000 ? `${Math.round(s / 3600)}h` : fmtDuration(s); }
   function fmtKm(m) { return m == null ? "—" : `${(m / 1000).toFixed(m >= 100000 ? 0 : 1)} km`; }
   function fmtPace(sPerKm) {
     if (sPerKm == null) return "—";
-    const m = Math.floor(sPerKm / 60), s = Math.round(sPerKm % 60);
-    return `${m}:${String(s).padStart(2, "0")} /km`;
+    return `${Math.floor(sPerKm / 60)}:${String(Math.round(sPerKm % 60)).padStart(2, "0")} /km`;
   }
-  function fmtTime(utc, offsetMin) {
-    // Show the time in the workout's own timezone (as recorded on the phone).
+  function fmtClock(utc, offsetMin) {
     const d = new Date(new Date(utc).getTime() + offsetMin * 60000);
     return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
   }
@@ -43,11 +59,17 @@
     if (mins < 1) return "just now";
     if (mins < 60) return `${mins} min ago`;
     const h = Math.round(mins / 60);
-    if (h < 48) return `${h} h ago`;
-    return `${Math.round(h / 24)} days ago`;
+    return h < 48 ? `${h} h ago` : `${Math.round(h / 24)} days ago`;
   }
-  const catVar = (c) => `var(--c-${CATEGORY_LABELS[c] ? c : "other"})`;
+  const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+  const catOf = (c) => (CATEGORY_LABELS[c] ? c : "other");
+  const catVar = (c) => `var(--c-${catOf(c)})`;
   const esc = (s) => String(s).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+  function shortLabel(activity) {
+    if (activity.category !== "other" && activity.category !== "sport") return CATEGORY_LABELS[activity.category];
+    return activity.label.replace(/^(Outdoor|Indoor|Traditional|Functional)\s+/i, "");
+  }
+  const badge = (c) => `<span class="cat-badge" style="--cat:${catVar(c)}">${CATEGORY_LABELS[catOf(c)][0]}</span>`;
 
   async function api(path, opts) {
     const r = await fetch(API + path, opts);
@@ -64,9 +86,30 @@
     toast._t = setTimeout(() => { t.hidden = true; }, 5000);
   }
 
-  // ---- data ---------------------------------------------------------------
+  // ---- loading ------------------------------------------------------------
+  function heatmapRange() {
+    const end = addDays(new Date(), 1);
+    const start = monday(addDays(new Date(), -364));
+    return { start, end };
+  }
+
+  async function loadOverview() {
+    const today = todayIso();
+    const { start, end } = heatmapRange();
+    const [overview, days] = await Promise.all([
+      api(`/analytics/overview?today=${today}&weekly_goal=${state.goal}`),
+      api(`/analytics/days?from=${iso(start)}&to=${iso(end)}`),
+    ]);
+    state.overview = overview;
+    state.yearDays = new Map(days.days.map((d) => [d.date, d]));
+    renderHero();
+    renderHeatmap();
+    renderSide();  // month-over-month deltas use yearDays
+    $("empty").hidden = overview.totals.workouts > 0;
+  }
+
   async function loadMonth() {
-    const start = gridStart(state.month);
+    const start = monday(state.month);
     const end = addDays(start, 42);
     const items = [];
     for (let offset = 0; ; offset += 1000) {
@@ -75,186 +118,388 @@
       if (items.length >= page.total || page.items.length === 0) break;
     }
     state.workouts = items;
-    render();
+    renderCalendar();
+    renderSide();
   }
 
   async function loadStatus() {
+    const pill = $("sync-status");
     try {
       const s = await api("/status");
-      const el = $("sync-status");
+      const label = pill.querySelector("span");
+      pill.classList.remove("fresh", "stale");
       if (s.last_successful_sync) {
-        el.textContent = `Last sync ${fmtAgo(s.last_successful_sync)} · ${s.workouts} workouts`;
-        el.classList.toggle("stale", Date.now() - new Date(s.last_successful_sync).getTime() > 3 * 86400000);
+        const age = Date.now() - new Date(s.last_successful_sync).getTime();
+        label.textContent = `Synced ${fmtAgo(s.last_successful_sync)}`;
+        pill.classList.add(age < 6 * 3600000 ? "fresh" : age > 3 * 86400000 ? "stale" : "x");
+        pill.title = `${s.workouts} workouts in cache`;
       } else {
-        el.textContent = "No syncs yet";
+        label.textContent = "No syncs yet";
       }
-      $("empty").hidden = s.workouts > 0;
       $("empty-url").textContent = `http://<this-PC-IP>:${location.port || 80}/api/v1/ingest/health-auto-export`;
     } catch (e) {
-      $("sync-status").textContent = `Status unavailable: ${e.message}`;
+      pill.querySelector("span").textContent = "Offline";
     }
   }
 
-  // ---- rendering ----------------------------------------------------------
-  function render() {
-    $("month-title").textContent = state.month.toLocaleDateString(undefined, { month: "long", year: "numeric" });
-    renderSummary();
-    renderCalendar();
-    renderLegend();
+  const refreshAll = () => Promise.all([loadOverview(), loadMonth(), loadStatus()]).catch((e) => toast(e.message));
+
+  // ---- hero ---------------------------------------------------------------
+  function renderHero() {
+    const o = state.overview;
+    renderLastCard(o.last_workout);
+    renderStreakCard(o.day_streak);
+    renderWeekCard(o.week_streak);
+    const t = o.totals;
+    $("brand-sub").textContent = t.workouts
+      ? `${t.workouts.toLocaleString()} workouts · ${fmtHours(t.duration_s)} trained since ${parseIso(t.first_workout_date).toLocaleDateString(undefined, { month: "short", year: "numeric" })}`
+      : "Waiting for your first workout";
   }
 
-  function monthWorkouts() {
-    const prefix = iso(state.month).slice(0, 7);
-    return state.workouts.filter((w) => w.local_date.startsWith(prefix));
+  function renderLastCard(w) {
+    const el = $("last-card");
+    if (!w) {
+      el.style.removeProperty("--tone");
+      el.innerHTML = `<div class="eyebrow">Last workout</div><div class="big">—</div>
+        <div class="last-meta">Your workouts will appear here after the first sync.</div>`;
+      return;
+    }
+    const n = w.days_ago;
+    const [when, tone, msg] =
+      n === 0 ? ["Today", "good", "Done for today. Nice work."] :
+      n === 1 ? ["Yesterday", "ok", "Go again today to keep the momentum."] :
+      n === 2 ? ["2 days ago", "warn", "Two rest days. A short session today keeps you on track."] :
+      n < 7 ? [`${n} days ago`, "bad", `It's been ${n} days. Time to get moving.`] :
+              [`${n} days ago`, "bad", "Over a week off. Any workout today restarts your streak."];
+    el.className = `card hero-card last-card tone-${tone}`;
+    el.dataset.id = w.id;
+    const date = parseIso(w.local_date).toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
+    const detail = [w.distance_m != null ? fmtKm(w.distance_m) : null, fmtDuration(w.duration_s),
+      w.active_energy_kcal != null ? `${Math.round(w.active_energy_kcal)} kcal` : null].filter(Boolean).join(" · ");
+    el.innerHTML = `<div class="eyebrow">Last workout</div>
+      <div class="big">${when}</div>
+      <div class="last-activity">${badge(w.activity.category)}<span>${esc(w.activity.label)}</span></div>
+      <div class="last-meta">${esc(detail)} · ${esc(date)}, ${fmtClock(w.start, w.utc_offset_minutes)}</div>
+      <div class="nudge">${esc(msg)}</div>`;
   }
 
-  function renderSummary() {
-    const ws = monthWorkouts();
-    const days = new Set(ws.map((w) => w.local_date)).size;
-    const time = ws.reduce((a, w) => a + (w.duration_s || 0), 0);
-    const kcal = ws.reduce((a, w) => a + (w.active_energy_kcal || 0), 0);
-    const byCat = {};
-    for (const w of ws) {
-      if (DISTANCE_CATEGORIES.has(w.activity.category) && w.distance_m) {
-        byCat[w.activity.category] = (byCat[w.activity.category] || 0) + w.distance_m;
+  function renderStreakCard(s) {
+    const lit = s.current > 0;
+    let tone = "flame", msg;
+    if (s.at_risk) { tone = "warn"; msg = `Work out today to make it ${s.current + 1}`; }
+    else if (s.active_today && s.current >= s.longest && s.current > 1) msg = "Personal best streak!";
+    else if (s.active_today) msg = s.current === 1 ? "Streak started. Come back tomorrow." : "Streak extended today";
+    else { tone = "ok"; msg = "Work out today to start a streak"; }
+    const pct = s.longest ? Math.min(100, (s.current / s.longest) * 100) : 0;
+    $("streak-card").innerHTML = `<div class="eyebrow">Current streak</div>
+      <div class="streak-row">
+        <svg class="flame ${lit ? "lit" : "cold"}" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-flame"/></svg>
+        <div class="big streak-num">${s.current}<span class="unit">${s.current === 1 ? "day" : "days"}</span></div>
+      </div>
+      <div>
+        <div class="best-track"><i style="width:${pct}%"></i></div>
+        <div class="best-label"><span><svg viewBox="0 0 24 24"><use href="#i-trophy"/></svg>Best ${plural(s.longest, "day")}</span>
+          <span>${s.longest && s.current < s.longest ? `${s.longest - s.current} to beat it` : s.current ? "On your best" : ""}</span></div>
+      </div>
+      <div class="nudge tone-${tone}">${esc(msg)}</div>`;
+  }
+
+  function renderWeekCard(w) {
+    const r = 34, c = 2 * Math.PI * r;
+    const pct = Math.min(1, w.this_week_days / w.goal);
+    const today = todayIso();
+    const dots = w.this_week.map((d, i) => {
+      const cls = ["wd", d.active && "on", d.date === today && "today", d.date > today && "future"].filter(Boolean).join(" ");
+      return `<div class="${cls}"><i>${d.active ? `<svg viewBox="0 0 24 24"><use href="#i-check"/></svg>` : ""}</i>${DOW[i][0]}</div>`;
+    }).join("");
+    const left = Math.max(0, w.goal - w.this_week_days);
+    const msg = w.this_week_met ? "Weekly goal hit" : `${plural(left, "more day")} to hit your goal`;
+    $("week-card").innerHTML = `<div class="eyebrow">This week</div>
+      <div class="week-top">
+        <svg class="ring" viewBox="0 0 84 84" role="img" aria-label="${w.this_week_days} of ${w.goal} active days">
+          <circle class="track" cx="42" cy="42" r="${r}" fill="none" stroke-width="9"/>
+          <circle class="prog" cx="42" cy="42" r="${r}" fill="none" stroke-width="9" stroke-linecap="round"
+            stroke-dasharray="${c}" stroke-dashoffset="${c * (1 - pct)}" transform="rotate(-90 42 42)"/>
+          <text x="42" y="45" text-anchor="middle">${w.this_week_days}/${w.goal}</text>
+          <text class="small" x="42" y="59" text-anchor="middle">days</text>
+        </svg>
+        <div>
+          <div class="big" style="font-size:30px">${plural(w.current, "week")}</div>
+          <div class="sub">goal streak · best ${w.longest}</div>
+        </div>
+      </div>
+      <div class="week-dots">${dots}</div>
+      <div class="week-foot">
+        <span class="nudge tone-${w.this_week_met ? "good" : "ok"}" style="margin-top:0">${esc(msg)}</span>
+        <span class="goal-stepper" title="Active days per week that keep your goal streak">
+          <button data-goal="-1" aria-label="Lower weekly goal">−</button>${w.goal}/wk<button data-goal="1" aria-label="Raise weekly goal">+</button>
+        </span>
+      </div>`;
+  }
+
+  // ---- heatmap ------------------------------------------------------------
+  function level(day) {
+    if (!day) return 0;
+    const m = day.duration_s / 60;
+    return m < 30 ? 1 : m < 60 ? 2 : m < 90 ? 3 : 4;
+  }
+
+  function renderHeatmap() {
+    const { start } = heatmapRange();
+    const today = new Date();
+    const tIso = iso(today);
+    const left = 30, top = 18;
+    const weeks = Math.ceil(((today - start) / 86400000 + 1) / 7);
+    // Size cells to fill the card; below the minimum the card scrolls horizontally.
+    const avail = $("heatmap-scroll").clientWidth || 900;
+    const step = Math.max(14, Math.min(24, Math.floor((avail - left) / weeks)));
+    const cell = step - 3;
+    const width = left + weeks * step, height = top + 7 * step;
+    let rects = "", labels = "", lastMonth = -1;
+    let workouts = 0, active = 0;
+    for (let w = 0; w < weeks; w++) {
+      for (let d = 0; d < 7; d++) {
+        const date = addDays(start, w * 7 + d);
+        if (date > today) continue;
+        const key = iso(date);
+        const day = state.yearDays.get(key);
+        if (day) { workouts += day.workouts; active++; }
+        const tip = day ? `${date.toDateString()}: ${plural(day.workouts, "workout")} · ${fmtDuration(day.duration_s)}` : `${date.toDateString()}: rest`;
+        rects += `<rect class="cell l${level(day)}${key === tIso ? " today-cell" : ""}" data-date="${key}" x="${left + w * step}" y="${top + d * step}" width="${cell}" height="${cell}"><title>${tip}</title></rect>`;
+        if (d === 0 && date.getMonth() !== lastMonth && date.getDate() <= 7) {
+          lastMonth = date.getMonth();
+          labels += `<text x="${left + w * step}" y="11">${date.toLocaleDateString(undefined, { month: "short" })}</text>`;
+        }
       }
     }
-    const stats = [
-      { label: "Workouts", value: ws.length, sub: `${days} active day${days === 1 ? "" : "s"}` },
-      { label: "Time", value: fmtDuration(time), sub: ws.length ? `avg ${fmtDuration(time / ws.length)}` : "" },
-      { label: "Active energy", value: `${Math.round(kcal).toLocaleString()} kcal`, sub: "" },
-      ...Object.entries(byCat).sort((a, b) => b[1] - a[1]).map(([c, m]) => ({ label: `${CATEGORY_LABELS[c]} distance`, value: fmtKm(m), sub: "" })),
-    ];
-    $("summary").innerHTML = stats.map((s) =>
-      `<div class="stat"><div class="label">${esc(s.label)}</div><div class="value">${esc(s.value)}</div><div class="sub">${esc(s.sub)}</div></div>`
-    ).join("");
+    ["Mon", "Wed", "Fri"].forEach((l, i) => { labels += `<text x="0" y="${top + (i * 2) * step + 10}">${l}</text>`; });
+    const svg = $("heatmap");
+    svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+    svg.setAttribute("width", width);
+    svg.setAttribute("height", height);
+    svg.setAttribute("aria-label", `Workout heatmap: ${workouts} workouts on ${active} days in the last year`);
+    svg.innerHTML = labels + rects;
+    $("heatmap-sub").textContent = `${plural(workouts, "workout")} on ${plural(active, "day")}`;
+    const scroller = $("heatmap-scroll");
+    scroller.scrollLeft = scroller.scrollWidth;
   }
 
+  // ---- calendar -----------------------------------------------------------
   function renderCalendar() {
-    const cal = $("calendar");
+    $("month-title").textContent = state.month.toLocaleDateString(undefined, { month: "long", year: "numeric" });
     const byDate = {};
     for (const w of state.workouts) (byDate[w.local_date] ||= []).push(w);
-    const todayIso = iso(new Date());
-    const start = gridStart(state.month);
-    const dows = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-    let html = dows.map((d) => `<div class="dow" role="columnheader">${d}</div>`).join("") + `<div class="dow week" role="columnheader">Week</div>`;
+    const tIso = todayIso();
+    const start = monday(state.month);
+    let html = DOW.map((d) => `<div class="dow" role="columnheader">${d}</div>`).join("") + `<div class="dow wk" role="columnheader">Week</div>`;
 
     for (let week = 0; week < 6; week++) {
-      let weekTime = 0, weekCount = 0;
+      const weekStart = addDays(start, week * 7);
+      if (week >= 4 && weekStart.getMonth() !== state.month.getMonth() && weekStart > state.month) break;
+      let weekTime = 0, activeDays = 0;
       for (let dow = 0; dow < 7; dow++) {
-        const d = addDays(start, week * 7 + dow);
+        const d = addDays(weekStart, dow);
         const key = iso(d);
         const ws = byDate[key] || [];
-        weekCount += ws.length;
+        const isActive = ws.length > 0;
+        if (isActive) activeDays++;
         weekTime += ws.reduce((a, w) => a + (w.duration_s || 0), 0);
-        const cls = ["day", d.getMonth() !== state.month.getMonth() && "outside", key === todayIso && "today"].filter(Boolean).join(" ");
+        const prevActive = dow > 0 && (byDate[iso(addDays(d, -1))] || []).length > 0;
+        const nextActive = dow < 6 && (byDate[iso(addDays(d, 1))] || []).length > 0;
+        const cls = ["day",
+          d.getMonth() !== state.month.getMonth() && "outside",
+          key === tIso && "today",
+          key > tIso && "future",
+          isActive && "active",
+          isActive && prevActive && "join-l",
+          isActive && nextActive && "join-r"].filter(Boolean).join(" ");
         const chips = ws.slice(0, MAX_CHIPS).map(chipHtml).join("");
         const more = ws.length > MAX_CHIPS ? `<button class="chip" style="--cat:var(--c-other)" data-date="${key}"><span class="name">+${ws.length - MAX_CHIPS} more</span></button>` : "";
-        html += `<div class="${cls}" role="gridcell" aria-label="${d.toDateString()}, ${ws.length} workouts"><span class="day-num">${d.getDate()}</span>${chips}${more}</div>`;
+        html += `<div class="${cls}" data-date="${key}" role="gridcell" aria-label="${d.toDateString()}, ${plural(ws.length, "workout")}">
+          ${isActive ? `<span class="band"></span>` : ""}
+          <div class="day-top"><span class="num">${d.getDate()}</span>${key === tIso ? `<span class="today-tag">Today</span>` : ""}</div>
+          <div class="chips">${chips}${more}</div></div>`;
       }
-      html += `<div class="week-total">${weekCount ? `<strong>${fmtDuration(weekTime)}</strong>${weekCount} workout${weekCount === 1 ? "" : "s"}` : "—"}</div>`;
+      const met = activeDays >= state.goal;
+      const pct = Math.min(100, (activeDays / state.goal) * 100);
+      html += `<div class="week-total${met ? " met" : ""}">
+        <strong>${activeDays ? fmtDuration(weekTime) : "—"}</strong>
+        <div class="bar"><i style="width:${pct}%"></i></div>
+        <span class="goal">${met ? `<svg viewBox="0 0 24 24"><use href="#i-check"/></svg>Goal` : `${activeDays}/${state.goal} days`}</span></div>`;
     }
-    cal.innerHTML = html;
+    $("calendar").innerHTML = html;
   }
 
   function chipHtml(w) {
     const meta = DISTANCE_CATEGORIES.has(w.activity.category) && w.distance_m ? fmtKm(w.distance_m) : fmtDuration(w.duration_s);
     const sel = w.id === state.selectedId ? " selected" : "";
-    return `<button class="chip${sel}" style="--cat:${catVar(w.activity.category)}" data-id="${w.id}" title="${esc(w.activity.label)} · ${fmtTime(w.start, w.utc_offset_minutes)}">` +
-      `<span class="name">${esc(shortLabel(w.activity))}</span><span class="meta">${meta}</span></button>`;
+    return `<button class="chip${sel}" style="--cat:${catVar(w.activity.category)}" data-id="${w.id}" title="${esc(w.activity.label)} · ${fmtClock(w.start, w.utc_offset_minutes)} · ${fmtDuration(w.duration_s)}">` +
+      `<span class="dot"></span><span class="name">${esc(shortLabel(w.activity))}</span><span class="meta">${meta}</span></button>`;
   }
 
-  function shortLabel(activity) {
-    // "Outdoor Run" -> "Run"; unknown categories keep their (trimmed) original label.
-    if (activity.category !== "other" && activity.category !== "sport") return CATEGORY_LABELS[activity.category];
-    return activity.label.replace(/^(Outdoor|Indoor|Traditional|Functional)\s+/i, "");
+  // ---- side panels --------------------------------------------------------
+  function monthAgg(monthDate) {
+    const prefix = iso(monthDate).slice(0, 7);
+    let workouts = 0, days = 0, secs = 0;
+    for (const [k, d] of state.yearDays) if (k.startsWith(prefix)) { workouts += d.workouts; days++; secs += d.duration_s; }
+    return { workouts, days, secs };
   }
 
-  function renderLegend() {
-    const cats = [...new Set(monthWorkouts().map((w) => w.activity.category))];
-    $("legend").innerHTML = cats.map((c) => `<span style="--cat:${catVar(c)}"><i></i>${CATEGORY_LABELS[c] || c}</span>`).join("");
+  function delta(cur, prev, fmt, prevName) {
+    if (prev == null) return "";
+    const diff = cur - prev;
+    if (Math.abs(diff) < 1e-9) return `<div class="delta">Same as ${prevName}</div>`;
+    return `<div class="delta ${diff > 0 ? "up" : "down"}">${diff > 0 ? "▲" : "▼"} ${fmt(Math.abs(diff))} vs ${prevName}</div>`;
   }
 
-  // ---- detail panel -------------------------------------------------------
+  function renderSide() {
+    const prefix = iso(state.month).slice(0, 7);
+    const ws = state.workouts.filter((w) => w.local_date.startsWith(prefix));
+    const days = new Set(ws.map((w) => w.local_date)).size;
+    const secs = ws.reduce((a, w) => a + (w.duration_s || 0), 0);
+    const kcal = ws.reduce((a, w) => a + (w.active_energy_kcal || 0), 0);
+
+    // Month-over-month deltas only when the previous month is inside the heatmap window.
+    const prevMonth = new Date(state.month.getFullYear(), state.month.getMonth() - 1, 1);
+    const inWindow = prevMonth >= startOfMonth(heatmapRange().start) && state.overview;
+    const prev = inWindow ? monthAgg(prevMonth) : null;
+    const pn = prevMonth.toLocaleDateString(undefined, { month: "short" });
+
+    const dist = {};
+    for (const w of ws) if (DISTANCE_CATEGORIES.has(w.activity.category) && w.distance_m) dist[w.activity.category] = (dist[w.activity.category] || 0) + w.distance_m;
+    const distStats = Object.entries(dist).sort((a, b) => b[1] - a[1]).slice(0, 2)
+      .map(([c, m]) => `<div class="stat"><div class="stat-label">${CATEGORY_LABELS[c]} distance</div><div class="stat-value">${fmtKm(m)}</div></div>`).join("");
+
+    $("month-stats").innerHTML = `<div class="card-head"><div><h2>${state.month.toLocaleDateString(undefined, { month: "long" })} at a glance</h2></div></div>
+      <div class="stat-grid">
+        <div class="stat"><div class="stat-label">Workouts</div><div class="stat-value">${ws.length}</div>${delta(ws.length, prev?.workouts, (v) => v, pn)}</div>
+        <div class="stat"><div class="stat-label">Active days</div><div class="stat-value">${days}</div>${delta(days, prev?.days, (v) => v, pn)}</div>
+        <div class="stat"><div class="stat-label">Time</div><div class="stat-value">${fmtDuration(secs)}</div>${delta(secs, prev?.secs, fmtDuration, pn)}</div>
+        <div class="stat"><div class="stat-label">Energy</div><div class="stat-value">${Math.round(kcal).toLocaleString()}<span style="font-size:12px;color:var(--muted)"> kcal</span></div></div>
+        ${distStats}
+      </div>`;
+
+    const byCat = {};
+    for (const w of ws) {
+      const c = catOf(w.activity.category);
+      (byCat[c] ||= { n: 0, secs: 0 });
+      byCat[c].n++; byCat[c].secs += w.duration_s || 0;
+    }
+    const rows = Object.entries(byCat).sort((a, b) => b[1].secs - a[1].secs);
+    const maxSecs = Math.max(1, ...rows.map(([, v]) => v.secs));
+    $("mix").innerHTML = `<div class="card-head"><h2>Activity mix</h2></div>` + (rows.length
+      ? rows.map(([c, v]) => `<div class="mix-row" style="--cat:${catVar(c)}">${badge(c)}
+          <div><div class="mix-name">${CATEGORY_LABELS[c]}</div><div class="mix-bar"><i style="width:${(v.secs / maxSecs) * 100}%"></i></div></div>
+          <div class="mix-val"><strong>${fmtDuration(v.secs)}</strong>${plural(v.n, "session")}</div></div>`).join("")
+      : `<div class="none">No workouts this month yet.</div>`);
+  }
+
+  // ---- detail drawer ------------------------------------------------------
   async function showDetail(id) {
     state.selectedId = id;
     renderCalendar();
-    const panel = $("detail");
-    panel.hidden = false;
+    $("detail").hidden = false;
+    $("drawer-backdrop").hidden = false;
     $("detail-body").innerHTML = `<p class="note">Loading…</p>`;
     try {
       const w = await api(`/workouts/${id}`);
-      const hasHr = w.metrics_available.heart_rate;
-      const hr = hasHr ? await api(`/workouts/${id}/metrics?type=heart_rate`) : null;
+      const hr = w.metrics_available.heart_rate ? await api(`/workouts/${id}/metrics?type=heart_rate`) : null;
       $("detail-body").innerHTML = detailHtml(w, hr?.series.heart_rate?.samples || []);
     } catch (e) {
       $("detail-body").innerHTML = `<p class="note">Could not load workout: ${esc(e.message)}</p>`;
     }
   }
 
+  function closeDetail() {
+    $("detail").hidden = true;
+    $("drawer-backdrop").hidden = true;
+    state.selectedId = null;
+    renderCalendar();
+  }
+
   function detailHtml(w, hrSamples) {
-    const d = new Date(`${w.local_date}T12:00:00`);
-    const when = `${d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })} · ${fmtTime(w.start, w.utc_offset_minutes)}–${fmtTime(w.end, w.utc_offset_minutes)}`;
+    const date = parseIso(w.local_date).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+    const when = `${date} · ${fmtClock(w.start, w.utc_offset_minutes)}–${fmtClock(w.end, w.utc_offset_minutes)}`;
     const cells = [["Duration", fmtDuration(w.duration_s)]];
     if (w.distance_m != null) cells.push(["Distance", fmtKm(w.distance_m)]);
     if (w.avg_pace_s_per_km != null) {
       cells.push(w.activity.category === "cycle" ? ["Avg speed", `${w.avg_speed_kmh.toFixed(1)} km/h`] : ["Avg pace", fmtPace(w.avg_pace_s_per_km)]);
     }
     if (w.active_energy_kcal != null) cells.push(["Active energy", `${Math.round(w.active_energy_kcal)} kcal`]);
-    if (w.heart_rate_bpm?.avg != null) cells.push(["Avg HR", `${w.heart_rate_bpm.avg} bpm`]);
-    if (w.heart_rate_bpm?.max != null) cells.push(["Max HR", `${w.heart_rate_bpm.max} bpm`]);
+    if (w.heart_rate_bpm?.avg != null) cells.push(["Avg heart rate", `${w.heart_rate_bpm.avg} bpm`]);
+    if (w.heart_rate_bpm?.max != null) cells.push(["Max heart rate", `${w.heart_rate_bpm.max} bpm`]);
     if (w.elevation_up_m != null) cells.push(["Elevation gain", `${Math.round(w.elevation_up_m)} m`]);
     if (w.extra_metrics.intensity) cells.push(["Intensity", `${w.extra_metrics.intensity.value.toFixed(1)} MET`]);
     if (w.extra_metrics.temperature) cells.push(["Temperature", `${Math.round(w.extra_metrics.temperature.value)} °C`]);
 
-    const flags = [];
-    if (w.flags.heart_rate_data_was_recovery) flags.push("Heart-rate trace from the export was post-workout recovery data and was filed as recovery.");
-    const extras = [];
-    if (w.route_points) extras.push(`GPS route: ${w.route_points} points`);
+    const notes = [];
+    if (w.route_points) notes.push(`GPS route recorded (${w.route_points} points)`);
     const series = Object.keys(w.metrics_available).filter((k) => k !== "heart_rate");
-    if (series.length) extras.push(`Also recorded: ${series.map((s) => s.replace(/_/g, " ")).join(", ")}`);
+    if (series.length) notes.push(`Also recorded: ${series.map((s) => s.replace(/_/g, " ")).join(", ")}`);
+    const flags = w.flags.heart_rate_data_was_recovery ? [`The exported heart-rate trace was post-workout recovery data, so it is shown as recovery.`] : [];
 
-    return `<h2 style="--cat:${catVar(w.activity.category)}"><i></i>${esc(w.activity.label)}</h2>
-      <div class="when">${esc(when)}${w.location ? ` · ${esc(w.location)}` : ""}</div>
-      <dl>${cells.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>
-      ${hrSamples.length > 1 ? `<h3>Heart rate</h3>${hrChart(hrSamples, w)}` : ""}
-      ${extras.map((e) => `<p class="note">${esc(e)}</p>`).join("")}
+    return `<div class="detail-head">${badge(w.activity.category)}<div><h3>${esc(w.activity.label)}</h3>
+        <div class="detail-when">${esc(when)}${w.location ? ` · ${esc(w.location)}` : ""}</div></div></div>
+      <div class="detail-grid">${cells.map(([k, v]) => `<div class="stat"><div class="stat-label">${k}</div><div class="stat-value">${esc(v)}</div></div>`).join("")}</div>
+      ${hrSamples.length > 1 ? `<h4>Heart rate</h4>${hrChart(hrSamples, w)}` : ""}
+      ${notes.map((n) => `<p class="note">${esc(n)}</p>`).join("")}
       ${flags.map((f) => `<p class="flag">${esc(f)}</p>`).join("")}`;
   }
 
   function hrChart(samples, w) {
-    const W = 300, H = 120, P = { l: 28, r: 6, t: 8, b: 18 };
+    const W = 360, H = 150, P = { l: 30, r: 8, t: 10, b: 20 };
     const t0 = new Date(w.start).getTime(), t1 = Math.max(new Date(w.end).getTime(), t0 + 1);
-    const lo = Math.min(...samples.map((s) => s.min ?? s.v)), hi = Math.max(...samples.map((s) => s.max ?? s.v));
+    const lo = Math.min(...samples.map((s) => s.v)), hi = Math.max(...samples.map((s) => s.v));
     const yMin = Math.floor((lo - 5) / 10) * 10, yMax = Math.ceil((hi + 5) / 10) * 10;
     const x = (t) => P.l + ((new Date(t).getTime() - t0) / (t1 - t0)) * (W - P.l - P.r);
     const y = (v) => P.t + (1 - (v - yMin) / (yMax - yMin)) * (H - P.t - P.b);
-    const line = samples.map((s, i) => `${i ? "L" : "M"}${x(s.t).toFixed(1)},${y(s.v).toFixed(1)}`).join("");
-    const hasBand = samples.some((s) => s.min != null && s.max != null);
-    const band = hasBand
-      ? samples.map((s, i) => `${i ? "L" : "M"}${x(s.t).toFixed(1)},${y(s.max ?? s.v).toFixed(1)}`).join("") +
-        samples.slice().reverse().map((s) => `L${x(s.t).toFixed(1)},${y(s.min ?? s.v).toFixed(1)}`).join("") + "Z"
-      : "";
+    const pts = samples.map((s) => [x(s.t), y(s.v)]);
+    const line = pts.map(([px, py], i) => `${i ? "L" : "M"}${px.toFixed(1)},${py.toFixed(1)}`).join("");
+    const area = `${line}L${pts[pts.length - 1][0].toFixed(1)},${H - P.b}L${pts[0][0].toFixed(1)},${H - P.b}Z`;
     const ticks = [yMin, Math.round((yMin + yMax) / 2), yMax];
     const mins = Math.round((t1 - t0) / 60000);
-    return `<svg class="hr-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Heart rate over the workout, ${lo} to ${hi} bpm">
+    return `<svg class="hr-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Heart rate from ${lo} to ${hi} bpm">
+      <defs><linearGradient id="g-hr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fb7185" stop-opacity=".35"/><stop offset="1" stop-color="#fb7185" stop-opacity="0"/></linearGradient></defs>
       ${ticks.map((v) => `<line class="grid" x1="${P.l}" x2="${W - P.r}" y1="${y(v)}" y2="${y(v)}"/><text x="0" y="${y(v) + 3}">${v}</text>`).join("")}
-      ${band ? `<path class="band" d="${band}"/>` : ""}
-      <path class="line" d="${line}"/>
-      <text x="${P.l}" y="${H - 4}">0</text><text x="${W - P.r}" y="${H - 4}" text-anchor="end">${mins} min</text>
+      <path class="area" d="${area}"/><path class="line" d="${line}"/>
+      <text x="${P.l}" y="${H - 4}">0 min</text><text x="${W - P.r}" y="${H - 4}" text-anchor="end">${mins} min</text>
     </svg>`;
   }
 
   // ---- events -------------------------------------------------------------
-  function shiftMonth(n) {
-    state.month = new Date(state.month.getFullYear(), state.month.getMonth() + n, 1);
-    loadMonth().catch((e) => toast(e.message));
+  function goToMonth(d, flashDate) {
+    state.month = startOfMonth(d);
+    loadMonth().then(() => {
+      if (!flashDate) return;
+      const cell = document.querySelector(`.day[data-date="${flashDate}"]`);
+      if (cell) { cell.scrollIntoView({ behavior: "smooth", block: "center" }); cell.classList.add("flash"); }
+    }).catch((e) => toast(e.message));
   }
 
-  $("prev").addEventListener("click", () => shiftMonth(-1));
-  $("next").addEventListener("click", () => shiftMonth(1));
-  $("today").addEventListener("click", () => { state.month = startOfMonth(new Date()); loadMonth().catch((e) => toast(e.message)); });
-  $("detail-close").addEventListener("click", () => { $("detail").hidden = true; state.selectedId = null; renderCalendar(); });
+  $("prev").addEventListener("click", () => goToMonth(new Date(state.month.getFullYear(), state.month.getMonth() - 1, 1)));
+  $("next").addEventListener("click", () => goToMonth(new Date(state.month.getFullYear(), state.month.getMonth() + 1, 1)));
+  $("today").addEventListener("click", () => goToMonth(new Date(), todayIso()));
+  $("detail-close").addEventListener("click", closeDetail);
+  $("drawer-backdrop").addEventListener("click", closeDetail);
+
+  $("last-card").addEventListener("click", () => { const id = Number($("last-card").dataset.id); if (id) showDetail(id); });
+  $("last-card").addEventListener("keydown", (e) => { if (e.key === "Enter") $("last-card").click(); });
+
+  $("week-card").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-goal]");
+    if (!btn) return;
+    const g = Math.min(7, Math.max(1, state.goal + Number(btn.dataset.goal)));
+    if (g === state.goal) return;
+    state.goal = g;
+    saveGoal(g);
+    loadOverview().catch((err) => toast(err.message));
+    renderCalendar();
+  });
+
+  $("heatmap").addEventListener("click", (e) => {
+    const cell = e.target.closest(".cell");
+    if (cell) goToMonth(parseIso(cell.dataset.date), cell.dataset.date);
+  });
 
   $("calendar").addEventListener("click", (e) => {
     const chip = e.target.closest(".chip");
@@ -268,9 +513,9 @@
 
   document.addEventListener("keydown", (e) => {
     if (e.target.closest("input, textarea")) return;
-    if (e.key === "ArrowLeft") shiftMonth(-1);
-    else if (e.key === "ArrowRight") shiftMonth(1);
-    else if (e.key === "Escape") $("detail-close").click();
+    if (e.key === "Escape" && !$("detail").hidden) closeDetail();
+    else if (e.key === "ArrowLeft" && $("detail").hidden) $("prev").click();
+    else if (e.key === "ArrowRight" && $("detail").hidden) $("next").click();
   });
 
   $("import-file").addEventListener("change", async (e) => {
@@ -281,16 +526,21 @@
       const r = await api("/import", { method: "POST", headers: { "Content-Type": "application/json" }, body: await file.text() });
       const c = r.workouts;
       toast(`Imported ${c.received} workouts: ${c.inserted} new, ${c.updated} updated, ${c.unchanged} unchanged${c.failed ? `, ${c.failed} failed` : ""}`);
-      await Promise.all([loadMonth(), loadStatus()]);
+      await refreshAll();
     } catch (err) {
       toast(`Import failed: ${err.message}`);
     }
   });
 
-  // Refresh while the page is open so new pushes from the phone show up.
-  setInterval(() => { if (!document.hidden) { loadStatus(); loadMonth().catch(() => {}); } }, 60000);
-  document.addEventListener("visibilitychange", () => { if (!document.hidden) { loadStatus(); loadMonth().catch(() => {}); } });
+  let resizeTimer;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => { if (state.overview) renderHeatmap(); }, 150);
+  });
 
-  loadStatus();
-  loadMonth().catch((e) => toast(e.message));
+  // Keep fresh while open so pushes from the phone appear without a reload.
+  setInterval(() => { if (!document.hidden && $("detail").hidden) refreshAll(); }, 60000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshAll(); });
+
+  refreshAll();
 })();

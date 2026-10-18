@@ -65,7 +65,8 @@ to backfill history. You can also import an exported JSON file with **Import JSO
 | HAE v2 → canonical model | `app/normalize.py`, `app/units.py`, `app/timeparse.py` |
 | Schema + migrations (`PRAGMA user_version`) | `app/db.py` |
 | Read queries shaped for the API | `app/queries.py` |
-| Calendar UI (vanilla JS, no build) | `static/` |
+| Streaks, per-day activity | `app/analytics.py` |
+| Dashboard UI (vanilla JS, no build) | `static/` |
 
 **Data model.** `workouts` holds one row per workout with core summary columns (duration, distance, energy,
 elevation, heart rate) in canonical units (m, s, kcal, bpm, m/s, °C). Anything else (temperature, MET,
@@ -103,6 +104,14 @@ All responses are JSON; errors are `{"error": {"code", "message", "details"}}`. 
 | `GET /api/v1/workouts?from=&to=&category=&activity_type=&sort=-start&limit=50&offset=0` | this PC only |
 | `GET /api/v1/workouts/{id}` · `/metrics?type=` · `/route` | this PC only |
 | `DELETE /api/v1/workouts/{id}` | this PC only |
+| `GET /api/v1/analytics/overview?today=YYYY-MM-DD&weekly_goal=3` | this PC only — last workout, day/week streaks, totals |
+| `GET /api/v1/analytics/days?from=&to=` | this PC only — per-day counts and time (heatmap) |
+
+**Streak rules.** A day is active when a workout started on it (local date). The day streak counts
+consecutive active days ending today, or ending yesterday when there is no workout yet today (still alive,
+flagged `at_risk`). The week streak counts consecutive Monday-start weeks with at least `weekly_goal`
+active days; the current week joins once the goal is met. `today` comes from the viewer so streaks never
+depend on the server's timezone.
 
 `from`/`to` are local dates, `from` inclusive and `to` exclusive. Distance and pace are only reported
 for distance-based categories (run, walk, hike, cycle, swim, row).
@@ -141,5 +150,5 @@ Example ingest response:
 ## Limitations / next steps
 - The fixture is built from the documented format; replace or extend it with a real export once the first
   sync arrives.
-- Not yet: analytics endpoints (trends, personal records), route map, Postgres. The schema and service
+- Not yet: personal records, trend charts, route map, Postgres. The schema and service
   boundaries are set up so these are additive.
