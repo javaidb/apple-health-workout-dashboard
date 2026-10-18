@@ -1,0 +1,86 @@
+{
+  "data": {
+    "metrics": [
+      {
+        "name": "step_count",
+        "units": "count",
+        "data": [{ "date": "2026-10-14 00:00:00 -0400", "qty": 11234, "source": "iPhone" }]
+      }
+    ],
+    "workouts": [
+      {
+        "id": "4F2C9A1E-7B3D-4E8A-9C61-2D5F8E0A1B11",
+        "name": "Outdoor Run",
+        "start": "2026-10-14 07:02:11 -0400",
+        "end": "2026-10-14 07:48:41 -0400",
+        "duration": 2790,
+        "location": "Outdoor",
+        "isIndoor": false,
+        "distance": { "qty": 8.42, "units": "km" },
+        "activeEnergyBurned": { "qty": 612.4, "units": "kcal" },
+        "totalEnergy": { "qty": 701.9, "units": "kcal" },
+        "elevationUp": { "qty": 48.2, "units": "m" },
+        "elevationDown": { "qty": 0, "units": "m" },
+        "intensity": { "qty": 9.8, "units": "MET" },
+        "temperature": { "qty": 9, "units": "degC" },
+        "humidity": { "qty": 71, "units": "%" },
+        "heartRate": {
+          "min": { "qty": 98, "units": "bpm" },
+          "avg": { "qty": 152, "units": "bpm" },
+          "max": { "qty": 176, "units": "bpm" }
+        },
+        "heartRateData": [
+          { "date": "2026-10-14 07:03:00 -0400", "Min": 98, "Avg": 121, "Max": 134, "units": "bpm", "source": "Apple Watch" },
+          { "date": "2026-10-14 07:04:00 -0400", "Min": 133, "Avg": 141, "Max": 147, "units": "bpm", "source": "Apple Watch" },
+          { "date": "2026-10-14 07:05:00 -0400", "Min": 145, "Avg": 151, "Max": 158, "units": "bpm", "source": "Apple Watch" }
+        ],
+        "heartRateRecovery": [
+          { "date": "2026-10-14 07:49:00 -0400", "Min": 150, "Avg": 158, "Max": 165, "units": "bpm", "source": "Apple Watch" },
+          { "date": "2026-10-14 07:50:00 -0400", "Min": 128, "Avg": 136, "Max": 149, "units": "bpm", "source": "Apple Watch" }
+        ],
+        "stepCount": [
+          { "date": "2026-10-14 07:03:00 -0400", "qty": 162, "units": "count", "source": "Apple Watch" },
+          { "date": "2026-10-14 07:04:00 -0400", "qty": 171, "units": "count", "source": "Apple Watch" }
+        ],
+        "walkingAndRunningDistance": [
+          { "date": "2026-10-14 07:03:00 -0400", "qty": 0.18, "units": "km", "source": "Apple Watch" },
+          { "date": "2026-10-14 07:04:00 -0400", "qty": 0.19, "units": "km", "source": "Apple Watch" }
+        ],
+        "route": [
+          { "latitude": 51.47700, "longitude": -0.001500, "altitude": 92.1, "course": 88.2, "courseAccuracy": 5.1, "horizontalAccuracy": 3.2, "verticalAccuracy": 2.4, "timestamp": "2026-10-14 07:02:12 -0400", "speed": 2.9, "speedAccuracy": 0.4 },
+          { "latitude": 51.47714, "longitude": -0.000986, "altitude": 92.6, "course": 87.9, "courseAccuracy": 5.0, "horizontalAccuracy": 3.1, "verticalAccuracy": 2.3, "timestamp": "2026-10-14 07:02:22 -0400", "speed": 3.1, "speedAccuracy": 0.4 },
+          { "latitude": 51.47729, "longitude": -0.000467, "altitude": 93.0, "course": 88.0, "courseAccuracy": 5.0, "horizontalAccuracy": 3.0, "verticalAccuracy": 2.3, "timestamp": "2026-10-14 07:02:32 -0400", "speed": 3.2, "speedAccuracy": 0.3 }
+        ],
+        "metadata": { "HKAverageMETs": "9.8 kcal/hr·kg" }
+      },
+      {
+        "id": "8A7D3C2B-1E4F-4A5B-8C9D-0E1F2A3B4C22",
+        "name": "Traditional Strength Training",
+        "start": "2026-10-15 18:30:00 -0400",
+        "end": "2026-10-15 19:22:00 -0400",
+        "duration": 3120,
+        "location": "Indoor",
+        "activeEnergyBurned": { "qty": 285.0, "units": "kcal" },
+        "heartRate": {
+          "min": { "qty": 82, "units": "bpm" },
+          "avg": { "qty": 118, "units": "bpm" },
+          "max": { "qty": 149, "units": "bpm" }
+        },
+        "heartRateData": [
+          { "date": "2026-10-15 18:31:00 -0400", "Min": 82, "Avg": 101, "Max": 115, "units": "bpm", "source": "Apple Watch" },
+          { "date": "2026-10-15 18:32:00 -0400", "Min": 110, "Avg": 124, "Max": 139, "units": "bpm", "source": "Apple Watch" }
+        ]
+      },
+      {
+        "id": "C3D4E5F6-0718-4293-A4B5-C6D7E8F90A33",
+        "name": "Outdoor Walk",
+        "start": "2026-10-15 23:30:00 -0400",
+        "end": "2026-10-16 00:05:00 -0400",
+        "duration": 2100,
+        "distance": { "qty": 1.9, "units": "mi" },
+        "elevationUp": { "qty": 30, "units": "ft" },
+        "intensity": { "qty": 3.6, "units": "MET" }
+      }
+    ]
+  }
+}

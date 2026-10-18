@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+# Health data, database and the ingest token never go into git.
+data/

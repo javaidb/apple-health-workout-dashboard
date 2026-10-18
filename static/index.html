@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Workout Calendar</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="month-nav">
+      <button id="prev" class="icon-btn" aria-label="Previous month">‹</button>
+      <h1 id="month-title">—</h1>
+      <button id="next" class="icon-btn" aria-label="Next month">›</button>
+      <button id="today" class="btn">Today</button>
+    </div>
+    <div class="topbar-right">
+      <span id="sync-status" class="sync-status">Loading…</span>
+      <label class="btn" title="Import a Health Auto Export JSON file">
+        Import JSON
+        <input id="import-file" type="file" accept=".json,application/json" hidden>
+      </label>
+    </div>
+  </header>
+
+  <section id="summary" class="summary" aria-label="Month summary"></section>
+
+  <main class="layout">
+    <section class="calendar-wrap">
+      <div class="calendar" id="calendar" role="grid" aria-labelledby="month-title"></div>
+      <div id="legend" class="legend"></div>
+    </section>
+
+    <aside id="detail" class="detail" hidden>
+      <button id="detail-close" class="icon-btn detail-close" aria-label="Close details">×</button>
+      <div id="detail-body"></div>
+    </aside>
+  </main>
+
+  <div id="empty" class="empty" hidden>
+    <h2>No workouts yet</h2>
+    <p>Point a Health Auto Export <strong>REST API</strong> automation at this computer:</p>
+    <ul>
+      <li>URL: <code id="empty-url"></code></li>
+      <li>Header: <code>Authorization: Bearer &lt;token from data/ingest_token.txt&gt;</code></li>
+      <li>Data type: Workouts · Format: JSON · Export Version 2</li>
+    </ul>
+    <p>Or use <strong>Import JSON</strong> above with a manual export.</p>
+  </div>
+
+  <div id="toast" class="toast" role="status" hidden></div>
+  <script src="app.js"></script>
+</body>
+</html>
