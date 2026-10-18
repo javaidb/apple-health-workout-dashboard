@@ -405,9 +405,14 @@ svg { display: block; }
 .gw i { display: block; width: 100%; border-radius: 4px 4px 2px 2px; background: var(--surface-3); }
 .gw.part i { background: color-mix(in srgb, var(--warn) 70%, var(--surface-3)); }
 .gw.hit i { background: linear-gradient(180deg, #34d399, #10b981); }
-.gw.current i { box-shadow: 0 0 0 1.5px var(--text); }
+.gw.current::after {  /* outline the whole current-week column, matching the orange "today" highlight */
+  content: ""; position: absolute; inset: -4px -3px -15px; pointer-events: none;
+  border: 1.5px solid var(--accent); border-radius: 7px;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 35%, transparent);
+}
 .gw span { position: absolute; bottom: -14px; left: 0; right: 0; text-align: center; font-size: 10px; color: var(--faint); font-weight: 650; }
-.gw.current span { color: var(--text); }
+.gw.current span { color: var(--accent); font-weight: 800; }
 .gw-axis { display: flex; justify-content: space-between; font-size: 10px; color: var(--faint); margin-top: 4px; }
 .form-sub { color: var(--muted); font-size: 11px; font-weight: 650; text-transform: uppercase; letter-spacing: .06em; margin: 12px 0 4px; }
 .bp + .bp { margin-top: 6px; }
