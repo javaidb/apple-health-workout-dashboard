@@ -1,4 +1,4 @@
-// Training Log dashboard: streaks, last workout, weekly goal, year heatmap and a
+// Health & Fitness Tracker dashboard: streaks, last workout, weekly goal, year heatmap and a
 // month calendar, all read from the local cache via /api/v1.
 (() => {
   "use strict";

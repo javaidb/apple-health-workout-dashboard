@@ -103,7 +103,7 @@ svg { display: block; }
   max-width: 1360px; margin: 0 auto; padding: 22px 28px 10px;
 }
 .brand { display: flex; align-items: center; gap: 12px; }
-.brand-mark { width: 34px; height: 34px; fill: url(#g-flame); filter: drop-shadow(0 4px 12px rgba(255, 106, 61, .45)); }
+.brand-mark { width: 34px; height: 34px; filter: drop-shadow(0 4px 12px rgba(255, 45, 111, .4)); }
 .brand-name { font-size: 20px; font-weight: 750; letter-spacing: -.02em; }
 /* lifetime stats in the top bar: quiet, inline, no container */
 .lifetime { display: flex; align-items: center; margin: 0 auto; }
@@ -120,6 +120,12 @@ svg { display: block; }
 @media (max-width: 1300px) { .lt { padding: 3px 11px; } .lt:nth-child(5) { display: none; } }
 @media (max-width: 1050px) { .lt:nth-child(4) { display: none; } }
 .appbar-right { display: flex; align-items: center; gap: 10px; }
+.powered {
+  display: inline-flex; align-items: center; gap: 6px;
+  color: var(--faint); font-size: 12px; white-space: nowrap; margin-right: 4px;
+}
+.powered img { width: 20px; height: 20px; border-radius: 5px; display: block; }
+.powered-plus { color: var(--faint); font-size: 11px; }
 
 .sync-pill {
   display: inline-flex; align-items: center; gap: 8px;
@@ -510,6 +516,7 @@ code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; font-
   .lifetime { order: 3; width: 100%; justify-content: space-between; margin: 4px 0 0; }
   .lt { padding: 3px 6px; gap: 6px; }
   .lt:nth-child(n+4) { display: none; }
+  .powered > span:first-child { display: none; }
 
   .btn span { display: none; }
 }

@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="docs/images/pipeline.png" alt="Fitbod → Apple Health → Health Auto Export → local receiver → Training Log dashboard" width="100%">
+<img src="docs/images/pipeline.png" alt="Fitbod → Apple Health → Health Auto Export → local receiver → Health &amp; Fitness Tracker dashboard" width="100%">
 
-<h1>Training Log</h1>
+<h1>Health &amp; Fitness Tracker</h1>
 
 <p><strong>A private, self-hosted workout dashboard that fills itself from your iPhone.</strong></p>
 
@@ -33,7 +33,7 @@ training calendar, so you always know when you last trained and what keeps the s
 
 <br>
 
-<img src="docs/images/dashboard.png" alt="Training Log dashboard showing last workout, current streak, weekly goal, a 12-month heatmap, the month calendar with streak bands, and month statistics" width="100%">
+<img src="docs/images/dashboard.png" alt="Health &amp; Fitness Tracker dashboard showing last workout, current streak, weekly goal, a 12-month heatmap, the month calendar with streak bands, and month statistics" width="100%">
 <p align="center"><sub>Dashboard shown with generated demo data.</sub></p>
 
 ## Highlights
