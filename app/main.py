@@ -77,6 +77,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.settings = settings
     limiter = FailedAuthLimiter()
 
+    @app.middleware("http")
+    async def revalidate_static(request: Request, call_next):
+        # Dashboard files change with every update; without this, browsers may keep using a
+        # cached copy. "no-cache" still allows cheap ETag revalidation (304 when unchanged).
+        response = await call_next(request)
+        if not request.url.path.startswith("/api/"):
+            response.headers["Cache-Control"] = "no-cache"
+        return response
+
     @app.exception_handler(ApiError)
     async def _api_error(_: Request, exc: ApiError):
         return _error(exc.status, exc.code, exc.message, exc.details)

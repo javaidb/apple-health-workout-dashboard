@@ -216,3 +216,9 @@ def test_status_reports_freshness(client, batch, auth):
     assert s["first_workout_date"] == "2026-10-14" and s["last_workout_date"] == "2026-10-15"
     assert s["last_successful_sync"] is not None
     assert s["last_batch"]["inserted"] == 3
+
+
+def test_dashboard_files_are_revalidated_not_cached(client):
+    for path in ("/", "/app.js", "/style.css"):
+        assert client.get(path).headers["cache-control"] == "no-cache"
+    assert "no-cache" not in client.get("/api/v1/health").headers.get("cache-control", "")
