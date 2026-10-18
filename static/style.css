@@ -470,6 +470,12 @@ svg { display: block; }
   filter: drop-shadow(0 0 5px #ff3b5c); }
 .trend-axis { position: relative; display: flex; justify-content: space-between; font-size: 9.5px; color: var(--faint); margin-top: 3px; }
 .trend-year { position: absolute; top: 0; transform: translateX(-50%); }
+.trend-plot { position: relative; }
+.trend-guide { stroke: var(--text); stroke-opacity: .12; stroke-width: 1; stroke-dasharray: 3 4; vector-effect: non-scaling-stroke; }
+.trend-guide-label {
+  position: absolute; right: 0; transform: translateY(-115%);
+  font-size: 8.5px; line-height: 1; color: var(--faint); opacity: .8; pointer-events: none;
+}
 .trend-tick { stroke: var(--faint); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .bp-dot.latest { fill: var(--accent); fill-opacity: 1; stroke: var(--surface); stroke-width: 2; }
 .none { color: var(--muted); font-size: 13px; padding: 6px 0; }

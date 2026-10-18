@@ -661,7 +661,7 @@
     const idx = smooth.map((_, i) => i).filter((i) => i % step === 0 || i === smooth.length - 1);
     const ma = idx.map((i) => smooth[i]);
     const W = 300, H = 60, P = 4;
-    const top = Math.max(...ma, 1) * 1.08;
+    const top = Math.max(...ma, 2) * 1.12;  // always leave room for the 1 and 2 per week guides
     const x = (i) => (i / (ma.length - 1)) * W;
     const y = (v) => P + (1 - v / top) * (H - 2 * P);
     const d = smoothPath(ma.map((v, i) => [x(i), y(v)]));
@@ -682,13 +682,17 @@
     return `<div class="trend">
       <div class="bp-head"><span>Workouts / week</span>
         <span class="bp-note">trend · now <strong>~${now.toFixed(1)}</strong> · peak ~${peak.toFixed(1)}</span></div>
+      <div class="trend-plot">
+      ${[1, 2].map((v) => `<span class="trend-guide-label" style="top:${((y(v) / H) * 100).toFixed(1)}%">${v}/wk</span>`).join("")}
       <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img"
         aria-label="Smoothed trend of workouts per week since ${first}: now about ${now.toFixed(1)}, peak about ${peak.toFixed(1)}">
         ${tickLines}
+        ${[1, 2].map((v) => `<line class="trend-guide" x1="0" x2="${W}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"/>`).join("")}
         <path class="trend-glow" d="${d}"/>
         <path class="trend-line" d="${d}"/>
         <path class="trend-now" d="M${x(ma.length - 1).toFixed(1)},${y(now).toFixed(1)}h0"/>
       </svg>
+      </div>
       <div class="trend-axis"><span>${first}</span>${tickLabels}<span>now</span></div>
     </div>`;
   }
