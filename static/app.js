@@ -554,7 +554,7 @@
   function detailHtml(w, hrSamples) {
     const date = parseIso(w.local_date).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
     const when = `${date} · ${fmtClock(w.start, w.utc_offset_minutes)}–${fmtClock(w.end, w.utc_offset_minutes)}`;
-    const cells = [["Duration", fmtDuration(w.duration_s)]];
+    const cells = [["Duration", `${w.flags.duration_estimated ? "≈ " : ""}${fmtDuration(w.duration_s)}`]];
     if (w.distance_m != null) cells.push(["Distance", fmtKm(w.distance_m)]);
     if (w.avg_pace_s_per_km != null) {
       cells.push(w.activity.category === "cycle" ? ["Avg speed", `${w.avg_speed_kmh.toFixed(1)} km/h`] : ["Avg pace", fmtPace(w.avg_pace_s_per_km)]);
@@ -571,6 +571,7 @@
     const series = Object.keys(w.metrics_available).filter((k) => k !== "heart_rate");
     if (series.length) notes.push(`Also recorded: ${series.map((s) => s.replace(/_/g, " ")).join(", ")}`);
     const flags = w.flags.heart_rate_data_was_recovery ? [`The exported heart-rate trace was post-workout recovery data, so it is shown as recovery.`] : [];
+    if (w.flags.imported_from === "fitbod_csv") notes.push("Imported from your Fitbod history. Duration is estimated from the number of sets.");
 
     return `<div class="detail-head">${badge(w.activity.category)}<div><h3>${esc(w.activity.label)}</h3>
         <div class="detail-when">${esc(when)}${w.location ? ` · ${esc(w.location)}` : ""}</div></div></div>
