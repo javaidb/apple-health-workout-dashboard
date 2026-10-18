@@ -33,21 +33,28 @@
       <article class="card hero-card week-card" id="week-card"></article>
     </section>
 
-    <section class="card heatmap-card" aria-labelledby="heatmap-title">
-      <div class="card-head">
-        <div>
-          <h2 id="heatmap-title">Last 12 months</h2>
-          <div class="card-sub" id="heatmap-sub"></div>
-        </div>
-        <div class="heat-legend" aria-hidden="true">
-          <span>Less</span><i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i><span>More</span>
-        </div>
-      </div>
-      <div class="heatmap-scroll" id="heatmap-scroll"><svg id="heatmap" role="img"></svg></div>
-    </section>
+    <section class="col-center">
+      <section id="empty" class="card empty" hidden>
+        <h2>No workouts yet</h2>
+        <p>Point a Health Auto Export <strong>REST API</strong> automation at
+          <code id="empty-url"></code> with header <code>Authorization: Bearer &lt;token from data/ingest_token.txt&gt;</code>
+          (Workouts · JSON · Export Version 2), or use <strong>Import</strong> above with a manual export.</p>
+      </section>
 
-    <section class="main-grid">
-      <div class="card calendar-card">
+      <section class="card heatmap-card" aria-labelledby="heatmap-title">
+        <div class="card-head">
+          <div class="heat-title">
+            <h2 id="heatmap-title">Last 12 months</h2>
+            <span class="card-sub" id="heatmap-sub"></span>
+          </div>
+          <div class="heat-legend" aria-hidden="true">
+            <span>Less</span><i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i><span>More</span>
+          </div>
+        </div>
+        <div class="heatmap-scroll" id="heatmap-scroll"><svg id="heatmap" role="img"></svg></div>
+      </section>
+
+      <section class="card calendar-card">
         <div class="card-head calendar-head">
           <div class="month-nav">
             <button id="prev" class="icon-btn" aria-label="Previous month"><svg viewBox="0 0 24 24"><use href="#i-left"/></svg></button>
@@ -57,24 +64,13 @@
           <button id="today" class="btn btn-ghost">Today</button>
         </div>
         <div class="calendar" id="calendar" role="grid" aria-labelledby="month-title"></div>
-      </div>
-
-      <aside class="side">
-        <div class="card" id="month-stats"></div>
-        <div class="card" id="mix"></div>
-      </aside>
+      </section>
     </section>
 
-    <section id="empty" class="card empty" hidden>
-      <h2>No workouts yet</h2>
-      <p>Point a Health Auto Export <strong>REST API</strong> automation at this computer:</p>
-      <ul>
-        <li>URL: <code id="empty-url"></code></li>
-        <li>Header: <code>Authorization: Bearer &lt;token from data/ingest_token.txt&gt;</code></li>
-        <li>Data type: Workouts · Format: JSON · Export Version 2</li>
-      </ul>
-      <p>Or use <strong>Import</strong> above with a manual export.</p>
-    </section>
+    <aside class="side">
+      <div class="card" id="month-stats"></div>
+      <div class="card" id="mix"></div>
+    </aside>
   </main>
 
   <div class="drawer-backdrop" id="drawer-backdrop" hidden></div>

@@ -9,7 +9,8 @@
     run: "Run", walk: "Walk", hike: "Hike", cycle: "Cycle", swim: "Swim", row: "Row",
     strength: "Strength", hiit: "HIIT", mobility: "Mobility", cardio: "Cardio", sport: "Sport", other: "Other",
   };
-  const MAX_CHIPS = 3;
+  const FIT_QUERY = matchMedia("(min-width: 1200px) and (min-height: 660px)");
+  const MAX_MIX_ROWS = 6;
   const DOW = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
   const $ = (id) => document.getElementById(id);
@@ -252,7 +253,8 @@
     const weeks = Math.ceil(((today - start) / 86400000 + 1) / 7);
     // Size cells to fill the card; below the minimum the card scrolls horizontally.
     const avail = $("heatmap-scroll").clientWidth || 900;
-    const step = Math.max(14, Math.min(24, Math.floor((avail - left) / weeks)));
+    const maxStep = FIT_QUERY.matches ? Math.max(12, Math.min(24, Math.floor(window.innerHeight * 0.021))) : 24;
+    const step = Math.max(12, Math.min(maxStep, Math.floor((avail - left) / weeks)));
     const cell = step - 3;
     const width = left + weeks * step, height = top + 7 * step;
     let rects = "", labels = "", lastMonth = -1;
@@ -292,10 +294,12 @@
     const tIso = todayIso();
     const start = monday(state.month);
     let html = DOW.map((d) => `<div class="dow" role="columnheader">${d}</div>`).join("") + `<div class="dow wk" role="columnheader">Week</div>`;
+    let rows = 0;
+    while (rows < 6 && !(rows >= 4 && addDays(start, rows * 7) > state.month && addDays(start, rows * 7).getMonth() !== state.month.getMonth())) rows++;
+    const maxChips = chipsPerDay(rows);
 
-    for (let week = 0; week < 6; week++) {
+    for (let week = 0; week < rows; week++) {
       const weekStart = addDays(start, week * 7);
-      if (week >= 4 && weekStart.getMonth() !== state.month.getMonth() && weekStart > state.month) break;
       let weekTime = 0, activeDays = 0;
       for (let dow = 0; dow < 7; dow++) {
         const d = addDays(weekStart, dow);
@@ -313,12 +317,14 @@
           isActive && "active",
           isActive && prevActive && "join-l",
           isActive && nextActive && "join-r"].filter(Boolean).join(" ");
-        const chips = ws.slice(0, MAX_CHIPS).map(chipHtml).join("");
-        const more = ws.length > MAX_CHIPS ? `<button class="chip" style="--cat:var(--c-other)" data-date="${key}"><span class="name">+${ws.length - MAX_CHIPS} more</span></button>` : "";
+        const shown = Math.min(ws.length, maxChips);
+        const chips = ws.slice(0, shown).map(chipHtml).join("");
+        const more = ws.length > shown
+          ? `<button class="more-badge" data-date="${key}" title="${plural(ws.length, "workout")}">+${ws.length - shown}</button>` : "";
         html += `<div class="${cls}" data-date="${key}" role="gridcell" aria-label="${d.toDateString()}, ${plural(ws.length, "workout")}">
           ${isActive ? `<span class="band"></span>` : ""}
-          <div class="day-top"><span class="num">${d.getDate()}</span>${key === tIso ? `<span class="today-tag">Today</span>` : ""}</div>
-          <div class="chips">${chips}${more}</div></div>`;
+          <div class="day-top"><span class="num">${d.getDate()}</span>${more}${key === tIso ? `<span class="today-tag">Today</span>` : ""}</div>
+          <div class="chips">${chips}</div></div>`;
       }
       const met = activeDays >= state.goal;
       const pct = Math.min(100, (activeDays / state.goal) * 100);
@@ -327,7 +333,18 @@
         <div class="bar"><i style="width:${pct}%"></i></div>
         <span class="goal">${met ? `<svg viewBox="0 0 24 24"><use href="#i-check"/></svg>Goal` : `${activeDays}/${state.goal} days`}</span></div>`;
     }
-    $("calendar").innerHTML = html;
+    const cal = $("calendar");
+    cal.style.setProperty("--rows", rows);
+    cal.innerHTML = html;
+  }
+
+  // How many workout chips fit in a day cell at the current calendar height.
+  function chipsPerDay(rows) {
+    if (!FIT_QUERY.matches) return 3;
+    const h = $("calendar").clientHeight;
+    if (!h) return 3;
+    const rowH = (h - 22 - rows * 5) / rows;
+    return Math.max(1, Math.min(4, Math.floor((rowH - 28) / 25)));
   }
 
   function chipHtml(w) {
@@ -385,7 +402,13 @@
       (byCat[c] ||= { n: 0, secs: 0 });
       byCat[c].n++; byCat[c].secs += w.duration_s || 0;
     }
-    const rows = Object.entries(byCat).sort((a, b) => b[1].secs - a[1].secs);
+    let rows = Object.entries(byCat).sort((a, b) => b[1].secs - a[1].secs);
+    if (rows.length > MAX_MIX_ROWS) {
+      const top = rows.filter(([c]) => c !== "other").slice(0, MAX_MIX_ROWS - 1);
+      const keep = new Set(top.map(([c]) => c));
+      const rest = rows.filter(([c]) => !keep.has(c)).reduce((a, [, v]) => ({ n: a.n + v.n, secs: a.secs + v.secs }), { n: 0, secs: 0 });
+      rows = [...top, ["other", rest]];
+    }
     const maxSecs = Math.max(1, ...rows.map(([, v]) => v.secs));
     $("mix").innerHTML = `<div class="card-head"><h2>Activity mix</h2></div>` + (rows.length
       ? rows.map(([c, v]) => `<div class="mix-row" style="--cat:${catVar(c)}">${badge(c)}
@@ -502,7 +525,7 @@
   });
 
   $("calendar").addEventListener("click", (e) => {
-    const chip = e.target.closest(".chip");
+    const chip = e.target.closest(".chip, .more-badge");
     if (!chip) return;
     if (chip.dataset.id) showDetail(Number(chip.dataset.id));
     else if (chip.dataset.date) {
@@ -535,7 +558,7 @@
   let resizeTimer;
   window.addEventListener("resize", () => {
     clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(() => { if (state.overview) renderHeatmap(); }, 150);
+    resizeTimer = setTimeout(() => { if (state.overview) renderHeatmap(); renderCalendar(); }, 150);
   });
 
   // Keep fresh while open so pushes from the phone appear without a reload.
