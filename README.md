@@ -18,7 +18,7 @@ training calendar, so you always know when you last trained and what keeps the s
 <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white">
 <img alt="SQLite" src="https://img.shields.io/badge/SQLite-003B57?logo=sqlite&logoColor=white">
 <img alt="Vanilla JS" src="https://img.shields.io/badge/frontend-vanilla%20JS-F7DF1E?logo=javascript&logoColor=black">
-<img alt="Tests" src="https://img.shields.io/badge/tests-77%20passing-34D399">
+<img alt="Tests" src="https://img.shields.io/badge/tests-90%20passing-34D399">
 <img alt="Local only" src="https://img.shields.io/badge/data-stays%20on%20your%20PC-FF6A3D">
 </p>
 
@@ -42,6 +42,8 @@ training calendar, so you always know when you last trained and what keeps the s
   account, no third-party server in between.
 - **Built to keep you consistent.** Time since your last workout, a live day streak with your personal best,
   a weekly goal ring, and a GitHub-style heatmap of the last 12 months.
+- **Daily activity too.** Steps (with a 10k goal and 7-day bars), walking distance, active energy, flights
+  and a 30-day weight trend from a second Health Metrics automation; each calendar day shows its steps.
 - **One-screen dashboard.** Everything fits a 1080p monitor without scrolling; falls back to a scrolling
   layout on smaller screens and phones.
 - **Correct data.** Units normalised to metric, timezones preserved (a late-night workout stays on its day),
@@ -105,6 +107,19 @@ powershell -ExecutionPolicy Bypass -File install-startup.ps1
 Allow **Local Network** access when iOS asks, then run a **Manual export** over a large date range once
 to backfill history. You can also import an exported JSON file with **Import JSON** in the calendar.
 
+### 4. Optional: daily health metrics
+Duplicate the automation and change only these settings (same URL and header):
+
+| Setting | Value |
+|---|---|
+| Data type | Health Metrics |
+| Metrics | Step Count, Walking + Running Distance, Active Energy, Flights Climbed, Weight & Body Mass |
+| Summarize data | On, Time Grouping: **Day** |
+| Date range | Previous 7 Days |
+
+Summarized daily values come from HealthKit's statistics, which de-duplicate overlapping iPhone and Watch
+samples. Unsummarized samples from several devices can overlap and inflate daily step totals.
+
 ## Design
 
 | Layer | Module |
@@ -115,6 +130,7 @@ to backfill history. You can also import an exported JSON file with **Import JSO
 | Schema + migrations (`PRAGMA user_version`) | `app/db.py` |
 | Read queries shaped for the API | `app/queries.py` |
 | Streaks, per-day activity | `app/analytics.py` |
+| Health metrics storage + daily aggregation | `app/metrics.py` |
 | Dashboard UI (vanilla JS, no build) | `static/` |
 
 **Data model.** `workouts` holds one row per workout with core summary columns (duration, distance, energy,
@@ -136,6 +152,12 @@ without an offset are rejected, never assumed UTC.
 - Each workout is processed in its own savepoint: one malformed workout fails alone, the rest commit.
 - HAE never sends deletions; delete a workout with `DELETE /api/v1/workouts/{id}`.
 
+**Health metrics.** `data.metrics` samples are stored in `health_metric_samples`, one row per
+(metric, timestamp, source), in canonical units with the exported unit kept for display (e.g. weight in lb).
+Re-sent samples update in place. Daily values are computed on read: cumulative metrics (steps, distance,
+energy, flights) are summed, body measurements (weight, body fat) use the day's latest reading, everything
+else is averaged.
+
 **Known HAE quirk.** `heartRateData` sometimes contains the post-workout recovery series
 ([issue #60](https://github.com/Lybron/health-auto-export/issues/60)). If every sample is at/after the
 workout end it is stored as `heart_rate_recovery` and the workout is flagged.
@@ -155,6 +177,8 @@ All responses are JSON; errors are `{"error": {"code", "message", "details"}}`. 
 | `DELETE /api/v1/workouts/{id}` | this PC only |
 | `GET /api/v1/analytics/overview?today=YYYY-MM-DD&weekly_goal=3` | this PC only — last workout, day/week streaks, totals |
 | `GET /api/v1/analytics/days?from=&to=` | this PC only — per-day counts and time (heatmap) |
+| `GET /api/v1/metrics` | this PC only — health metrics received, with date ranges |
+| `GET /api/v1/metrics/daily?names=step_count,weight_body_mass&from=&to=` | this PC only — daily values per metric |
 
 **Streak rules.** A day is active when a workout started on it (local date). The day streak counts
 consecutive active days ending today, or ending yesterday when there is no workout yet today (still alive,

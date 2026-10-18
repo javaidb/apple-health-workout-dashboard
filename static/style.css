@@ -301,6 +301,7 @@ svg { display: block; }
 .chip .name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
 .chip .meta { color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; font-size: 11.5px; }
 @container (max-width: 100px) { .chip .meta { display: none; } }
+@container (max-width: 120px) { .day-steps ~ .today-tag { display: none; } }
 
 .week-total {
   border-radius: 12px; padding: 10px; background: transparent; border: 1px dashed var(--border-strong);
@@ -313,6 +314,46 @@ svg { display: block; }
 .week-total .goal { display: flex; align-items: center; gap: 4px; font-size: 11px; }
 .week-total.met .goal { color: var(--good); font-weight: 650; }
 .week-total .goal svg { width: 12px; height: 12px; }
+
+/* ---------- daily activity ------------------------------------------- */
+.activity-card .card-head { align-items: baseline; }
+.act-top { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 4px 12px; }
+.activity-card .steps-ring { width: 56px; height: 56px; }
+.steps-ring .prog { stroke: url(#g-steps); }
+.act-steps { font-size: 26px; font-weight: 800; letter-spacing: -.03em; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.act-top .sub { color: var(--muted); font-size: 12px; }
+.step-bars {
+  grid-column: 1 / -1; position: relative;
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;
+  height: 64px; margin-top: 8px; padding-bottom: 14px;
+}
+.step-bars::before {   /* goal line */
+  content: ""; position: absolute; left: 0; right: 0; bottom: calc(14px + (100% - 14px) * var(--goal) / 100%);
+  border-top: 1px dashed color-mix(in srgb, var(--warn) 55%, transparent);
+}
+.sbar { position: relative; display: flex; align-items: flex-end; height: 100%; }
+.sbar i { display: block; width: 100%; border-radius: 4px 4px 2px 2px; background: color-mix(in srgb, var(--ok) 35%, var(--surface-3)); }
+.sbar.hit i { background: linear-gradient(180deg, #fbbf24, #f59e0b); }
+.sbar.today i { box-shadow: 0 0 0 1.5px var(--text); }
+.sbar span { position: absolute; bottom: -14px; left: 0; right: 0; text-align: center; font-size: 10px; color: var(--faint); font-weight: 600; }
+.sbar.today span { color: var(--text); }
+.mini-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+.mini { background: var(--surface-2); border-radius: 10px; padding: 8px 10px; min-width: 0; }
+.mini-value { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.weight-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin-top: 8px; background: var(--surface-2); border-radius: 10px; padding: 8px 10px;
+}
+.weight-when { color: var(--muted); font-size: 11.5px; font-weight: 500; }
+.delta.down-neutral, .delta.up-neutral { color: var(--muted); }
+.spark { width: 90px; height: 26px; flex-shrink: 0; }
+.spark polyline { fill: none; stroke: var(--ok); stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+
+.day-steps { font-size: 10.5px; font-weight: 650; color: var(--faint); font-variant-numeric: tabular-nums; }
+.day-steps.hit { color: var(--warn); }
+.day-top .day-steps { margin-left: auto; }
+.day-top .day-steps + .more-badge { margin-left: 4px; }
+.day-top .today-tag { margin-left: 4px; }
 
 /* ---------- side panels ----------------------------------------------- */
 .side { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
@@ -383,7 +424,7 @@ code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; font-
   .week-total, .dow.wk { display: none; }
   .day { min-height: 58px; padding: 8px 3px 4px; border-radius: 9px; align-items: center; }
   .day-top { justify-content: center; }
-  .today-tag { display: none; }
+  .today-tag, .day-steps { display: none; }
   .band { left: 3px; right: 3px; }
   .day.join-l .band { left: -5px; }
   .day.join-r .band { right: -5px; }
@@ -409,7 +450,7 @@ code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; font-
     flex: 1; min-height: 0; max-width: none; width: 100%;
     padding: 0 22px 18px;
     display: grid; gap: 16px;
-    grid-template-columns: minmax(300px, 21%) minmax(0, 1fr) minmax(280px, 19%);
+    grid-template-columns: minmax(300px, 21%) minmax(0, 1fr) minmax(300px, 21%);
   }
   .card { padding: 14px 16px; }
   .card-head { margin-bottom: 10px; }
@@ -440,8 +481,16 @@ code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; font-
 
   .side { display: flex; flex-direction: column; align-items: stretch; gap: 16px; min-height: 0; }
   #month-stats { flex: 0 0 auto; }
-  .stat { padding: 9px 11px; }
-  .stat-value { font-size: 20px; }
+  .activity-card { flex: 0 0 auto; }
+  .step-bars { height: clamp(44px, 6vh, 64px); }
+  .stat { padding: 8px 10px; }
+  .stat-value { font-size: 18px; }
+  #month-stats .stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  #month-stats .stat-label { font-size: 10px; letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #month-stats .stat-value { font-size: 17px; white-space: nowrap; }
+  #month-stats .delta { font-size: 10.5px; white-space: nowrap; }
+  .mini-grid { margin-top: 10px; }
+  .mini-value { font-size: 14px; }
   #mix { flex: 1 1 0; min-height: 0; overflow-y: auto; }
   .mix-row { padding: 6px 0; }
 }

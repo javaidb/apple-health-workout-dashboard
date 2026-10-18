@@ -11,6 +11,8 @@
   };
   const FIT_QUERY = matchMedia("(min-width: 1200px) and (min-height: 660px)");
   const MAX_MIX_ROWS = 6;
+  const STEP_GOAL = 10000;
+  const ACTIVITY_METRICS = ["step_count", "walking_running_distance", "active_energy", "flights_climbed", "weight_body_mass"];
   const DOW = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
   const $ = (id) => document.getElementById(id);
@@ -20,6 +22,8 @@
     overview: null,
     yearDays: new Map(),     // local date -> {workouts, duration_s, categories}
     workouts: [],            // workouts in the visible calendar grid
+    metrics: {},             // metric -> {byDate: Map(date -> value), sourceUnit} for the last 30 days
+    gridSteps: new Map(),    // local date -> steps for the visible calendar grid
     selectedId: null,
   };
 
@@ -62,6 +66,7 @@
     const h = Math.round(mins / 60);
     return h < 48 ? `${h} h ago` : `${Math.round(h / 24)} days ago`;
   }
+  function fmtSteps(n) { return n >= 10000 ? `${Math.round(n / 1000)}k` : n >= 1000 ? `${(n / 1000).toFixed(1)}k` : `${Math.round(n)}`; }
   const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
   const catOf = (c) => (CATEGORY_LABELS[c] ? c : "other");
   const catVar = (c) => `var(--c-${catOf(c)})`;
@@ -106,6 +111,7 @@
     renderHero();
     renderHeatmap();
     renderSide();  // month-over-month deltas use yearDays
+    loadActivity().catch(() => renderActivity());
     $("empty").hidden = overview.totals.workouts > 0;
   }
 
@@ -119,8 +125,22 @@
       if (items.length >= page.total || page.items.length === 0) break;
     }
     state.workouts = items;
+    try {
+      const steps = await api(`/metrics/daily?names=step_count&from=${iso(start)}&to=${iso(end)}`);
+      state.gridSteps = new Map(steps.metrics.step_count.days.map((d) => [d.date, d.value]));
+    } catch { state.gridSteps = new Map(); }
     renderCalendar();
     renderSide();
+  }
+
+  async function loadActivity() {
+    const today = new Date();
+    const res = await api(`/metrics/daily?names=${ACTIVITY_METRICS.join(",")}&from=${iso(addDays(today, -30))}&to=${iso(addDays(today, 1))}`);
+    state.metrics = {};
+    for (const [name, m] of Object.entries(res.metrics)) {
+      state.metrics[name] = { byDate: new Map(m.days.map((d) => [d.date, d.value])), sourceUnit: m.source_unit };
+    }
+    renderActivity();
   }
 
   async function loadStatus() {
@@ -317,13 +337,16 @@
           isActive && "active",
           isActive && prevActive && "join-l",
           isActive && nextActive && "join-r"].filter(Boolean).join(" ");
+        const steps = state.gridSteps.get(key);
+        const stepsTag = steps != null && key <= tIso
+          ? `<span class="day-steps${steps >= STEP_GOAL ? " hit" : ""}" title="${Math.round(steps).toLocaleString()} steps">${fmtSteps(steps)}</span>` : "";
         const shown = Math.min(ws.length, maxChips);
         const chips = ws.slice(0, shown).map(chipHtml).join("");
         const more = ws.length > shown
           ? `<button class="more-badge" data-date="${key}" title="${plural(ws.length, "workout")}">+${ws.length - shown}</button>` : "";
         html += `<div class="${cls}" data-date="${key}" role="gridcell" aria-label="${d.toDateString()}, ${plural(ws.length, "workout")}">
           ${isActive ? `<span class="band"></span>` : ""}
-          <div class="day-top"><span class="num">${d.getDate()}</span>${more}${key === tIso ? `<span class="today-tag">Today</span>` : ""}</div>
+          <div class="day-top"><span class="num">${d.getDate()}</span>${stepsTag}${more}${key === tIso ? `<span class="today-tag">Today</span>` : ""}</div>
           <div class="chips">${chips}</div></div>`;
       }
       const met = activeDays >= state.goal;
@@ -354,6 +377,83 @@
       `<span class="dot"></span><span class="name">${esc(shortLabel(w.activity))}</span><span class="meta">${meta}</span></button>`;
   }
 
+  // ---- daily activity (health metrics) --------------------------------------
+  function metricOn(name, date) { return state.metrics[name]?.byDate.get(date); }
+
+  function renderActivity() {
+    const el = $("activity-card");
+    const hasAny = Object.values(state.metrics).some((m) => m.byDate.size);
+    if (!hasAny) {
+      el.innerHTML = `<div class="card-head"><h2>Daily activity</h2></div>
+        <div class="none">No health metrics yet. Add a Health Auto Export automation with data type <strong>Health Metrics</strong> pointing at this PC.</div>`;
+      return;
+    }
+    const today = new Date();
+    const tIso = iso(today);
+    const steps = metricOn("step_count", tIso) ?? 0;
+    const r = 26, c = 2 * Math.PI * r, pct = Math.min(1, steps / STEP_GOAL);
+
+    // Last 7 days of steps, oldest first.
+    const week = Array.from({ length: 7 }, (_, i) => addDays(today, i - 6));
+    const vals = week.map((d) => metricOn("step_count", iso(d)) ?? 0);
+    const max = Math.max(STEP_GOAL, ...vals);
+    const goalPct = (STEP_GOAL / max) * 100;
+    const bars = week.map((d, i) => {
+      const v = vals[i], h = Math.max(3, (v / max) * 100);
+      const cls = [v >= STEP_GOAL && "hit", iso(d) === tIso && "today"].filter(Boolean).join(" ");
+      return `<div class="sbar ${cls}" title="${d.toDateString()}: ${Math.round(v).toLocaleString()} steps"><i style="height:${h}%"></i><span>${DOW[(d.getDay() + 6) % 7][0]}</span></div>`;
+    }).join("");
+    const avg7 = vals.reduce((a, b) => a + b, 0) / 7;
+
+    const distUnit = state.metrics.walking_running_distance?.sourceUnit === "mi" ? "mi" : "km";
+    const dist = metricOn("walking_running_distance", tIso);
+    const kcal = metricOn("active_energy", tIso);
+    const flights = metricOn("flights_climbed", tIso);
+    const tiles = [
+      ["Distance", dist == null ? "—" : `${(dist / (distUnit === "mi" ? 1609.344 : 1000)).toFixed(1)} ${distUnit}`],
+      ["Active kcal", kcal == null ? "—" : Math.round(kcal).toLocaleString()],
+      ["Flights", flights == null ? "—" : Math.round(flights)],
+    ].map(([k, v]) => `<div class="mini"><div class="stat-label">${k}</div><div class="mini-value">${esc(v)}</div></div>`).join("");
+
+    el.innerHTML = `<div class="card-head"><h2>Daily activity</h2><span class="card-sub">7-day avg ${Math.round(avg7).toLocaleString()} steps</span></div>
+      <div class="act-top">
+        <svg class="ring steps-ring" viewBox="0 0 64 64" aria-hidden="true">
+          <circle class="track" cx="32" cy="32" r="${r}" fill="none" stroke-width="7"/>
+          <circle class="prog" cx="32" cy="32" r="${r}" fill="none" stroke-width="7" stroke-linecap="round"
+            stroke-dasharray="${c}" stroke-dashoffset="${c * (1 - pct)}" transform="rotate(-90 32 32)"/>
+        </svg>
+        <div>
+          <div class="act-steps">${Math.round(steps).toLocaleString()}</div>
+          <div class="sub">steps today · ${steps >= STEP_GOAL ? "goal hit" : `${Math.round(STEP_GOAL - steps).toLocaleString()} to ${STEP_GOAL / 1000}k`}</div>
+        </div>
+        <div class="step-bars" style="--goal:${goalPct}%">${bars}</div>
+      </div>
+      <div class="mini-grid">${tiles}</div>
+      ${weightRow()}`;
+  }
+
+  function weightRow() {
+    const m = state.metrics.weight_body_mass;
+    if (!m || !m.byDate.size) return "";
+    const lb = m.sourceUnit === "lb" || m.sourceUnit === "lbs";
+    const conv = (kg) => (lb ? kg / 0.45359237 : kg);
+    const unit = lb ? "lb" : "kg";
+    const entries = [...m.byDate.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+    const [lastDate, last] = entries[entries.length - 1];
+    const first = entries[0][1];
+    const diff = conv(last) - conv(first);
+    const trend = entries.length > 1 && Math.abs(diff) >= 0.05
+      ? `<span class="delta ${diff < 0 ? "down-neutral" : "up-neutral"}">${diff < 0 ? "▼" : "▲"} ${Math.abs(diff).toFixed(1)} ${unit} · 30d</span>` : "";
+    const lo = Math.min(...entries.map((e) => e[1])), hi = Math.max(...entries.map((e) => e[1]));
+    const W = 90, H = 26;
+    const pts = entries.map(([d, v], i) => `${entries.length === 1 ? W / 2 : (i / (entries.length - 1)) * W},${hi === lo ? H / 2 : H - 2 - ((v - lo) / (hi - lo)) * (H - 4)}`).join(" ");
+    const when = lastDate === todayIso() ? "today" : parseIso(lastDate).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    return `<div class="weight-row">
+      <div><div class="stat-label">Weight</div><div class="mini-value">${conv(last).toFixed(1)} ${unit} <span class="weight-when">${when}</span></div>${trend}</div>
+      <svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><polyline points="${pts}"/></svg>
+    </div>`;
+  }
+
   // ---- side panels --------------------------------------------------------
   function monthAgg(monthDate) {
     const prefix = iso(monthDate).slice(0, 7);
@@ -362,11 +462,11 @@
     return { workouts, days, secs };
   }
 
-  function delta(cur, prev, fmt, prevName) {
+  function delta(cur, prev, fmt) {
     if (prev == null) return "";
     const diff = cur - prev;
-    if (Math.abs(diff) < 1e-9) return `<div class="delta">Same as ${prevName}</div>`;
-    return `<div class="delta ${diff > 0 ? "up" : "down"}">${diff > 0 ? "▲" : "▼"} ${fmt(Math.abs(diff))} vs ${prevName}</div>`;
+    if (Math.abs(diff) < 1e-9) return `<div class="delta">= same</div>`;
+    return `<div class="delta ${diff > 0 ? "up" : "down"}">${diff > 0 ? "▲" : "▼"} ${fmt(Math.abs(diff))}</div>`;
   }
 
   function renderSide() {
@@ -385,14 +485,14 @@
     const dist = {};
     for (const w of ws) if (DISTANCE_CATEGORIES.has(w.activity.category) && w.distance_m) dist[w.activity.category] = (dist[w.activity.category] || 0) + w.distance_m;
     const distStats = Object.entries(dist).sort((a, b) => b[1] - a[1]).slice(0, 2)
-      .map(([c, m]) => `<div class="stat"><div class="stat-label">${CATEGORY_LABELS[c]} distance</div><div class="stat-value">${fmtKm(m)}</div></div>`).join("");
+      .map(([c, m]) => `<div class="stat"><div class="stat-label">${CATEGORY_LABELS[c]} km</div><div class="stat-value">${(m / 1000).toFixed(1)}</div></div>`).join("");
 
-    $("month-stats").innerHTML = `<div class="card-head"><div><h2>${state.month.toLocaleDateString(undefined, { month: "long" })} at a glance</h2></div></div>
+    $("month-stats").innerHTML = `<div class="card-head"><h2>${state.month.toLocaleDateString(undefined, { month: "long" })} at a glance</h2>${prev ? `<span class="card-sub">▲▼ vs ${pn}</span>` : ""}</div>
       <div class="stat-grid">
-        <div class="stat"><div class="stat-label">Workouts</div><div class="stat-value">${ws.length}</div>${delta(ws.length, prev?.workouts, (v) => v, pn)}</div>
-        <div class="stat"><div class="stat-label">Active days</div><div class="stat-value">${days}</div>${delta(days, prev?.days, (v) => v, pn)}</div>
-        <div class="stat"><div class="stat-label">Time</div><div class="stat-value">${fmtDuration(secs)}</div>${delta(secs, prev?.secs, fmtDuration, pn)}</div>
-        <div class="stat"><div class="stat-label">Energy</div><div class="stat-value">${Math.round(kcal).toLocaleString()}<span style="font-size:12px;color:var(--muted)"> kcal</span></div></div>
+        <div class="stat"><div class="stat-label">Workouts</div><div class="stat-value">${ws.length}</div>${delta(ws.length, prev?.workouts, (v) => v)}</div>
+        <div class="stat"><div class="stat-label">Active days</div><div class="stat-value">${days}</div>${delta(days, prev?.days, (v) => v)}</div>
+        <div class="stat"><div class="stat-label">Time</div><div class="stat-value">${fmtDuration(secs)}</div>${delta(secs, prev?.secs, fmtDuration)}</div>
+        <div class="stat"><div class="stat-label">Workout kcal</div><div class="stat-value">${Math.round(kcal).toLocaleString()}</div></div>
         ${distStats}
       </div>`;
 
