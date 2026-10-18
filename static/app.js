@@ -223,11 +223,11 @@
       ["i-clock", "var(--ok)", fmtHours(t.duration_s), "trained"],
       ["i-calendar", "var(--warn)", t.this_year_workouts.toLocaleString(), `in ${new Date().getFullYear()}`],
       ["i-trophy", "var(--accent)", `${streak.longest} wk`, "best streak"],
-      ["i-flag", "var(--c-mobility)", since.toLocaleDateString(undefined, { month: "short", year: "numeric" }), "training since"],
+      ["i-flag", "var(--c-mobility)", `since ${since.toLocaleDateString(undefined, { month: "short", year: "numeric" })}`, ""],
     ];
     el.innerHTML = items.map(([icon, color, value, label]) => `<div class="lt" style="--lt:${color}">
         <span class="lt-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#${icon}"/></svg></span>
-        <span class="lt-text"><span class="lt-value">${esc(value)}</span><span class="lt-label">${esc(label)}</span></span>
+        <span class="lt-text"><span class="lt-value">${esc(value)}</span>${label ? `<span class="lt-label">${esc(label)}</span>` : ""}</span>
       </div>`).join("");
   }
 
