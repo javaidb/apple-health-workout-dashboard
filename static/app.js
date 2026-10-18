@@ -287,7 +287,7 @@
           <span>${w.longest && w.current < w.longest ? `${w.longest - w.current} to beat it` : w.current ? "On your best" : ""}</span></div>
       </div>
       <div class="nudge tone-${tone}">${esc(msg)}</div></div>
-      <div class="climb">${climbSvg(w)}</div>`;
+      <div class="climb"><div class="climb-caption">Help Carl reach the top!</div>${climbSvg(w)}</div>`;
   }
 
   // ---- the climb: a minimalist climber on an endless mountain -----------------
@@ -298,9 +298,9 @@
   const CLIMB_STEP = 15;   // height gained per week, in SVG units
   let climbId = 0;         // unique ids for each drawing's mist gradient and mask
 
-  function climbPoint(k) {
+  function climbPoint(k, step = CLIMB_STEP) {
     const m = Math.floor(k / CLIMB_LEG), t = (k - m * CLIMB_LEG) / CLIMB_LEG;
-    return [m % 2 === 0 ? 20 + 60 * t : 80 - 60 * t, k * CLIMB_STEP];
+    return [m % 2 === 0 ? 20 + 60 * t : 80 - 60 * t, k * step];
   }
 
   function lastRunBeforeGap() {
@@ -352,8 +352,8 @@
   }
 
   // Irregular rock slab for a month ledge, centred on (x, y) with its flat top at y.
-  function rockLedge(x, y, done) {
-    const p = (dx, dy) => `${(x + dx).toFixed(1)},${(y + dy).toFixed(1)}`;
+  function rockLedge(x, y, done, sc = 1) {
+    const p = (dx, dy) => `${(x + dx * sc).toFixed(1)},${(y + dy * sc).toFixed(1)}`;
     return `<g class="cl-rock${done ? " done" : ""}">
       <path d="M${p(-12, .4)} L${p(-9, -.6)} L${p(-3, -.2)} L${p(4, -.7)} L${p(10, -.3)} L${p(12.5, .9)} L${p(10.5, 3)} L${p(6, 3.6)}
         L${p(3.5, 5.6)} L${p(-.5, 4.2)} L${p(-4, 6.2)} L${p(-7.5, 4)} L${p(-11, 3.4)} Z"/>
@@ -372,70 +372,96 @@
     const cur = w.current;
     const fallFrom = cur === 0 ? lastRunBeforeGap() : 0;
     const focus = cur > 0 ? cur : fallFrom;
-    const lo = Math.max(0, focus - 7), hi = Math.max(focus + 4, lo + 8);
-    const W = 100, H = (hi - lo) * CLIMB_STEP + 26;
-    const sx = (x) => x, sy = (y) => H - 10 - (y - lo * CLIMB_STEP);
-    const pt = (k) => { const [x, y] = climbPoint(k); return [sx(x), sy(y)]; };
+    // The whole climb is always in view, from base camp to a few steps above Carl. As the streak
+    // grows each week rises a little less (step shrinks), so the route becomes tighter switchbacks
+    // and Carl and the ledges get smaller, but base camp never leaves the view.
+    const hi = Math.max(focus + 3, 8);
+    const step = Math.min(CLIMB_STEP, 210 / hi);
+    const z = CLIMB_STEP / step;               // how far zoomed out we are (1 = comfortable size)
+    const W = 100, H = Math.round(hi * step + 34), ox = 0;
+    const sy = (y) => H - 12 - y;
+    const pt = (k) => { const [x, y] = climbPoint(k, step); return [x + ox, sy(y)]; };
     const line = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => pt(a + i)).map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`).join("");
+    const fs = (n) => n.toFixed(1);
+    const sc = Math.max(.45, Math.sqrt(1 / z));   // size of ledges, tent and Carl relative to the comfortable size
 
     // Rock face: jagged edges that keep rising above the view, so the summit is never in sight.
-    const f = (v) => (v * H).toFixed(1);
-    const mountain = `<path class="cl-mtn" d="M0 ${H} L0 ${f(.72)} L5 ${f(.6)} L2 ${f(.42)} L8 ${f(.28)} L4 ${f(.12)} L10 -10
-        L90 -10 L96 ${f(.16)} L92 ${f(.3)} L98 ${f(.46)} L94 ${f(.62)} L100 ${f(.76)} L100 ${H} Z"/>
-      <path class="cl-crack" d="M14 ${f(.86)} l7 -${(.08 * H).toFixed(1)} l-3 -${(.05 * H).toFixed(1)} M78 ${f(.7)} l-6 -${(.07 * H).toFixed(1)} l4 -${(.06 * H).toFixed(1)}
-        M30 ${f(.34)} l6 -${(.05 * H).toFixed(1)} M66 ${f(.24)} l-5 -${(.06 * H).toFixed(1)}"/>`;
-    const dots = Array.from({ length: hi - lo + 1 }, (_, i) => lo + i).filter((k) => k > 0 && k % CLIMB_LEG !== 0)
-      .map((k) => { const [x, y] = pt(k); return `<circle class="cl-step${k <= Math.max(cur, fallFrom) && (cur > 0 || k <= fallFrom) ? (cur > 0 ? " done" : " old") : ""}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1.3"/>`; }).join("");
-    const ledges = [];
-    for (let k = Math.max(CLIMB_LEG, Math.ceil(lo / CLIMB_LEG) * CLIMB_LEG); k <= hi; k += CLIMB_LEG) {
-      const [x, y] = pt(k);
-      ledges.push(rockLedge(x, y + 1.2, k <= Math.max(cur, fallFrom)));
-      ledges.push(`<text class="cl-label" x="${(x + (x > 50 ? -14 : 14)).toFixed(1)}" y="${(y + 9).toFixed(1)}" text-anchor="${x > 50 ? "end" : "start"}">${k / CLIMB_LEG} mo</text>`);
-    }
-    const base = lo === 0 ? `<path class="cl-ground" d="M2,${sy(0) + 1.6}H98"/><text class="cl-label" x="50" y="${sy(0) + 9}" text-anchor="middle">base camp</text>` : "";
+    const f = (v) => (v * H).toFixed(1), X = (v) => (v * W / 100).toFixed(1);
+    const mountain = `<path class="cl-mtn" d="M0 ${H} L0 ${f(.72)} L${X(5)} ${f(.6)} L${X(2)} ${f(.42)} L${X(8)} ${f(.28)} L${X(4)} ${f(.12)} L${X(10)} -10
+        L${X(90)} -10 L${X(96)} ${f(.16)} L${X(92)} ${f(.3)} L${X(98)} ${f(.46)} L${X(94)} ${f(.62)} L${W} ${f(.76)} L${W} ${H} Z"/>
+      <path class="cl-crack" d="M${X(14)} ${f(.86)} l${X(7)} -${(.08 * H).toFixed(1)} l-${X(3)} -${(.05 * H).toFixed(1)} M${X(78)} ${f(.7)} l-${X(6)} -${(.07 * H).toFixed(1)} l${X(4)} -${(.06 * H).toFixed(1)}
+        M${X(30)} ${f(.34)} l${X(6)} -${(.05 * H).toFixed(1)} M${X(66)} ${f(.24)} l-${X(5)} -${(.06 * H).toFixed(1)}"/>`;
 
-    const climbedTo = cur > 0 ? cur : 0;
-    const arrows = Array.from({ length: hi - lo }, (_, i) => lo + i)
-      .filter((k) => k !== cur - 1 && k !== cur)  // keep the climber's own step clear
-      .map((k) => routeArrow(pt(k), pt(k + 1), k < climbedTo ? "done" : cur === 0 && k < fallFrom ? "old" : "ahead")).join("");
-    let route = `<path class="cl-route ahead" d="${line(Math.max(lo, cur), hi)}"/>`;
+    // Week dots and arrows: every week when close, one arrow per traverse when zoomed far out.
+    const reached = cur > 0 ? cur : 0;
+    const dots = z > 2.5 ? "" : Array.from({ length: hi }, (_, i) => i + 1).filter((k) => k % CLIMB_LEG !== 0)
+      .map((k) => { const [x, y] = pt(k); return `<circle class="cl-step${k <= reached ? " done" : cur === 0 && k <= fallFrom ? " old" : ""}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1.3"/>`; }).join("");
+    const arrowEvery = z > 1.6 ? CLIMB_LEG : 1;
+    const arrows = Array.from({ length: hi }, (_, k) => k)
+      .filter((k) => (arrowEvery === 1 ? true : k % CLIMB_LEG === 1) && k !== cur - 1 && k !== cur)
+      .map((k) => routeArrow(pt(k), pt(k + 1), k < reached ? "done" : cur === 0 && k < fallFrom ? "old" : "ahead")).join("");
+
+    // Rock ledges each month; labels thin out when zoomed far out.
+    const labelEvery = Math.max(1, Math.ceil(z / 1.5));
+    const ledges = [];
+    for (let k = CLIMB_LEG; k <= hi; k += CLIMB_LEG) {
+      const [x, y] = pt(k), m = k / CLIMB_LEG;
+      ledges.push(rockLedge(x, y + 1.2 * sc, k <= Math.max(cur, fallFrom), sc));
+      if (m % labelEvery === 0) {
+        const right = x > W / 2;
+        ledges.push(`<text class="cl-label" style="font-size:${fs(6)}px" x="${(x + (right ? -16 : 16)).toFixed(1)}" y="${(y + 2 + 6 * sc).toFixed(1)}" text-anchor="${right ? "end" : "start"}">${m} mo</text>`);
+      }
+    }
+
+    // Base camp with Carl's tent.
+    const gy = sy(0) + 1.6;
+    const tx = 7.5, ts = .75;   // tucked away at the far left, clear of where the route starts
+    const tent = `<g class="cl-tent" transform="translate(${tx.toFixed(1)},${gy.toFixed(1)}) scale(${ts.toFixed(2)})">
+        <path class="cl-tent-body" d="M-8 0L0 -10L8 0Z"/><path class="cl-tent-door" d="M0 -10L-2.6 0H2.6Z"/>
+        <path class="cl-tent-line" d="M0 -10V-11.6M-8 0L-11 .1M8 0L11 .1"/></g>`;
+    const base = `<path class="cl-ground" d="M2,${gy.toFixed(1)}H${(W - 2).toFixed(1)}"/>${tent}
+      <text class="cl-label" style="font-size:${fs(6)}px" x="${(W / 2).toFixed(1)}" y="${(gy + 8).toFixed(1)}" text-anchor="middle">base camp</text>`;
+
+    const cs = 1.25 * sc;   // Carl shrinks as the climb gets longer
+    let route = `<path class="cl-route ahead" d="${line(cur, hi)}"/>`;
     let figure, extra = "";
     if (cur > 0) {
-      route = `<path class="cl-route done" d="${line(lo, cur)}"/>` + route;
+      route = `<path class="cl-route done" d="${line(0, cur)}"/>` + route;
       const [x, y] = pt(cur), facingLeft = Math.floor(cur / CLIMB_LEG) % 2 === 1;
-      // rope from the harness back down to the previous step, with a little slack
-      const [px, py] = pt(Math.max(lo, cur - 1));
-      const hip = !w.this_week_met ? [x, y + 4.5] : cur % CLIMB_LEG === 0 ? [x + (facingLeft ? .5 : -.5), y - .5] : [x + (facingLeft ? -.3 : .3), y - 5];
+      const [px, py] = pt(cur - 1);
+      const hang = !w.this_week_met;
+      const hip = hang ? [x, y + 4.5 * cs / 1.25] : cur % CLIMB_LEG === 0 ? [x, y - .5] : [x + (facingLeft ? -.3 : .3), y - 5 * cs / 1.25];
       const rope = `<path class="cl-rope" d="M${hip[0].toFixed(1)},${hip[1].toFixed(1)} Q${((hip[0] + px) / 2).toFixed(1)},${(Math.max(hip[1], py) + 5).toFixed(1)} ${px.toFixed(1)},${py.toFixed(1)}"/>`;
-      if (!w.this_week_met) {
-        figure = rope + climber("hang", x, y + 9.5, facingLeft);
-        extra = `<text class="cl-alert" x="${(x + (x > 50 ? -10 : 10)).toFixed(1)}" y="${(y + 3).toFixed(1)}" text-anchor="middle">!</text>`;
+      if (hang) {
+        figure = rope + climber("hang", x, y + 9.5 * cs / 1.25, facingLeft, cs);
+        extra = `<text class="cl-alert" style="font-size:${fs(9)}px" x="${(x + (x > W / 2 ? -10 : 10) * cs / 1.25).toFixed(1)}" y="${(y + 3).toFixed(1)}" text-anchor="middle">!</text>`;
       } else {
-        figure = rope + climber(cur % CLIMB_LEG === 0 ? "rest" : "climb", x, y, facingLeft);
+        figure = rope + climber(cur % CLIMB_LEG === 0 ? "rest" : "climb", x, y, facingLeft, cs);
       }
     } else if (fallFrom > 0) {
-      route = `<path class="cl-route old" d="${line(lo, Math.min(fallFrom, hi))}"/>` + route;
-      const [fx, fy] = pt(Math.min(fallFrom, hi));
-      extra = `<path class="cl-fall" d="M${fx.toFixed(1)},${fy.toFixed(1)} Q${(fx + (fx > 50 ? 14 : -14)).toFixed(1)},${((fy + sy(0)) / 2).toFixed(1)} 50,${(sy(0) - 3).toFixed(1)}"/>`;
-      figure = climber("fallen", 50, sy(0), false);
+      route = `<path class="cl-route old" d="${line(0, fallFrom)}"/>` + route;
+      const [fx, fy] = pt(fallFrom);
+      extra = `<path class="cl-fall" d="M${fx.toFixed(1)},${fy.toFixed(1)} Q${(fx + (fx > W / 2 ? 14 : -14)).toFixed(1)},${((fy + sy(0)) / 2).toFixed(1)} ${(W / 2).toFixed(1)},${(sy(0) - 3).toFixed(1)}"/>`;
+      figure = climber("fallen", W / 2, sy(0), false, cs);
     } else {
-      figure = climber("stand", 50, sy(0), false);
+      figure = climber("stand", W / 2, sy(0), false, cs);
     }
-    const best = w.longest > 0 && w.longest >= lo && w.longest <= hi && w.longest !== cur
-      ? (() => { const [x, y] = pt(w.longest); return `<g class="cl-best" transform="translate(${x.toFixed(1)},${y.toFixed(1)})"><path d="M0 0V-9"/><path class="flag" d="M0 -9L5.5 -7.2L0 -5.4Z"/></g>`; })()
+    const best = w.longest > 0 && w.longest <= hi && w.longest !== cur
+      ? (() => { const [x, y] = pt(w.longest); return `<g class="cl-best" transform="translate(${x.toFixed(1)},${y.toFixed(1)}) scale(${sc.toFixed(2)})"><path d="M0 0V-9"/><path class="flag" d="M0 -9L5.5 -7.2L0 -5.4Z"/></g>`; })()
       : "";
     const label = cur > 0
-      ? `Climber ${plural(cur, "week")} up the mountain${w.this_week_met ? "" : ", hanging on until a workout this week"}`
-      : fallFrom ? `Climber fell from ${plural(fallFrom, "week")} up and is back at base camp` : "Climber at base camp";
-    // Mist: everything fades out towards the top of the view.
-    const mistEnd = (Math.min(H * 0.38, 70) / H).toFixed(3), id = ++climbId;
-    return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMax meet" role="img" aria-label="${label}">
+      ? `Carl is ${plural(cur, "week")} up the mountain${w.this_week_met ? "" : ", hanging on until a workout this week"}`
+      : fallFrom ? `Carl fell from ${plural(fallFrom, "week")} up and is back at base camp` : "Carl is at base camp";
+    // Mist: fades out the mountain above Carl only (never Carl himself), under the caption.
+    const carlTop = sy(focus * step) - 16 * sc;
+    const mistEnd = Math.max(.1, Math.min(.38, carlTop / H)).toFixed(3), id = ++climbId;
+    return `<svg viewBox="0 0 ${W.toFixed(1)} ${H}" preserveAspectRatio="xMidYMax meet" role="img" aria-label="${label}">
       <defs>
         <linearGradient id="g-mist-${id}" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="${mistEnd}" stop-color="#fff" stop-opacity="1"/>
         </linearGradient>
-        <mask id="m-mist-${id}" maskUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${H}">
-          <rect x="0" y="0" width="${W}" height="${H}" fill="url(#g-mist-${id})"/>
+        <mask id="m-mist-${id}" maskUnits="userSpaceOnUse" x="0" y="0" width="${W.toFixed(1)}" height="${H}">
+          <rect x="0" y="0" width="${W.toFixed(1)}" height="${H}" fill="url(#g-mist-${id})"/>
         </mask>
       </defs>
       <g mask="url(#m-mist-${id})">${mountain}${base}${route}${arrows}${dots}${ledges.join("")}${best}${extra}${figure}</g>
