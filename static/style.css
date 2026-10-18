@@ -539,9 +539,10 @@ code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; font-
   #month-stats .stat.dist { display: none; }  /* one row: distances only in the scrolling layout */
   #month-stats .stat { padding: 7px 8px; }
   #month-stats .card-head { margin-bottom: 8px; }
-  #month-stats .stat-label { font-size: 10px; letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  #month-stats .stat-value { font-size: 17px; white-space: nowrap; }
-  #month-stats .delta { font-size: 10.5px; white-space: nowrap; }
+  #month-stats .stat-label { font-size: 10px; letter-spacing: .04em; line-height: 1.25; }  /* wraps instead of cutting off */
+  #month-stats .stat-value { font-size: 17px; line-height: 1.2; }
+  #month-stats .stat { container-type: inline-size; }
+  #month-stats .delta { font-size: 10.5px; line-height: 1.25; }
   .mini-grid { margin-top: 10px; }
   .mini-value { font-size: 14px; }
   #form-card { flex: 1 1 0; min-height: 0; overflow-y: auto; }
@@ -598,3 +599,8 @@ code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; font-
   .bp svg { height: 28px; }
 }
 
+/* Very narrow month-stat tiles: shrink labels so single words like "Workouts" still fit. */
+@container (max-width: 64px) {
+  #month-stats .stat-label { font-size: 8.5px; letter-spacing: 0; }
+  #month-stats .stat-value { font-size: 14px; }
+}
