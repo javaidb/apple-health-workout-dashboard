@@ -274,9 +274,12 @@
     const today = todayIso();
     const weekSecs = w.this_week.reduce((a, d) => a + (state.yearDays.get(d.date)?.duration_s || 0), 0);
     const dots = w.this_week.map((d, i) => {
-      const cls = ["wd", d.active && "on", d.date === today && "today", d.date > today && "future"].filter(Boolean).join(" ");
-      const mark = d.workouts > 1 ? `<b>${d.workouts}</b>` : d.active ? `<svg viewBox="0 0 24 24"><use href="#i-check"/></svg>` : "";
-      return `<div class="${cls}" title="${plural(d.workouts, "workout")}"><i>${mark}</i>${DOW[i][0]}</div>`;
+      const missed = !d.active && d.date < today;  // day already passed without a workout
+      const cls = ["wd", d.active && "on", missed && "missed", d.date === today && "today", d.date > today && "future"].filter(Boolean).join(" ");
+      const mark = d.workouts > 1 ? `<b>${d.workouts}</b>`
+        : d.active ? `<svg viewBox="0 0 24 24"><use href="#i-check"/></svg>`
+        : missed ? `<svg viewBox="0 0 24 24"><use href="#i-close"/></svg>` : "";
+      return `<div class="${cls}" title="${missed ? "No workout" : plural(d.workouts, "workout")}"><i>${mark}</i>${DOW[i][0]}</div>`;
     }).join("");
     const msg = w.this_week_met ? "Weekly goal hit"
       : `${plural(w.remaining, "more workout")} · ${plural(w.days_left, "day")} left`;
