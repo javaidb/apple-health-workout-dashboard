@@ -541,14 +541,14 @@
     const dist = {};
     for (const w of ws) if (DISTANCE_CATEGORIES.has(w.activity.category) && w.distance_m) dist[w.activity.category] = (dist[w.activity.category] || 0) + w.distance_m;
     const distStats = Object.entries(dist).sort((a, b) => b[1] - a[1]).slice(0, 2)
-      .map(([c, m]) => `<div class="stat"><div class="stat-label">${CATEGORY_LABELS[c]} km</div><div class="stat-value">${(m / 1000).toFixed(1)}</div></div>`).join("");
+      .map(([c, m]) => `<div class="stat dist"><div class="stat-label">${CATEGORY_LABELS[c]} km</div><div class="stat-value">${(m / 1000).toFixed(1)}</div></div>`).join("");
 
     $("month-stats").innerHTML = `<div class="card-head"><h2>${state.month.toLocaleDateString(undefined, { month: "long" })} at a glance</h2>${prev ? `<span class="card-sub">▲▼ vs ${pn}</span>` : ""}</div>
       <div class="stat-grid">
         <div class="stat"><div class="stat-label">Workouts</div><div class="stat-value">${ws.length}</div>${delta(ws.length, prev?.workouts, (v) => v)}</div>
         <div class="stat"><div class="stat-label">Active days</div><div class="stat-value">${days}</div>${delta(days, prev?.days, (v) => v)}</div>
         <div class="stat"><div class="stat-label">Time</div><div class="stat-value">${fmtDuration(secs)}</div>${delta(secs, prev?.secs, fmtDuration)}</div>
-        <div class="stat"><div class="stat-label">Workout kcal</div><div class="stat-value">${Math.round(kcal).toLocaleString()}</div></div>
+        <div class="stat"><div class="stat-label">Kcal</div><div class="stat-value">${Math.round(kcal).toLocaleString()}</div></div>
         ${distStats}
       </div>`;
   }
