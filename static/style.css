@@ -82,6 +82,7 @@
 
 /* ---------- base ------------------------------------------------------ */
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html { background: var(--bg); }
 body {
   margin: 0;
@@ -591,7 +592,8 @@ code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; font-
   #month-stats .delta { font-size: 10.5px; line-height: 1.25; }
   .mini-grid { margin-top: 10px; }
   .mini-value { font-size: 14px; }
-  #form-card { flex: 1 1 0; min-height: 0; overflow-y: auto; }
+  #form-card { flex: 1 1 0; min-height: 0; overflow: hidden; }  /* never scrolls: see fitCard() */
+  .hero-card, #month-stats, .activity-card { overflow: hidden; }
   .goal-weeks { height: clamp(48px, 6.5vh, 62px); }
 }
 
@@ -603,7 +605,7 @@ code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; font-
 .calendar.dots .day { padding-top: 7px; }
 
 /* One-screen layout on short windows (e.g. a 1280x720 monitor): tighten everything. */
-@media (min-width: 1100px) and (min-height: 560px) and (max-height: 760px) {
+@media (min-width: 1100px) and (min-height: 560px) and (max-height: 860px) {
   .appbar { padding-top: 8px; padding-bottom: 6px; }
   .brand-mark { width: 24px; height: 24px; }
   .page { gap: 12px; padding-bottom: 12px; }

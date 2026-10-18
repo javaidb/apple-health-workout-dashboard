@@ -183,6 +183,7 @@
     renderWeekCard(o.week_streak);
     const t = o.totals;
     renderLifetime(t, o.active_week_streak);
+    scheduleFit();
   }
 
   // Nudge for the last-workout card. Rules are checked in order; the first match wins.
@@ -314,7 +315,7 @@
         </svg>
         <div>
           <div class="big" style="font-size:30px">${weekSecs ? fmtDuration(weekSecs) : "0m"}</div>
-          <div class="sub">trained this week · ${plural(w.this_week_days, "active day")}</div>
+          <div class="sub" data-opt="1">trained this week · ${plural(w.this_week_days, "active day")}</div>
         </div>
       </div>
       <div class="week-dots">${dots}</div>
@@ -518,6 +519,7 @@
       </div>
       <div class="mini-grid">${tiles}</div>
       ${weightRow()}`;
+    scheduleFit();
   }
 
   function weightRow() {
@@ -618,12 +620,34 @@
     el.innerHTML = `<div class="card-head"><h2>Recent form</h2>
         <span class="card-sub">Goal hit <strong>${hits}</strong> of the last ${plural(done.length, "week")}</span></div>
       <div class="goal-weeks">${bars}</div>
-      <div class="gw-axis"><span>${FORM_WEEKS} weeks ago</span><span>${goal}/wk goal</span><span>this week</span></div>
-      <div class="form-sub">Last ${plural(sessions.length, "session")}</div>
+      <div class="gw-axis" data-opt="3"><span>${FORM_WEEKS} weeks ago</span><span>${goal}/wk goal</span><span>this week</span></div>
+      <div data-opt="2"><div class="form-sub">Last ${plural(sessions.length, "session")}</div>
       ${sessions.length ? boxPlot("Duration", sessions.map((w) => ({ v: w.duration_s / 60, est: !!w.flags.duration_estimated, w })), (v) => fmtDuration(v * 60))
-                        + boxPlot("Calories", sessions.filter((w) => w.active_energy_kcal != null).map((w) => ({ v: w.active_energy_kcal, w })), (v) => `${Math.round(v)} kcal`)
+                        + `<div data-opt="1">${boxPlot("Calories", sessions.filter((w) => w.active_energy_kcal != null).map((w) => ({ v: w.active_energy_kcal, w })), (v) => `${Math.round(v)} kcal`)}</div>`
                         : `<div class="none">No workouts yet.</div>`}
-      ${trendLine()}`;
+      </div>
+      <div data-opt="4">${trendLine()}</div>`;
+    scheduleFit();
+  }
+
+  // No scrolling: when a card's content is taller than its box, hide its optional sections
+  // (marked data-opt="N") one at a time, lowest N first, until it fits.
+  function fitCard(el) {
+    const opts = [...el.querySelectorAll("[data-opt]")].sort((a, b) => a.dataset.opt - b.dataset.opt);
+    opts.forEach((o) => { o.hidden = false; });
+    if (!FIT_QUERY.matches) return;
+    for (const o of opts) {
+      if (el.scrollHeight <= el.clientHeight + 1) break;
+      o.hidden = true;
+    }
+  }
+
+  // Fit every card after the layout has settled (renders and size changes can come in any order).
+  // (setTimeout rather than requestAnimationFrame so it also runs in background tabs.)
+  let fitTimer = 0;
+  function scheduleFit() {
+    clearTimeout(fitTimer);
+    fitTimer = setTimeout(() => document.querySelectorAll(".card").forEach(fitCard), 40);
   }
 
   // Slim line: trailing moving average of workouts per week since the first workout.
@@ -840,6 +864,8 @@
     clearTimeout(calTimer);
     calTimer = setTimeout(renderCalendar, 60);
   }).observe($("calendar"));
+
+  new ResizeObserver(scheduleFit).observe(document.querySelector(".page"));
 
   let resizeTimer;
   window.addEventListener("resize", () => {
