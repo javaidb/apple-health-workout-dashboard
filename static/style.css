@@ -23,6 +23,8 @@
   --heat-3: #1fb07a;
   --heat-4: #4ae3a2;
   --radius: 16px;
+  --font-display: "Segoe UI Variable Display", "Segoe UI Variable", "SF Pro Display", "Inter", system-ui, sans-serif;
+  --font-ui: "Segoe UI Variable Text", "Segoe UI Variable", "SF Pro Text", "Inter", system-ui, sans-serif;
   --shadow: 0 1px 0 rgba(255, 255, 255, .04) inset, 0 10px 30px -12px rgba(0, 0, 0, .6);
 
   --c-run: #ff7a45;
@@ -111,7 +113,7 @@ svg { display: block; }
   border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
 }
 .brand-mark svg { width: 20px; height: 20px; }
-.brand-name { font-size: 20px; font-weight: 750; letter-spacing: -.02em; }
+.brand-name { font-family: var(--font-display); font-size: 19px; font-weight: 600; letter-spacing: -.015em; }
 /* lifetime stats in the top bar: quiet, inline, no container */
 .lifetime { display: flex; align-items: center; margin: 0 auto; }
 .lt { display: flex; align-items: center; gap: 7px; padding: 2px 14px; position: relative; }
@@ -121,8 +123,8 @@ svg { display: block; }
 .lt-icon { display: grid; place-items: center; color: var(--faint); flex-shrink: 0; }
 .lt-icon svg { width: 15px; height: 15px; }
 .lt-text { display: flex; align-items: baseline; gap: 5px; line-height: 1.2; }
-.lt-value { font-size: 13.5px; font-weight: 650; color: color-mix(in srgb, var(--text) 85%, var(--muted)); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.lt-label { font-size: 12px; color: var(--faint); white-space: nowrap; }
+.lt-value { font-family: var(--font-ui); font-size: 13.5px; font-weight: 600; color: color-mix(in srgb, var(--text) 85%, var(--muted)); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.lt-label { font-family: var(--font-ui); font-size: 12px; font-weight: 400; color: var(--faint); white-space: nowrap; }
 .lt-empty { color: var(--muted); font-size: 13px; padding: 6px 12px; }
 @media (max-width: 1300px) { .lt { padding: 3px 11px; } .lt:nth-child(5) { display: none; } }
 @media (max-width: 1050px) { .lt:nth-child(4) { display: none; } }
@@ -769,4 +771,8 @@ code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; font-
   .hero .week-card { flex: .8 1 0; }
   .hero .streak-card { flex: 1.25 1 0; }
 }
+
+/* Top bar typography: clean, minimal */
+.appbar { font-family: var(--font-ui); }
+.sync-pill, .powered, .appbar .btn { font-family: var(--font-ui); font-weight: 500; }
 
