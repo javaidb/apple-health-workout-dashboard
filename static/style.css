@@ -406,7 +406,8 @@ svg { display: block; }
 .gw.part i { background: color-mix(in srgb, var(--warn) 70%, var(--surface-3)); }
 .gw.hit i { background: linear-gradient(180deg, #34d399, #10b981); }
 .gw.current::after {  /* outline the whole current-week column, matching the orange "today" highlight */
-  content: ""; position: absolute; inset: -4px -3px -15px; pointer-events: none;
+  content: ""; position: absolute; left: -3px; right: -3px; bottom: -15px; pointer-events: none;
+  top: calc(100% - var(--goal) + 3px);  /* start just below the dashed goal line, never across it */
   border: 1.5px solid var(--accent); border-radius: 7px;
   background: color-mix(in srgb, var(--accent) 10%, transparent);
   box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 35%, transparent);
