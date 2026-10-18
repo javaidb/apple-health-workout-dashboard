@@ -583,8 +583,9 @@ code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; font-
 
   .side { display: flex; flex-direction: column; align-items: stretch; gap: 16px; min-height: 0; }
   #month-stats { flex: 0 0 auto; }
-  .activity-card { flex: 0 0 auto; }
-  .step-bars { height: clamp(44px, 6vh, 64px); }
+  .activity-card { flex: 0.3 0 auto; display: flex; flex-direction: column; }  /* grows with a share of spare height, never below its content */
+  .activity-card .act-top { flex: 1 1 auto; min-height: 0; grid-template-rows: auto 1fr; }
+  .activity-card .step-bars { align-self: stretch; height: auto; min-height: 52px; max-height: 110px; margin-top: 12px; }
   .stat { padding: 8px 10px; }
   .stat-value { font-size: 18px; }
   #month-stats .stat-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
