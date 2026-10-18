@@ -545,8 +545,8 @@
   function delta(cur, prev, fmt) {
     if (prev == null) return "";
     const diff = cur - prev;
-    if (Math.abs(diff) < 1e-9) return `<div class="delta">= same</div>`;
-    return `<div class="delta ${diff > 0 ? "up" : "down"}">${diff > 0 ? "▲" : "▼"} ${fmt(Math.abs(diff))}</div>`;
+    if (Math.abs(diff) < 1e-9) return `<div class="delta" data-opt="1">= same</div>`;
+    return `<div class="delta ${diff > 0 ? "up" : "down"}" data-opt="1">${diff > 0 ? "▲" : "▼"} ${fmt(Math.abs(diff))}</div>`;
   }
 
   function renderSide() {

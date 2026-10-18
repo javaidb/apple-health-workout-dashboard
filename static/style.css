@@ -582,10 +582,12 @@ code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; font-
   .chip { padding: 3px 6px; }
 
   .side { display: flex; flex-direction: column; align-items: stretch; gap: 16px; min-height: 0; }
-  #month-stats { flex: 0 0 auto; }
-  .activity-card { flex: 0.3 0 auto; display: flex; flex-direction: column; }  /* grows with a share of spare height, never below its content */
+  /* right column split 15 : 55 : 30 (at a glance : Recent form : Daily activity) */
+  #month-stats { flex: 15 1 0; min-height: min-content; display: flex; flex-direction: column; justify-content: center; }  /* never below its content */
+  #month-stats .stat-grid { align-items: start; }  /* tiles keep their natural height: no empty space inside */
+  .activity-card { flex: 30 1 0; min-height: 0; display: flex; flex-direction: column; }
   .activity-card .act-top { flex: 1 1 auto; min-height: 0; grid-template-rows: auto 1fr; }
-  .activity-card .step-bars { align-self: stretch; height: auto; min-height: 52px; max-height: 110px; margin-top: 12px; }
+  .activity-card .step-bars { align-self: stretch; height: auto; min-height: 28px; max-height: 140px; margin-top: 10px; }
   .stat { padding: 8px 10px; }
   .stat-value { font-size: 18px; }
   #month-stats .stat-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
@@ -598,7 +600,7 @@ code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; font-
   #month-stats .delta { font-size: 10.5px; line-height: 1.25; }
   .mini-grid { margin-top: 10px; }
   .mini-value { font-size: 14px; }
-  #form-card { flex: 1 1 0; min-height: 0; overflow: hidden; }  /* never scrolls: see fitCard() */
+  #form-card { flex: 55 1 0; min-height: 0; overflow: hidden; }  /* never scrolls: see fitCard() */
   #form-card { display: flex; flex-direction: column; }
   #form-card .trend svg { height: 56px; }  /* slim, fixed height */
   #form-card > [data-opt="2"], #form-card > [data-opt="4"] { margin-top: auto; }  /* spare height becomes even gaps between sections */
