@@ -494,15 +494,6 @@
     const synced = week.map((d) => metricOn("step_count", iso(d))).filter((v) => v != null);
     const avg7 = synced.length ? synced.reduce((a, b) => a + b, 0) / synced.length : 0;
 
-    const distUnit = state.metrics.walking_running_distance?.sourceUnit === "mi" ? "mi" : "km";
-    const dist = metricOn("walking_running_distance", shown);
-    const kcal = metricOn("active_energy", shown);
-    const flights = metricOn("flights_climbed", shown);
-    const tiles = [
-      ["Distance", dist == null ? "—" : `${(dist / (distUnit === "mi" ? 1609.344 : 1000)).toFixed(1)} ${distUnit}`],
-      ["Active kcal", kcal == null ? "—" : Math.round(kcal).toLocaleString()],
-      ["Flights", flights == null ? "—" : Math.round(flights)],
-    ].map(([k, v]) => `<div class="mini"><div class="stat-label">${k}</div><div class="mini-value">${esc(v)}</div></div>`).join("");
 
     el.innerHTML = `<div class="card-head"><h2>Daily activity</h2><span class="card-sub">7-day avg ${Math.round(avg7).toLocaleString()} steps</span></div>
       <div class="act-top">
@@ -517,7 +508,6 @@
         </div>
         <div class="step-bars" style="--goal:${goalPct}%">${bars}</div>
       </div>
-      <div class="mini-grid">${tiles}</div>
       ${weightRow()}`;
     scheduleFit();
   }
