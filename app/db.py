@@ -135,6 +135,15 @@ MIGRATIONS: list[str] = [
           ON a.activity_category = b.activity_category AND a.start_utc = b.start_utc AND a.id < b.id
     );
     """,
+    # 4 — the app that recorded each workout (HAE sends source.name, e.g. "Fitbod"); backfilled
+    #     from stored raw payloads, and Fitbod CSV imports are Fitbod by definition.
+    """
+    ALTER TABLE workouts ADD COLUMN source_app TEXT;
+    UPDATE workouts SET source_app = (
+        SELECT json_extract(r.payload, '$.source.name') FROM raw_workout_payloads r WHERE r.workout_id = workouts.id
+    );
+    UPDATE workouts SET source_app = 'Fitbod' WHERE source = 'fitbod_csv' AND source_app IS NULL;
+    """,
 ]
 
 

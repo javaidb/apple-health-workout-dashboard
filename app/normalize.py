@@ -48,7 +48,7 @@ _CORE_QTY = {
 _SERIES_NAMES = {"heartRateData": "heart_rate", "heartRateRecovery": "heart_rate_recovery"}
 
 _HANDLED_KEYS = {"id", "name", "start", "end", "duration", "location", "isIndoor", "heartRate",
-                 "avgHeartRate", "maxHeartRate", "minHeartRate", "route", "metadata", *_CORE_QTY}
+                 "avgHeartRate", "maxHeartRate", "minHeartRate", "route", "metadata", "source", *_CORE_QTY}
 
 
 class WorkoutValidationError(ValueError):
@@ -92,6 +92,7 @@ class NormalizedWorkout:
     summary: dict[str, float | None] = field(default_factory=dict)
     location: str | None = None
     is_indoor: bool | None = None
+    source_app: str | None = None        # app that recorded it, e.g. "Fitbod"
     extra_metrics: dict[str, Any] = field(default_factory=dict)
     source_units: dict[str, str] = field(default_factory=dict)
     source_metadata: dict[str, Any] = field(default_factory=dict)
@@ -259,6 +260,11 @@ def normalize_workout(raw: Any) -> NormalizedWorkout:
         w.is_indoor = raw["isIndoor"]
     elif w.location:
         w.is_indoor = w.location in ("Indoor", "Pool")
+    src = raw.get("source")
+    if isinstance(src, dict) and isinstance(src.get("name"), str) and src["name"].strip():
+        w.source_app = src["name"].strip()
+    elif isinstance(src, str) and src.strip():
+        w.source_app = src.strip()
     if isinstance(raw.get("metadata"), dict):
         w.source_metadata = raw["metadata"]
 

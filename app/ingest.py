@@ -172,6 +172,7 @@ def _upsert_workout(conn: sqlite3.Connection, w: NormalizedWorkout, raw: Any, ba
     optional = {col: w.summary.get(col) for col in _SUMMARY_COLUMNS}
     optional["location"] = w.location
     optional["is_indoor"] = None if w.is_indoor is None else int(w.is_indoor)
+    optional["source_app"] = w.source_app
 
     if existing is None:
         values = {

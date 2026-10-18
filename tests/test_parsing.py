@@ -175,3 +175,11 @@ def test_categorize(label, category):
 def test_slugify():
     assert slugify("Traditional Strength Training") == "traditional_strength_training"
     assert slugify("Mind & Body") == "mind_body"
+
+
+def test_source_app_is_captured(batch):
+    raw = batch["data"]["workouts"][1]
+    raw["source"] = {"name": "Fitbod", "identifier": "com.fitbod"}
+    assert normalize_workout(raw).source_app == "Fitbod"
+    del raw["source"]
+    assert normalize_workout(raw).source_app is None

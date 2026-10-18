@@ -44,6 +44,7 @@ def serialize_workout(row: sqlite3.Row) -> dict[str, Any]:
         "heart_rate_bpm": hr if any(v is not None for v in hr.values()) else None,
         "location": row["location"],
         "is_indoor": None if row["is_indoor"] is None else bool(row["is_indoor"]),
+        "source_app": row["source_app"],
         "flags": json.loads(row["flags"]),
     }
 

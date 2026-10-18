@@ -222,3 +222,10 @@ def test_dashboard_files_are_revalidated_not_cached(client):
     for path in ("/", "/app.js", "/style.css"):
         assert client.get(path).headers["cache-control"] == "no-cache"
     assert "no-cache" not in client.get("/api/v1/health").headers.get("cache-control", "")
+
+
+def test_source_app_is_returned(client, batch, auth):
+    batch["data"]["workouts"][1]["source"] = {"name": "Fitbod", "identifier": "com.fitbod"}
+    post(client, batch, auth)
+    items = client.get("/api/v1/workouts", params={"sort": "start"}).json()["items"]
+    assert [w["source_app"] for w in items] == [None, "Fitbod", None]
