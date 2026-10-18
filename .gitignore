@@ -4,3 +4,5 @@ __pycache__/
 *.pyc
 # Health data, database and the ingest token never go into git.
 data/
+# One-off local tools (e.g. the Fitbod history backfill). Kept on this PC only.
+local/
