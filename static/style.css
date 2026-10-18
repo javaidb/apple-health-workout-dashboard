@@ -105,7 +105,32 @@ svg { display: block; }
 .brand { display: flex; align-items: center; gap: 12px; }
 .brand-mark { width: 34px; height: 34px; fill: url(#g-flame); filter: drop-shadow(0 4px 12px rgba(255, 106, 61, .45)); }
 .brand-name { font-size: 20px; font-weight: 750; letter-spacing: -.02em; }
-.brand-sub { color: var(--muted); font-size: 12.5px; }
+/* lifetime stats pill in the top bar */
+.lifetime {
+  display: flex; align-items: center; margin: 0 auto;
+  padding: 5px 6px; border-radius: 16px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--surface) 92%, transparent), color-mix(in srgb, var(--surface-2) 70%, transparent));
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .05) inset, 0 8px 24px -14px rgba(0, 0, 0, .7);
+  backdrop-filter: blur(8px);
+}
+.lt { display: flex; align-items: center; gap: 9px; padding: 3px 16px; position: relative; }
+.lt + .lt::before {
+  content: ""; position: absolute; left: 0; top: 18%; bottom: 18%; width: 1px;
+  background: linear-gradient(180deg, transparent, var(--border-strong), transparent);
+}
+.lt-icon {
+  width: 30px; height: 30px; border-radius: 10px; display: grid; place-items: center; flex-shrink: 0;
+  color: var(--lt); background: color-mix(in srgb, var(--lt) 15%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--lt) 22%, transparent) inset;
+}
+.lt-icon svg { width: 17px; height: 17px; }
+.lt-text { display: flex; flex-direction: column; line-height: 1.1; }
+.lt-value { font-size: 16px; font-weight: 750; letter-spacing: -.02em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.lt-label { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; font-weight: 600; white-space: nowrap; }
+.lt-empty { color: var(--muted); font-size: 13px; padding: 6px 12px; }
+@media (max-width: 1300px) { .lt { padding: 3px 11px; } .lt:nth-child(5) { display: none; } }
+@media (max-width: 1050px) { .lt:nth-child(4) { display: none; } }
 .appbar-right { display: flex; align-items: center; gap: 10px; }
 
 .sync-pill {
@@ -494,7 +519,10 @@ code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; font-
   .chip .dot, .chip .name, .chip .meta, .chip .app-icon { display: none; }
   .day .chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 3px; }
   .month-nav h2 { min-width: 0; font-size: 17px; }
-  .brand-sub { display: none; }
+  .lifetime { order: 3; width: 100%; justify-content: space-between; margin: 4px 0 0; }
+  .lt { padding: 3px 6px; gap: 6px; }
+  .lt:nth-child(n+4) { display: none; }
+  .lt-icon { width: 26px; height: 26px; }
   .btn span { display: none; }
 }
 

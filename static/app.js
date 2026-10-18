@@ -178,9 +178,7 @@
     renderStreakCard(o.active_week_streak);
     renderWeekCard(o.week_streak);
     const t = o.totals;
-    $("brand-sub").textContent = t.workouts
-      ? `${t.workouts.toLocaleString()} workouts · ${fmtHours(t.duration_s)} trained since ${parseIso(t.first_workout_date).toLocaleDateString(undefined, { month: "short", year: "numeric" })}`
-      : "Waiting for your first workout";
+    renderLifetime(t, o.active_week_streak);
   }
 
   // Nudge for the last-workout card. Rules are checked in order; the first match wins.
@@ -213,6 +211,24 @@
     if (n === 2) return ["ok", "Rest day done. Time to train."];
     if (n < 7) return ["bad", `It's been ${n} days. Time to get moving.`];
     return ["bad", "Over a week off. One workout today gets you back on track."];
+  }
+
+  // Lifetime stats in the top bar: one glassy pill of icon + value + label items.
+  function renderLifetime(t, streak) {
+    const el = $("lifetime");
+    if (!t.workouts) { el.innerHTML = `<span class="lt-empty">Waiting for your first workout</span>`; return; }
+    const since = parseIso(t.first_workout_date);
+    const items = [
+      ["i-dumbbell", "var(--good)", t.workouts.toLocaleString(), "workouts"],
+      ["i-clock", "var(--ok)", fmtHours(t.duration_s), "trained"],
+      ["i-calendar", "var(--warn)", t.this_year_workouts.toLocaleString(), `in ${new Date().getFullYear()}`],
+      ["i-trophy", "var(--accent)", `${streak.longest} wk`, "best streak"],
+      ["i-flag", "var(--c-mobility)", since.toLocaleDateString(undefined, { month: "short", year: "numeric" }), "training since"],
+    ];
+    el.innerHTML = items.map(([icon, color, value, label]) => `<div class="lt" style="--lt:${color}">
+        <span class="lt-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#${icon}"/></svg></span>
+        <span class="lt-text"><span class="lt-value">${esc(value)}</span><span class="lt-label">${esc(label)}</span></span>
+      </div>`).join("");
   }
 
   function renderLastCard(w) {
