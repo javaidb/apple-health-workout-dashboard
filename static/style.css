@@ -706,12 +706,17 @@ code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; font-
 /* ---------- the climb (weekly streak card) ---------------------------- */
 .streak-card { flex-direction: row !important; gap: 14px; }
 .streak-main { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
-.climb { flex: 0 0 44%; min-width: 0; min-height: 150px; position: relative; }
-.climb svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; }  /* always scales to fit its box */
-.climb-caption {
-  position: absolute; top: 0; left: 0; right: 0; z-index: 1; text-align: center;
-  font-size: 11px; font-weight: 650; letter-spacing: .02em; color: var(--muted); pointer-events: none;
-}
+.climb { flex: 0 0 46%; min-width: 0; min-height: 190px; display: flex; flex-direction: column; }
+.climb-art { position: relative; flex: 1 1 auto; min-height: 0; }
+.climb-art svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; }  /* always scales to fit its box */
+.climb-caption { text-align: center; line-height: 1.25; margin-bottom: 4px; }
+.cc-name { font-size: 12.5px; font-weight: 700; color: var(--text); letter-spacing: -.01em; }
+.cc-tier { font-size: 10px; font-weight: 700; color: var(--warn); margin-left: 3px; }
+.cc-sub { font-size: 10.5px; color: var(--muted); }
+.cc-peaks { display: flex; justify-content: center; gap: 4px; margin-top: 3px; }
+.cc-peak { width: 9px; height: 7px; display: block; background: var(--surface-3); clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.cc-peak.done { background: var(--accent); }
+.cc-peak.now { background: color-mix(in srgb, var(--accent) 45%, var(--surface-3)); outline: none; }
 .cl-tent-body { fill: color-mix(in srgb, var(--good) 38%, var(--surface-2)); }
 .cl-tent-door { fill: color-mix(in srgb, var(--good) 14%, var(--surface)); }
 .cl-tent-line { fill: none; stroke: var(--faint); stroke-width: .6; stroke-linecap: round; }
@@ -775,4 +780,42 @@ code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; font-
 /* Top bar typography: clean, minimal */
 .appbar { font-family: var(--font-ui); }
 .sync-pill, .powered, .appbar .btn { font-family: var(--font-ui); font-weight: 500; }
+
+/* Carl's mountains: one theme per 8-week mountain. Each sets the sky and rock colours. */
+.climb svg { --sky1: transparent; --sky2: transparent; --mtn: var(--surface-3); --mtn-edge: var(--border-strong); }
+.climb svg.th-pine   { --sky1: color-mix(in srgb, #7cc8a0 6%, transparent);  --sky2: color-mix(in srgb, #7cc8a0 12%, transparent); --mtn: color-mix(in srgb, #3f8f64 26%, var(--surface)); --mtn-edge: color-mix(in srgb, #5fbf8a 40%, transparent); }
+.climb svg.th-mesa   { --sky1: color-mix(in srgb, #f4a25d 7%, transparent);  --sky2: color-mix(in srgb, #f4a25d 14%, transparent); --mtn: color-mix(in srgb, #b8552f 30%, var(--surface)); --mtn-edge: color-mix(in srgb, #e07a4a 45%, transparent); }
+.climb svg.th-ember  { --sky1: color-mix(in srgb, #ff5a1f 4%, transparent);  --sky2: color-mix(in srgb, #ff5a1f 12%, transparent); --mtn: color-mix(in srgb, #2a1e1e 70%, var(--surface)); --mtn-edge: color-mix(in srgb, #ff6a3d 35%, transparent); }
+.climb svg.th-frost  { --sky1: color-mix(in srgb, #9fd3ff 8%, transparent);  --sky2: color-mix(in srgb, #9fd3ff 14%, transparent); --mtn: color-mix(in srgb, #6aa7d6 22%, var(--surface)); --mtn-edge: color-mix(in srgb, #bfe3ff 45%, transparent); }
+.climb svg.th-canopy { --sky1: color-mix(in srgb, #5fd38d 5%, transparent);  --sky2: color-mix(in srgb, #2fbf71 12%, transparent); --mtn: color-mix(in srgb, #1f7a46 32%, var(--surface)); --mtn-edge: color-mix(in srgb, #43c67f 40%, transparent); }
+.climb svg.th-stars  { --sky1: color-mix(in srgb, #4b5bd6 14%, transparent); --sky2: color-mix(in srgb, #4b5bd6 4%, transparent);  --mtn: color-mix(in srgb, #5866b8 22%, var(--surface)); --mtn-edge: color-mix(in srgb, #9aa6ff 40%, transparent); }
+.th-mtn { fill: var(--mtn); stroke: var(--mtn-edge); stroke-width: .7; stroke-linejoin: round; }
+.th-tree { fill: color-mix(in srgb, #2f8f5b 70%, var(--surface)); }
+.th-trunk { stroke: color-mix(in srgb, #8a5a3a 70%, transparent); stroke-width: .8; }
+.th-strata { fill: none; stroke: color-mix(in srgb, #f0a070 30%, transparent); stroke-width: .8; stroke-dasharray: 5 3; }
+.th-cactus { fill: none; stroke: color-mix(in srgb, #4caf6a 75%, transparent); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+.th-lava { fill: none; stroke: #ff6a1f; stroke-width: 1.3; stroke-linecap: round; opacity: .85; filter: drop-shadow(0 0 2px #ff5a1f); }
+.th-smoke { fill: color-mix(in srgb, var(--text) 10%, transparent); animation: th-drift 5s ease-in-out infinite; }
+.th-snow { fill: color-mix(in srgb, #ffffff 82%, transparent); }
+.th-ice { fill: none; stroke: color-mix(in srgb, #d6efff 55%, transparent); stroke-width: .7; stroke-linecap: round; }
+.th-flake { fill: #e8f6ff; opacity: .8; animation: th-twinkle 3s ease-in-out infinite; }
+.th-fall { fill: none; stroke: color-mix(in srgb, #7fd3ff 70%, transparent); stroke-width: 1.4; stroke-linecap: round; stroke-dasharray: 3 2; animation: th-flow 1.2s linear infinite; }
+.th-fall2 { opacity: .5; animation-duration: 1.6s; }
+.th-vine { fill: none; stroke: color-mix(in srgb, #4fd18a 65%, transparent); stroke-width: .9; stroke-linecap: round; }
+.th-moon { fill: #f4f1d8; opacity: .9; }
+.th-moon-cut { fill: color-mix(in srgb, #1b1f3a 90%, transparent); }
+.th-star { fill: #ffffff; animation: th-twinkle 2.6s ease-in-out infinite; }
+.th-star:nth-of-type(2n) { animation-delay: 1.1s; }
+.cl-summit path { stroke: var(--text); stroke-width: .9; fill: none; }
+.cl-summit .flag { fill: var(--faint); stroke: none; }
+.cl-summit.won .flag { fill: var(--accent); }
+.cl-confetti .cf { animation: cf-pop 1.8s ease-in-out infinite; }
+.cl-confetti .cf.a { fill: var(--accent); }
+.cl-confetti .cf.b { fill: var(--warn); animation-delay: .4s; }
+.cl-confetti .cf.c { fill: var(--good); animation-delay: .8s; }
+@keyframes th-drift { 0%, 100% { transform: translateY(0); opacity: .9; } 50% { transform: translateY(-3px); opacity: .5; } }
+@keyframes th-twinkle { 0%, 100% { opacity: .9; } 50% { opacity: .3; } }
+@keyframes th-flow { to { stroke-dashoffset: -10; } }
+@keyframes cf-pop { 0%, 100% { opacity: 1; transform: translateY(0); } 50% { opacity: .4; transform: translateY(-2px); } }
+@media (prefers-reduced-motion: reduce) { .th-smoke, .th-flake, .th-fall, .th-star, .cl-confetti .cf { animation: none; } }
 
