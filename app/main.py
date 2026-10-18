@@ -19,7 +19,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from . import queries
+from . import analytics, queries
 from .config import ROOT, Settings, load_settings
 from .db import connect, migrate
 from .ingest import EnvelopeError, ingest_payload
@@ -214,6 +214,25 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def delete_workout(workout_id: int, conn: sqlite3.Connection = Depends(get_conn)):
         if not queries.delete_workout(conn, workout_id):
             raise ApiError(404, "not_found", "workout not found")
+
+    # ---- analytics ---------------------------------------------------------
+
+    @app.get("/api/v1/analytics/overview", dependencies=[Depends(require_local)])
+    def get_overview(
+        conn: sqlite3.Connection = Depends(get_conn),
+        today: str | None = Query(None, description="Viewer's local date YYYY-MM-DD (defaults to server date)"),
+        weekly_goal: int = Query(3, ge=1, le=7, description="Active days per week that keep the week streak"),
+    ):
+        day = date.fromisoformat(_parse_date(today, "today")) if today else date.today()
+        return analytics.overview(conn, day, weekly_goal)
+
+    @app.get("/api/v1/analytics/days", dependencies=[Depends(require_local)])
+    def get_days(
+        conn: sqlite3.Connection = Depends(get_conn),
+        date_from: str = Query(..., alias="from", description="Inclusive local date YYYY-MM-DD"),
+        date_to: str = Query(..., alias="to", description="Exclusive local date YYYY-MM-DD"),
+    ):
+        return analytics.days(conn, _parse_date(date_from, "from"), _parse_date(date_to, "to"))
 
     # ---- static calendar UI ------------------------------------------------
 
