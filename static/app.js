@@ -667,16 +667,29 @@
     const d = smoothPath(ma.map((v, i) => [x(i), y(v)]));
     const peak = Math.max(...ma), now = ma[ma.length - 1];
     const first = parseIso(weeks[0].start).toLocaleDateString(undefined, { month: "short", year: "numeric" });
+
+    // Year ticks: this calendar day in each earlier year, positioned on the same week scale as the line.
+    const t0 = parseIso(weeks[0].start).getTime(), span = parseIso(weeks[weeks.length - 1].start).getTime() - t0;
+    const today = new Date();
+    const ticks = [];
+    for (let yr = today.getFullYear() - 1; yr >= parseIso(weeks[0].start).getFullYear(); yr--) {
+      const f = (new Date(yr, today.getMonth(), today.getDate()).getTime() - t0) / span;
+      if (f > 0 && f < 1) ticks.push({ f, label: `'${String(yr).slice(2)}` });
+    }
+    const tickLines = ticks.map((k) => `<line class="trend-tick" x1="${(k.f * W).toFixed(1)}" x2="${(k.f * W).toFixed(1)}" y1="${H - 5}" y2="${H + 3}"/>`).join("");
+    const tickLabels = ticks.filter((k) => k.f > 0.1 && k.f < 0.92)
+      .map((k) => `<span class="trend-year" style="left:${(k.f * 100).toFixed(2)}%">${k.label}</span>`).join("");
     return `<div class="trend">
       <div class="bp-head"><span>Workouts / week</span>
         <span class="bp-note">trend · now <strong>~${now.toFixed(1)}</strong> · peak ~${peak.toFixed(1)}</span></div>
       <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img"
         aria-label="Smoothed trend of workouts per week since ${first}: now about ${now.toFixed(1)}, peak about ${peak.toFixed(1)}">
+        ${tickLines}
         <path class="trend-glow" d="${d}"/>
         <path class="trend-line" d="${d}"/>
         <path class="trend-now" d="M${x(ma.length - 1).toFixed(1)},${y(now).toFixed(1)}h0"/>
       </svg>
-      <div class="trend-axis"><span>${first}</span><span>now</span></div>
+      <div class="trend-axis"><span>${first}</span>${tickLabels}<span>now</span></div>
     </div>`;
   }
 
