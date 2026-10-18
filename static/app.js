@@ -278,7 +278,7 @@
       const cls = ["wd", d.active && "on", missed && "missed", d.date === today && "today", d.date > today && "future"].filter(Boolean).join(" ");
       const mark = d.workouts > 1 ? `<b>${d.workouts}</b>`
         : d.active ? `<svg viewBox="0 0 24 24"><use href="#i-check"/></svg>`
-        : missed ? `<svg viewBox="0 0 24 24"><use href="#i-close"/></svg>` : "";
+        : missed ? `<svg viewBox="0 0 24 24"><use href="#i-x"/></svg>` : "";
       return `<div class="${cls}" title="${missed ? "No workout" : plural(d.workouts, "workout")}"><i>${mark}</i>${DOW[i][0]}</div>`;
     }).join("");
     const msg = w.this_week_met ? "Weekly goal hit"

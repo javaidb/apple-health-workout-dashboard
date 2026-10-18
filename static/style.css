@@ -209,8 +209,13 @@ svg { display: block; }
 }
 .wd i svg { width: 14px; height: 14px; }
 .wd i b { font-size: 12px; font-weight: 800; }
-.wd.missed i { color: var(--faint); }
-.wd.missed i svg { width: 12px; height: 12px; }
+.wd.missed i {
+  color: color-mix(in srgb, var(--bad) 85%, var(--text));
+  background: color-mix(in srgb, var(--bad) 16%, var(--surface-2));
+  border-color: color-mix(in srgb, var(--bad) 45%, transparent);
+}
+.wd.missed i svg { width: 15px; height: 15px; }
+.wd.missed { color: var(--muted); }
 .wd.on i { background: linear-gradient(135deg, #34d399, #22d3ee); border-color: transparent; }
 .wd.today { color: var(--text); }
 .wd.today i { border-color: var(--text); }
