@@ -103,7 +103,13 @@ svg { display: block; }
   max-width: 1360px; margin: 0 auto; padding: 22px 28px 10px;
 }
 .brand { display: flex; align-items: center; gap: 12px; }
-.brand-mark { width: 34px; height: 34px; filter: drop-shadow(0 4px 12px rgba(255, 45, 111, .4)); }
+.brand-mark {
+  width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; flex-shrink: 0;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
+}
+.brand-mark svg { width: 20px; height: 20px; }
 .brand-name { font-size: 20px; font-weight: 750; letter-spacing: -.02em; }
 /* lifetime stats in the top bar: quiet, inline, no container */
 .lifetime { display: flex; align-items: center; margin: 0 auto; }
