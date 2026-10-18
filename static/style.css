@@ -257,7 +257,6 @@ svg { display: block; }
   cursor: pointer; line-height: 1; font-weight: 700;
 }
 .goal-stepper button:hover { border-color: var(--border-strong); }
-.week-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: auto; padding-top: 10px; }
 
 /* ---------- heatmap --------------------------------------------------- */
 .heat-title { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
@@ -647,7 +646,6 @@ code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; font-
   .week-top .big { font-size: 22px; }
   .week-dots { margin-top: 4px; gap: 4px; }
   .wd i { width: 20px; height: 20px; border-radius: 6px; }
-  .week-foot { padding-top: 4px; }
   .month-nav h2 { font-size: 16px; }
   .calendar-card .card-head { margin-bottom: 4px; }
   .icon-btn { width: 28px; height: 28px; }
@@ -701,7 +699,6 @@ code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; font-
   .hero .wd { font-size: clamp(10px, 3.3cqh, 10.8px); gap: clamp(3px, 1.1cqh, 4.5px); }
   .hero .wd i { width: clamp(18px, 11.1cqh, 36.0px); height: clamp(18px, 11.1cqh, 36.0px); border-radius: clamp(6px, 2.9cqh, 9.0px); }
   .hero .wd i svg, .hero .wd.missed i svg { width: 56%; height: 56%; }
-  .hero .week-foot { padding-top: 0; }
 }
 
 /* ---------- the climb (weekly streak card) ---------------------------- */
@@ -760,3 +757,16 @@ code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; font-
 @media (min-width: 1100px) and (min-height: 560px) {
   .hero .streak-main { justify-content: space-between; }
 }
+
+/* This week: message and goal stepper sit in the header row (top right), freeing height so the
+   Weekly streak card below can grow. */
+.week-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.week-head-right { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.week-head .nudge { margin-top: 0; }
+@media (min-width: 1100px) and (min-height: 560px) {
+  .hero .week-head .nudge { font-size: clamp(11px, 5.4cqh, 14px); padding: clamp(3px, 1.6cqh, 6px) clamp(8px, 3.4cqh, 12px); }
+  .hero .last-card { flex: 1 1 0; }
+  .hero .week-card { flex: .8 1 0; }
+  .hero .streak-card { flex: 1.25 1 0; }
+}
+

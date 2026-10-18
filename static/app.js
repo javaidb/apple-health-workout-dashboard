@@ -483,7 +483,15 @@
     }).join("");
     const msg = w.this_week_met ? "Weekly goal hit"
       : `${plural(w.remaining, "more workout")} · ${plural(w.days_left, "day")} left`;
-    $("week-card").innerHTML = `<div class="eyebrow">This week</div>
+    $("week-card").innerHTML = `<div class="week-head">
+        <div class="eyebrow">This week</div>
+        <div class="week-head-right">
+          <span class="nudge tone-${w.this_week_met ? "good" : "ok"}" data-opt="2">${esc(msg)}</span>
+          <span class="goal-stepper" title="Workouts per week that keep your weekly streak">
+            <button data-goal="-1" aria-label="Lower weekly goal">−</button>${w.goal}/wk<button data-goal="1" aria-label="Raise weekly goal">+</button>
+          </span>
+        </div>
+      </div>
       <div class="week-top">
         <svg class="ring" viewBox="0 0 84 84" role="img" aria-label="${w.this_week_workouts} of ${w.goal} workouts this week">
           <circle class="track" cx="42" cy="42" r="${r}" fill="none" stroke-width="9"/>
@@ -497,13 +505,7 @@
           <div class="sub" data-opt="1">trained this week · ${plural(w.this_week_days, "active day")}</div>
         </div>
       </div>
-      <div class="week-dots">${dots}</div>
-      <div class="week-foot">
-        <span class="nudge tone-${w.this_week_met ? "good" : "ok"}" style="margin-top:0">${esc(msg)}</span>
-        <span class="goal-stepper" title="Workouts per week that keep your weekly streak">
-          <button data-goal="-1" aria-label="Lower weekly goal">−</button>${w.goal}/wk<button data-goal="1" aria-label="Raise weekly goal">+</button>
-        </span>
-      </div>`;
+      <div class="week-dots">${dots}</div>`;
   }
 
   // ---- heatmap ------------------------------------------------------------
