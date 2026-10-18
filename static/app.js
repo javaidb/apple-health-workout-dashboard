@@ -7,7 +7,7 @@
   const DISTANCE_CATEGORIES = new Set(["run", "walk", "hike", "cycle", "swim", "row"]);
   const CATEGORY_LABELS = {
     run: "Run", walk: "Walk", hike: "Hike", cycle: "Cycle", swim: "Swim", row: "Row",
-    strength: "Strength", hiit: "HIIT", mobility: "Mobility", cardio: "Cardio", sport: "Sport", other: "Other",
+    strength: "Workout", hiit: "HIIT", mobility: "Mobility", cardio: "Cardio", sport: "Sport", other: "Other",
   };
   const FIT_QUERY = matchMedia("(min-width: 1100px) and (min-height: 560px)");
   const APP_ICONS = { fitbod: "img/fitbod.png" };  // source app (lower-case) -> small icon
@@ -391,7 +391,7 @@
         const more = ws.length > shown
           ? `<button class="more-badge" data-date="${key}" title="${plural(ws.length, "workout")}">+${ws.length - shown}</button>` : "";
         html += `<div class="${cls}" data-date="${key}" role="gridcell" aria-label="${d.toDateString()}, ${plural(ws.length, "workout")}">
-          ${isActive ? `<span class="band"></span>` : ""}
+          ${isActive ? `<span class="band"></span><svg class="day-tick" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-check"/></svg>` : ""}
           <div class="day-top"><span class="num">${d.getDate()}</span>${stepsTag}${more}${key === tIso ? `<span class="today-tag">Today</span>` : ""}</div>
           <div class="chips">${chips}</div></div>`;
       }

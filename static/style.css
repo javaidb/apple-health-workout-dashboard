@@ -277,6 +277,14 @@ svg { display: block; }
 .day.join-l .band { left: -7px; border-bottom-left-radius: 0; }
 .day.join-r .band { right: -7px; border-bottom-right-radius: 0; }
 
+/* big green tick on days with a workout */
+.day-tick {
+  position: absolute; right: 6px; bottom: 4px; width: 52px; height: 52px; z-index: 0;
+  color: var(--good); filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--good) 45%, transparent));
+  pointer-events: none;
+}
+.calendar.dots .day-tick { width: 30px; height: 30px; right: 4px; bottom: 2px; }
+.day .chips, .day .day-top { position: relative; z-index: 1; }
 .day-top { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
 .num { font-size: 13px; font-weight: 700; color: var(--muted); }
 .day.active .num { color: var(--text); }
@@ -455,6 +463,7 @@ code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; font-
   .day { min-height: 58px; padding: 8px 3px 4px; border-radius: 9px; align-items: center; }
   .day-top { justify-content: center; }
   .today-tag, .day-steps { display: none; }
+  .day-tick { width: 16px; height: 16px; right: 3px; bottom: 3px; }
   .band { left: 3px; right: 3px; }
   .day.join-l .band { left: -5px; }
   .day.join-r .band { right: -5px; }
