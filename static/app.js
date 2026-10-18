@@ -390,12 +390,17 @@
     }
     const today = new Date();
     const tIso = iso(today);
-    const todaySteps = metricOn("step_count", tIso);
-    const steps = todaySteps ?? 0;
-    const yesterday = metricOn("step_count", iso(addDays(today, -1)));
-    const stepsSub = todaySteps == null
-      ? `today not synced yet${yesterday != null ? ` · yesterday ${Math.round(yesterday).toLocaleString()}` : ""}`
-      : `steps today · ${steps >= STEP_GOAL ? "goal hit" : `${Math.round(STEP_GOAL - steps).toLocaleString()} to ${STEP_GOAL / 1000}k`}`;
+    // Show today when it has synced; otherwise the most recent day that has activity data.
+    const dayMetrics = ["step_count", "walking_running_distance", "active_energy", "flights_climbed"];
+    const latest = dayMetrics.flatMap((n) => [...(state.metrics[n]?.byDate.keys() ?? [])]).filter((d) => d <= tIso).sort().pop();
+    const shown = metricOn("step_count", tIso) != null || !latest ? tIso : latest;
+    const shownLabel = shown === tIso ? "today"
+      : shown === iso(addDays(today, -1)) ? "yesterday"
+      : parseIso(shown).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+    const shownSteps = metricOn("step_count", shown);
+    const steps = shownSteps ?? 0;
+    const stepsSub = `steps ${shown === tIso || shownLabel === "yesterday" ? shownLabel : `on ${shownLabel}`} · ` +
+      (steps >= STEP_GOAL ? "goal hit" : `${Math.round(STEP_GOAL - steps).toLocaleString()} to ${STEP_GOAL / 1000}k`);
     const r = 26, c = 2 * Math.PI * r, pct = Math.min(1, steps / STEP_GOAL);
 
     // Last 7 days of steps, oldest first.
@@ -405,15 +410,16 @@
     const goalPct = (STEP_GOAL / max) * 100;
     const bars = week.map((d, i) => {
       const v = vals[i], h = Math.max(3, (v / max) * 100);
-      const cls = [v >= STEP_GOAL && "hit", iso(d) === tIso && "today"].filter(Boolean).join(" ");
+      const cls = [v >= STEP_GOAL && "hit", iso(d) === shown && "today"].filter(Boolean).join(" ");
       return `<div class="sbar ${cls}" title="${d.toDateString()}: ${Math.round(v).toLocaleString()} steps"><i style="height:${h}%"></i><span>${DOW[(d.getDay() + 6) % 7][0]}</span></div>`;
     }).join("");
-    const avg7 = vals.reduce((a, b) => a + b, 0) / 7;
+    const synced = week.map((d) => metricOn("step_count", iso(d))).filter((v) => v != null);
+    const avg7 = synced.length ? synced.reduce((a, b) => a + b, 0) / synced.length : 0;
 
     const distUnit = state.metrics.walking_running_distance?.sourceUnit === "mi" ? "mi" : "km";
-    const dist = metricOn("walking_running_distance", tIso);
-    const kcal = metricOn("active_energy", tIso);
-    const flights = metricOn("flights_climbed", tIso);
+    const dist = metricOn("walking_running_distance", shown);
+    const kcal = metricOn("active_energy", shown);
+    const flights = metricOn("flights_climbed", shown);
     const tiles = [
       ["Distance", dist == null ? "—" : `${(dist / (distUnit === "mi" ? 1609.344 : 1000)).toFixed(1)} ${distUnit}`],
       ["Active kcal", kcal == null ? "—" : Math.round(kcal).toLocaleString()],
@@ -428,7 +434,7 @@
             stroke-dasharray="${c}" stroke-dashoffset="${c * (1 - pct)}" transform="rotate(-90 32 32)"/>
         </svg>
         <div>
-          <div class="act-steps">${todaySteps == null ? "—" : Math.round(steps).toLocaleString()}</div>
+          <div class="act-steps">${shownSteps == null ? "—" : Math.round(steps).toLocaleString()}</div>
           <div class="sub">${esc(stepsSub)}</div>
         </div>
         <div class="step-bars" style="--goal:${goalPct}%">${bars}</div>
