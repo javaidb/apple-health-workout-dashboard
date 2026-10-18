@@ -9,7 +9,8 @@
     run: "Run", walk: "Walk", hike: "Hike", cycle: "Cycle", swim: "Swim", row: "Row",
     strength: "Strength", hiit: "HIIT", mobility: "Mobility", cardio: "Cardio", sport: "Sport", other: "Other",
   };
-  const FIT_QUERY = matchMedia("(min-width: 1200px) and (min-height: 660px)");
+  const FIT_QUERY = matchMedia("(min-width: 1100px) and (min-height: 560px)");
+  const APP_ICONS = { fitbod: "img/fitbod.png" };  // source app (lower-case) -> small icon
   const FORM_WEEKS = 12;
   const FORM_SESSIONS = 6;
   const STEP_GOAL = 10000;
@@ -408,18 +409,26 @@
 
   // How many workout chips fit in a day cell at the current calendar height.
   function chipsPerDay(rows) {
-    if (!FIT_QUERY.matches) return 3;
-    const h = $("calendar").clientHeight;
+    const cal = $("calendar");
+    if (!FIT_QUERY.matches) { cal.classList.remove("dots"); return 3; }
+    const h = cal.clientHeight;
     if (!h) return 3;
     const rowH = (h - 22 - rows * 5) / rows;
-    return Math.max(1, Math.min(4, Math.floor((rowH - 28) / 25)));
+    const fit = Math.floor((rowH - 28) / 25);
+    cal.classList.toggle("dots", fit < 1);  // too short for labels: compact dots (up to 4)
+    return fit < 1 ? 4 : Math.min(4, fit);
+  }
+
+  function appIcon(w) {
+    const src = w.source_app && APP_ICONS[w.source_app.toLowerCase()];
+    return src ? `<img class="app-icon" src="${src}" alt="${esc(w.source_app)}" width="14" height="14">` : "";
   }
 
   function chipHtml(w) {
     const meta = DISTANCE_CATEGORIES.has(w.activity.category) && w.distance_m ? fmtKm(w.distance_m) : fmtDuration(w.duration_s);
     const sel = w.id === state.selectedId ? " selected" : "";
     return `<button class="chip${sel}" style="--cat:${catVar(w.activity.category)}" data-id="${w.id}" title="${esc(w.activity.label)} · ${fmtClock(w.start, w.utc_offset_minutes)} · ${fmtDuration(w.duration_s)}">` +
-      `<span class="dot"></span><span class="name">${esc(shortLabel(w.activity))}</span><span class="meta">${meta}</span></button>`;
+      `${appIcon(w) || `<span class="dot"></span>`}<span class="name">${esc(shortLabel(w.activity))}</span><span class="meta">${meta}</span></button>`;
   }
 
   // ---- daily activity (health metrics) --------------------------------------
@@ -670,6 +679,7 @@
 
     const notes = [];
     if (w.route_points) notes.push(`GPS route recorded (${w.route_points} points)`);
+    if (w.source_app) notes.push(`Recorded with ${w.source_app}`);
     const series = Object.keys(w.metrics_available).filter((k) => k !== "heart_rate");
     if (series.length) notes.push(`Also recorded: ${series.map((s) => s.replace(/_/g, " ")).join(", ")}`);
     const flags = w.flags.heart_rate_data_was_recovery ? [`The exported heart-rate trace was post-workout recovery data, so it is shown as recovery.`] : [];
@@ -768,6 +778,17 @@
       toast(`Import failed: ${err.message}`);
     }
   });
+
+  // Redraw the calendar when its box settles or changes size (first layout, window resize,
+  // fonts loading), since chips-per-day and the dot mode depend on the cell height.
+  let calHeight = 0, calTimer;
+  new ResizeObserver(([entry]) => {
+    const h = Math.round(entry.contentRect.height);
+    if (Math.abs(h - calHeight) < 3) return;
+    calHeight = h;
+    clearTimeout(calTimer);
+    calTimer = setTimeout(renderCalendar, 60);
+  }).observe($("calendar"));
 
   let resizeTimer;
   window.addEventListener("resize", () => {
