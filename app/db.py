@@ -126,6 +126,15 @@ MIGRATIONS: list[str] = [
     ALTER TABLE ingestion_batches ADD COLUMN metric_samples_received INTEGER NOT NULL DEFAULT 0;
     ALTER TABLE ingestion_batches ADD COLUMN metric_samples_stored INTEGER NOT NULL DEFAULT 0;
     """,
+    # 3 — drop duplicate records of the same session (same category and start), keeping the
+    #     earliest stored one; e.g. Fitbod writing one workout to Apple Health twice.
+    #     Ingest now prevents new ones (see app/ingest.py).
+    """
+    DELETE FROM workouts WHERE id IN (
+        SELECT b.id FROM workouts a JOIN workouts b
+          ON a.activity_category = b.activity_category AND a.start_utc = b.start_utc AND a.id < b.id
+    );
+    """,
 ]
 
 
