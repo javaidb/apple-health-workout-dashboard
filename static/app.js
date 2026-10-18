@@ -585,19 +585,19 @@
     });
     const done = weeks.filter((w) => !w.current || w.n >= goal);
     const hits = done.filter((w) => w.n >= goal).length;
-    const maxN = Math.max(goal, ...weeks.map((w) => w.n));
+    // Each week is a battery with one cell per workout of the weekly goal, filled from the bottom.
     const bars = weeks.map((w) => {
-      const cls = w.n >= goal ? "hit" : w.n > 0 ? "part" : "none";
-      const h = w.n ? Math.max(12, (w.n / maxN) * 100) : 6;
+      const cls = w.n >= goal ? "hit" : w.n > 0 ? "part" : "zero";
+      const cells = Array.from({ length: goal }, (_, i) => `<i class="${i < w.n ? "on" : ""}"></i>`).join("");
       const label = w.start.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-      return `<div class="gw ${cls}${w.current ? " current" : ""}" title="Week of ${label}: ${plural(w.n, "workout")}${w.current ? " (this week)" : ""}">
-        <i style="height:${h}%"></i><span>${w.n || ""}</span></div>`;
+      return `<div class="gw ${cls}${w.current ? " current" : ""}" title="Week of ${label}: ${w.n} of ${goal} workouts${w.current ? " (this week)" : ""}">
+        <div class="batt">${cells}</div><span>${w.n || ""}</span></div>`;
     }).join("");
 
     const sessions = state.recent;
     el.innerHTML = `<div class="card-head"><h2>Recent form</h2>
         <span class="card-sub">Goal hit <strong>${hits}</strong> of the last ${plural(done.length, "week")}</span></div>
-      <div class="goal-weeks" style="--goal:${(goal / maxN) * 100}%">${bars}</div>
+      <div class="goal-weeks">${bars}</div>
       <div class="gw-axis"><span>${FORM_WEEKS} weeks ago</span><span>${goal}/wk goal</span><span>this week</span></div>
       <div class="form-sub">Last ${plural(sessions.length, "session")}</div>
       ${sessions.length ? boxPlot("Duration", sessions.map((w) => ({ v: w.duration_s / 60, est: !!w.flags.duration_estimated, w })), (v) => fmtDuration(v * 60))
