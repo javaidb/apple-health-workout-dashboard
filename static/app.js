@@ -300,12 +300,12 @@
   const CLIMB_LEDGE = 4;     // the ledge halfway up
   let climbId = 0;           // unique ids for each drawing's gradients
   const MOUNTAINS = [
-    { key: "pine", name: "Pine Ridge", summit: [50, 40] },
-    { key: "mesa", name: "Red Rock Mesa", summit: [50, 58] },
-    { key: "ember", name: "Ember Peak", summit: [50, 50] },
-    { key: "frost", name: "Frost Spire", summit: [50, 28] },
-    { key: "canopy", name: "Canopy Crag", summit: [50, 42] },
-    { key: "stars", name: "Summit of Stars", summit: [50, 32] },
+    { key: "pine", name: "Pine Ridge", top: 70, width: 46, seed: 1 },
+    { key: "mesa", name: "Red Rock Mesa", top: 78, width: 60, seed: 2 },
+    { key: "ember", name: "Ember Peak", top: 70, width: 42, seed: 3, crater: true },
+    { key: "frost", name: "Frost Spire", top: 60, width: 38, seed: 4, snow: true },
+    { key: "canopy", name: "Canopy Crag", top: 68, width: 44, seed: 5 },
+    { key: "stars", name: "Summit of Stars", top: 58, width: 40, seed: 6, snow: true },
   ];
   const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
 
@@ -387,34 +387,62 @@
     return `<path class="cl-arrow ${cls}" d="M-1.7,-1.9 L.9,0 L-1.7,1.9" transform="translate(${mx.toFixed(1)},${my.toFixed(1)}) rotate(${deg.toFixed(1)})"/>`;
   }
 
-  // Theme scenery: silhouette path (summit matching MOUNTAINS[].summit) and decorations.
-  function mountainScene(key) {
-    const ground = 186;
-    const shapes = {
-      pine: `M-4 200V150L10 130L18 136L30 104L38 110L50 40L62 104L70 98L84 128L92 124L104 150V200Z`,
-      mesa: `M-4 200V156L8 148L14 120L22 116L26 84L34 80L36 60H64L66 80L74 84L78 116L86 120L92 148L104 156V200Z`,
-      ember: `M-4 200V160L14 140L28 104L38 76L42 54L46 50L50 54L54 50L58 54L62 76L72 104L86 140L104 160V200Z`,
-      frost: `M-4 200V152L12 136L22 140L34 100L40 104L46 60L50 28L54 60L60 104L66 100L78 140L88 136L104 152V200Z`,
-      canopy: `M-4 200V146L6 120L14 124L22 92L30 96L38 62L46 60L50 42L56 58L66 70L74 100L82 96L92 124L104 140V200Z`,
-      stars: `M-4 200V154L10 138L20 142L32 106L40 110L50 32L60 108L68 104L80 136L90 132L104 154V200Z`,
-    };
+  // Theme scenery. Every mountain is built from the same recipe so it reads as a real massif:
+  // a flat summit plateau (room for a tent) with steep shoulders that ease into foothills, the
+  // right face in shadow, a few ridgelines, a fainter range behind, and optional snow up top.
+  function mountainScene(m, id) {
+    const ground = 186, py = m.top, L = 50 - m.width / 2, R = 50 + m.width / 2;
+    const rnd = (i) => { const v = Math.sin(i * 12.9898 + m.seed * 78.233) * 43758.5453; return v - Math.floor(v); };
+    const P = (pts) => pts.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`).join("");
+    // a slope from the plateau edge to the foot: drops fast at the top, flattens near the base
+    const slope = (x0, y0, x1, y1, n, k) => Array.from({ length: n }, (_, i) => {
+      const t = (i + 1) / (n + 1), drop = 1 - (1 - t) ** 1.35;
+      return [x0 + (x1 - x0) * t + (rnd(k + i) - .5) * 4, y0 + (y1 - y0) * drop + (rnd(k + i + 40) - .5) * 5];
+    });
+    const left = slope(L, py, -4, 174, 8, 10).reverse();
+    const right = slope(R, py, 104, 168, 8, 30);
+    const plateau = m.crater
+      ? [[L, py], [L + 7, py - 1], [L + 12, py + 4], [50, py + 6], [R - 12, py + 4], [R - 7, py - 1], [R, py]]
+      : [[L, py + .8], [L + 3, py - .4], [L + m.width * .3, py - 1], [L + m.width * .55, py], [L + m.width * .8, py - .8], [R - 3, py - .2], [R, py + 1]];
+    const outline = [[-4, 178], ...left, ...plateau, ...right, [104, 172]];
+    const path = `${P([[-4, 200], ...outline, [104, 200]])}Z`;
+
+    // Face detail, clipped to the mountain: shadowed right face behind a jagged ridge, ridgelines,
+    // a lit rim along the plateau, and a snowcap with a wavy snowline.
+    const ridge = [[64, 200], [R - 9, 160], [R - 4, 130], [R - 10, 104], [R - 6, py + 14], [R - 2, py]];
+    const shade = `<path class="th-shade" d="${P([...ridge, [104, py], [104, 200]])}Z"/>`;
+    const ridges = `<path class="th-ridge" d="${P([[L + 5, py + 2], [L + 1, py + 24], [L - 2, py + 50]])}${P([[L + 16, py + 3], [L + 13, py + 30], [L + 20, py + 60], [L + 14, py + 90]])}${P([[50, py + 4], [48, py + 38], [54, py + 72]])}"/>`;
+    const rim = `<path class="th-rim" d="${P([...plateau, ...plateau.slice().reverse().map(([x, y]) => [x, y + 3])])}Z"/>`;
+    let snow = "";
+    if (m.snow) {
+      const line = py + 30;
+      const wave = Array.from({ length: 9 }, (_, i) => [104 - (108 * (i + 1)) / 10, line + (i % 2 ? 7 : -3) + (rnd(90 + i) - .5) * 5]);
+      snow = `<path class="th-snowcap" d="${P([[-4, line], [-4, 0], [104, 0], [104, line], ...wave])}Z"/>`;
+    }
+    const face = {
+      mesa: `<path class="th-strata" d="M0 ${py + 14}H100M0 ${py + 36}H100M0 ${py + 64}H100M0 ${py + 92}H100"/>`,
+      ember: `<path class="th-lava" d="M50 ${py + 6}L47 ${py + 26}L51 ${py + 46}L45 ${py + 76}M54 ${py + 5}L57 ${py + 24}"/>`,
+      frost: `<path class="th-ice" d="M30 136l4 6M80 130l-3 7M40 152l3 4"/>`,
+    }[m.key] || "";
+    const detail = `<defs><clipPath id="c-mtn-${id}"><path d="${path}"/></clipPath></defs>
+      <g clip-path="url(#c-mtn-${id})">${face}${snow}${shade}${ridges}${rim}</g>`;
+
     const deco = {
-      pine: [[14, 160], [22, 168], [80, 150], [88, 162], [30, 176], [70, 172]].map(([x, y]) =>
+      pine: [[10, 170], [18, 177], [86, 162], [93, 172], [30, 181], [72, 179], [6, 181]].map(([x, y]) =>
         `<path class="th-tree" d="M${x} ${y - 9}L${x - 3.4} ${y}H${x + 3.4}Z"/><path class="th-trunk" d="M${x} ${y}v2"/>`).join(""),
-      mesa: `<path class="th-strata" d="M28 92H72M22 124H78M14 152H86"/>
-        <path class="th-cactus" d="M84 182v-9m0 4h-2.4v-3m2.4 2h2.4v-3.6"/><path class="th-cactus" d="M14 184v-6m0 3h1.8v-2.4"/>`,
-      ember: `<path class="th-lava" d="M50 54L47 74L51 92L46 116M54 52L56 70"/>
-        <circle class="th-smoke" cx="52" cy="36" r="5"/><circle class="th-smoke" cx="58" cy="26" r="4"/><circle class="th-smoke" cx="54" cy="16" r="3"/>`,
-      frost: `<path class="th-snow" d="M50 28L46 60L42 68L48 64L52 70L56 62L60 66L54 60Z"/>
-        <path class="th-ice" d="M30 116l4 6M72 118l-3 7M40 140l3 4"/>
-        ${[[18, 40], [80, 52], [30, 70], [72, 30], [88, 84]].map(([x, y]) => `<circle class="th-flake" cx="${x}" cy="${y}" r=".9"/>`).join("")}`,
-      canopy: `<path class="th-fall" d="M82 112Q80 140 84 186"/><path class="th-fall th-fall2" d="M84 112Q83 140 87 186"/>
-        <path class="th-vine" d="M26 96q2 10 -1 18M34 96q-2 8 1 14M70 74q2 10 -1 16"/>`,
-      stars: `<path class="th-snow" d="M50 32L44 70L40 78L47 72L51 80L56 70L61 76L56 66Z"/>
-        <circle class="th-moon" cx="84" cy="24" r="6"/><circle class="th-moon-cut" cx="87" cy="21.5" r="5.2"/>
-        ${[[12, 20], [24, 36], [70, 14], [92, 48], [8, 60], [36, 12], [64, 40], [16, 86]].map(([x, y], i) => `<circle class="th-star" cx="${x}" cy="${y}" r="${i % 3 ? .6 : .9}"/>`).join("")}`,
+      mesa: `<path class="th-cactus" d="M88 182v-9m0 4h-2.4v-3m2.4 2h2.4v-3.6"/><path class="th-cactus" d="M12 184v-6m0 3h1.8v-2.4"/>`,
+      ember: `<circle class="th-smoke" cx="52" cy="${py - 8}" r="5"/><circle class="th-smoke" cx="58" cy="${py - 18}" r="4"/><circle class="th-smoke" cx="54" cy="${py - 28}" r="3"/>`,
+      frost: [[14, 30], [82, 40], [26, 52], [70, 22], [90, 70], [8, 86]].map(([x, y]) => `<circle class="th-flake" cx="${x}" cy="${y}" r=".9"/>`).join(""),
+      canopy: `<path class="th-fall" d="M${L + 3} ${py + 2}Q${L - 2} ${py + 60} ${L - 12} 186"/><path class="th-fall th-fall2" d="M${L + 5} ${py + 2}Q${L} ${py + 60} ${L - 9} 186"/>
+        <path class="th-vine" d="M${L + 10} ${py + 3}q2 10 -1 18M${L + 18} ${py + 2}q-2 8 1 14M${R - 6} ${py + 3}q2 10 -1 16"/>`,
+      stars: `<circle class="th-moon" cx="84" cy="22" r="6"/><circle class="th-moon-cut" cx="87" cy="19.5" r="5.2"/>
+        ${[[12, 18], [24, 34], [70, 12], [92, 44], [8, 50], [36, 10], [62, 30], [16, 74]].map(([x, y], i) => `<circle class="th-star" cx="${x}" cy="${y}" r="${i % 3 ? .6 : .9}"/>`).join("")}`,
     };
-    return { path: shapes[key], deco: deco[key], ground };
+    const back = "M0 200L0 140L10 130L20 136L32 120L44 128L58 114L70 124L82 116L94 128L100 122L100 200Z";
+    // Carl tops out on the left half of the plateau; his tent goes on the right half.
+    const summit = [L + m.width * .3, py + (m.crater ? .5 : -.5)];
+    const tentAt = [R - m.width * .24, py + (m.crater ? 1 : 0)];
+    return { back, path, detail, deco: deco[m.key], ground, summit, tentAt };
   }
 
   function tent(x, y, label, sc = 1) {
@@ -440,9 +468,10 @@
     const shownWeeks = cur > 0 ? cur : fallFrom;
     const { index, step } = mountainAt(shownWeeks);
     const info = mountainInfo(index), next = mountainInfo(index + 1);
-    const scene = mountainScene(info.key);
+    const id = ++climbId;
+    const scene = mountainScene(info, id);
     const W = 100, H = 200, G = scene.ground;
-    const base = [24, G - 2], ledge = [76, 116], summit = info.summit;
+    const base = [24, G - 2], ledge = [76, 118], summit = scene.summit;
     const lerp = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
     const pt = (k) => (k <= CLIMB_LEDGE ? lerp(base, ledge, k / CLIMB_LEDGE) : lerp(ledge, summit, (k - CLIMB_LEDGE) / (CLIMB_WEEKS - CLIMB_LEDGE)));
     const line = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => pt(a + i)).map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`).join("");
@@ -470,9 +499,9 @@
       const hip = hang ? [x, y + 4.5] : step === CLIMB_LEDGE ? [x, y - .5] : [x + (facingLeft ? -.3 : .3), y - 5];
       const rope = atSummit ? "" : `<path class="cl-rope" d="M${hip[0].toFixed(1)},${hip[1].toFixed(1)} Q${((hip[0] + px) / 2).toFixed(1)},${(Math.max(hip[1], py) + 5).toFixed(1)} ${px.toFixed(1)},${py.toFixed(1)}"/>`;
       if (atSummit) {
-        figure = tent(summit[0] + 12, summit[1] + 4, "", .8) + climber("cheer", summit[0] - 7, summit[1] + 2, false, cs)
+        figure = `<g class="cl-newcamp">${tent(scene.tentAt[0], scene.tentAt[1], "", 1.1)}</g>` + climber("cheer", summit[0], summit[1], false, cs)
           + `<g class="cl-confetti">${[[-14, -16, "a"], [-4, -22, "b"], [8, -18, "c"], [14, -10, "a"], [-18, -6, "c"], [2, -28, "b"]]
-            .map(([dx, dy, c]) => `<rect class="cf ${c}" x="${summit[0] - 7 + dx}" y="${summit[1] + dy}" width="1.6" height="1.6" rx=".3"/>`).join("")}</g>`;
+            .map(([dx, dy, c]) => `<rect class="cf ${c}" x="${summit[0] + dx}" y="${summit[1] + dy}" width="1.6" height="1.6" rx=".3"/>`).join("")}</g>`;
         if (!w.this_week_met) extra = `<text class="cl-alert" x="${summit[0] - 16}" y="${summit[1] - 4}" text-anchor="middle">!</text>`;
         sub = w.this_week_met ? `Summit! Next: ${next.name}` : `Summit reached · work out to start ${next.name}`;
       } else if (hang) {
@@ -493,7 +522,6 @@
       sub = "Help Carl reach the top!";
     }
 
-    const id = ++climbId;
     const label = cur > 0
       ? `Carl on ${info.name}, ${atSummit ? "at the summit" : `${plural(step, "week")} up, ${plural(CLIMB_WEEKS - step, "week")} to the summit`}`
       : fallFrom ? `Carl fell from ${info.name} and is back at base camp` : "Carl at base camp, ready to climb Pine Ridge";
@@ -504,7 +532,8 @@
           <stop offset="0" style="stop-color:var(--sky1)"/><stop offset="1" style="stop-color:var(--sky2)"/>
         </linearGradient></defs>
         <rect x="0" y="0" width="${W}" height="${H}" rx="8" fill="url(#g-sky-${id})"/>
-        <path class="th-mtn" d="${scene.path}"/>${scene.deco}
+        <path class="th-back" d="${scene.back}"/>
+        <path class="th-mtn" d="${scene.path}"/>${scene.detail}${scene.deco}
         ${ground}${tent(9, G, camp)}${route}${arrows}${dots}${ledgeRock}${flag}${extra}${figure}
       </svg></div>`;
   }

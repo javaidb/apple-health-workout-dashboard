@@ -718,6 +718,8 @@ code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; font-
 .cc-peak.done { background: var(--accent); }
 .cc-peak.now { background: color-mix(in srgb, var(--accent) 45%, var(--surface-3)); outline: none; }
 .cl-tent-body { fill: color-mix(in srgb, var(--good) 38%, var(--surface-2)); }
+.cl-newcamp .cl-tent-body { fill: #f0a03c; }
+.cl-newcamp .cl-tent-door { fill: #7a4a14; }
 .cl-tent-door { fill: color-mix(in srgb, var(--good) 14%, var(--surface)); }
 .cl-tent-line { fill: none; stroke: var(--faint); stroke-width: .6; stroke-linecap: round; }
 .cl-mtn { fill: color-mix(in srgb, var(--text) 4.5%, transparent); stroke: color-mix(in srgb, var(--text) 10%, transparent); stroke-width: .6; stroke-linejoin: round; }
@@ -790,6 +792,11 @@ code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; font-
 .climb svg.th-canopy { --sky1: color-mix(in srgb, #5fd38d 5%, transparent);  --sky2: color-mix(in srgb, #2fbf71 12%, transparent); --mtn: color-mix(in srgb, #1f7a46 32%, var(--surface)); --mtn-edge: color-mix(in srgb, #43c67f 40%, transparent); }
 .climb svg.th-stars  { --sky1: color-mix(in srgb, #4b5bd6 14%, transparent); --sky2: color-mix(in srgb, #4b5bd6 4%, transparent);  --mtn: color-mix(in srgb, #5866b8 22%, var(--surface)); --mtn-edge: color-mix(in srgb, #9aa6ff 40%, transparent); }
 .th-mtn { fill: var(--mtn); stroke: var(--mtn-edge); stroke-width: .7; stroke-linejoin: round; }
+.th-back { fill: color-mix(in srgb, var(--mtn) 45%, transparent); opacity: .7; }
+.th-shade { fill: rgba(0, 0, 0, .22); }
+.th-rim { fill: rgba(255, 255, 255, .10); }
+.th-ridge { fill: none; stroke: color-mix(in srgb, var(--mtn-edge) 70%, transparent); stroke-width: .6; stroke-linecap: round; stroke-linejoin: round; opacity: .8; }
+.th-snowcap { fill: color-mix(in srgb, #ffffff 80%, transparent); stroke: rgba(255, 255, 255, .5); stroke-width: .4; }
 .th-tree { fill: color-mix(in srgb, #2f8f5b 70%, var(--surface)); }
 .th-trunk { stroke: color-mix(in srgb, #8a5a3a 70%, transparent); stroke-width: .8; }
 .th-strata { fill: none; stroke: color-mix(in srgb, #f0a070 30%, transparent); stroke-width: .8; stroke-dasharray: 5 3; }
