@@ -33,30 +33,47 @@ def test_streak_empty_history():
     assert day_streaks(set(), TODAY) == {"current": 0, "longest": 0, "active_today": False, "at_risk": False}
 
 
-# ---- week streaks --------------------------------------------------------
+# ---- week streaks (workouts per week) -------------------------------------
+
+def per_day(*dates: str, n: int = 1) -> dict:
+    return {D(d): n for d in dates}
+
 
 def test_week_streak_counts_completed_weeks_and_current_week_once_met():
-    # Week of Oct 12: Mon/Wed/Fri (3). Week of Oct 5: 3 days. Week of Sep 28: 1 day.
-    active = {D("2026-10-12"), D("2026-10-14"), D("2026-10-16"),
-              D("2026-10-05"), D("2026-10-07"), D("2026-10-09"), D("2026-09-30")}
-    s = week_streaks(active, TODAY, goal=3)
-    assert s["this_week_days"] == 3 and s["this_week_met"] is True
+    # This week (Oct 12): Mon/Wed/Fri. Week of Oct 5: 3 workouts. Week of Sep 28: 1.
+    days = per_day("2026-10-12", "2026-10-14", "2026-10-16", "2026-10-05", "2026-10-07", "2026-10-09", "2026-09-30")
+    s = week_streaks(days, TODAY, goal=3)
+    assert s["this_week_workouts"] == 3 and s["this_week_met"] is True
     assert s["current"] == 2 and s["longest"] == 2
-    assert [d["active"] for d in s["this_week"]] == [True, False, True, False, True, False, False]
+    assert s["remaining"] == 0 and s["at_risk"] is False
+    assert [d["workouts"] for d in s["this_week"]] == [1, 0, 1, 0, 1, 0, 0]
 
 
-def test_week_streak_in_progress_week_does_not_break_streak():
-    active = {D("2026-10-13"),  # this week: 1 day so far
-              D("2026-10-05"), D("2026-10-06"), D("2026-10-07")}
-    s = week_streaks(active, TODAY, goal=3)
-    assert s["this_week_met"] is False
-    assert s["current"] == 1  # last week still counts
+def test_multiple_workouts_on_one_day_each_count():
+    days = {D("2026-10-12"): 2, D("2026-10-13"): 1}
+    s = week_streaks(days, TODAY, goal=3)
+    assert s["this_week_workouts"] == 3 and s["this_week_days"] == 2 and s["this_week_met"] is True
+    assert s["current"] == 1
+
+
+def test_open_week_keeps_streak_alive_but_at_risk():
+    days = {D("2026-10-13"): 1, **per_day("2026-10-05", "2026-10-06", "2026-10-07")}
+    s = week_streaks(days, TODAY, goal=3)
+    assert s["this_week_met"] is False and s["current"] == 1  # last week still counts
+    assert s["at_risk"] is True and s["remaining"] == 2
+    assert s["days_left"] == 2  # Saturday and Sunday
+
+
+def test_missed_week_breaks_streak():
+    days = per_day("2026-09-28", "2026-09-29", "2026-09-30")  # two weeks ago; last week empty
+    s = week_streaks(days, TODAY, goal=3)
+    assert s["current"] == 0 and s["longest"] == 1 and s["at_risk"] is False
 
 
 def test_week_streak_goal_changes_result():
-    active = {D("2026-10-12"), D("2026-10-14")}
-    assert week_streaks(active, TODAY, goal=2)["current"] == 1
-    assert week_streaks(active, TODAY, goal=3)["current"] == 0
+    days = per_day("2026-10-12", "2026-10-14")
+    assert week_streaks(days, TODAY, goal=2)["current"] == 1
+    assert week_streaks(days, TODAY, goal=3)["current"] == 0
 
 
 # ---- API -----------------------------------------------------------------
@@ -72,7 +89,8 @@ def test_overview_endpoint(client, batch, auth):
     assert o["last_workout"]["activity"]["type"] == "outdoor_walk"
     assert o["last_workout"]["days_ago"] == 1
     assert o["day_streak"] == {"current": 2, "longest": 2, "active_today": False, "at_risk": True}
-    assert o["week_streak"]["this_week_days"] == 2 and o["week_streak"]["current"] == 1
+    assert o["week_streak"]["this_week_workouts"] == 3 and o["week_streak"]["this_week_days"] == 2
+    assert o["week_streak"]["current"] == 1
     assert o["totals"]["workouts"] == 3 and o["totals"]["active_days"] == 2
 
 

@@ -208,6 +208,7 @@ svg { display: block; }
   display: grid; place-items: center; color: #06231a;
 }
 .wd i svg { width: 14px; height: 14px; }
+.wd i b { font-size: 12px; font-weight: 800; }
 .wd.on i { background: linear-gradient(135deg, #34d399, #22d3ee); border-color: transparent; }
 .wd.today { color: var(--text); }
 .wd.today i { border-color: var(--text); }

@@ -6,9 +6,10 @@ Conventions
   depend on the server's timezone.
 - Day streak: consecutive active days ending today, or ending yesterday if there
   is no workout yet today (the streak is still alive, but "at risk").
-- Week streak: consecutive Monday-start weeks with at least `weekly_goal` active
-  days. The current week counts once the goal is met; until then the streak runs
-  through last week.
+- Week streak (the headline streak): consecutive Monday-start weeks with at least
+  `weekly_goal` workouts (two workouts on one day count twice). The current week
+  counts once its goal is met; until then the streak runs through last week and is
+  "at risk" while this week's goal is still open.
 """
 import sqlite3
 from datetime import date, timedelta
@@ -39,14 +40,15 @@ def day_streaks(active: set[date], today: date) -> dict[str, Any]:
             "at_risk": current > 0 and not active_today}
 
 
-def week_streaks(active: set[date], today: date, goal: int) -> dict[str, Any]:
+def week_streaks(per_day: dict[date, int], today: date, goal: int) -> dict[str, Any]:
+    """`per_day` maps local dates to the number of workouts that started that day."""
     per_week: dict[date, int] = {}
-    for d in active:
-        per_week[_monday(d)] = per_week.get(_monday(d), 0) + 1
+    for d, n in per_day.items():
+        per_week[_monday(d)] = per_week.get(_monday(d), 0) + n
 
     this_week = _monday(today)
-    this_week_days = per_week.get(this_week, 0)
-    met = this_week_days >= goal
+    this_week_workouts = per_week.get(this_week, 0)
+    met = this_week_workouts >= goal
     current = 0
     cursor = this_week if met else this_week - timedelta(weeks=1)
     while per_week.get(cursor, 0) >= goal:
@@ -60,22 +62,31 @@ def week_streaks(active: set[date], today: date, goal: int) -> dict[str, Any]:
         longest = max(longest, run)
         previous = week
     week_dates = [this_week + timedelta(days=i) for i in range(7)]
+    remaining = max(0, goal - this_week_workouts)
     return {
         "current": current,
         "longest": longest,
         "goal": goal,
-        "this_week_days": this_week_days,
+        "this_week_workouts": this_week_workouts,
+        "this_week_days": sum(1 for d in week_dates if per_day.get(d)),
         "this_week_met": met,
-        "this_week": [{"date": d.isoformat(), "active": d in active} for d in week_dates],
+        "remaining": remaining,
+        "days_left": 7 - today.weekday(),  # including today
+        "at_risk": current > 0 and not met,
+        "this_week": [{"date": d.isoformat(), "workouts": per_day.get(d, 0), "active": bool(per_day.get(d))}
+                      for d in week_dates],
     }
 
 
-def _active_dates(conn: sqlite3.Connection) -> set[date]:
-    return {date.fromisoformat(r[0]) for r in conn.execute("SELECT DISTINCT start_local_date FROM workouts")}
+def _workouts_per_day(conn: sqlite3.Connection, today: date) -> dict[date, int]:
+    return {date.fromisoformat(r[0]): r[1] for r in conn.execute(
+        "SELECT start_local_date, COUNT(*) FROM workouts WHERE start_local_date <= ? GROUP BY start_local_date",
+        (today.isoformat(),))}
 
 
 def overview(conn: sqlite3.Connection, today: date, weekly_goal: int) -> dict[str, Any]:
-    active = {d for d in _active_dates(conn) if d <= today}
+    per_day = _workouts_per_day(conn, today)
+    active = set(per_day)
     last_row = conn.execute(
         "SELECT * FROM workouts WHERE start_local_date <= ? ORDER BY start_utc DESC LIMIT 1",
         (today.isoformat(),)).fetchone()
@@ -95,7 +106,7 @@ def overview(conn: sqlite3.Connection, today: date, weekly_goal: int) -> dict[st
         "today": today.isoformat(),
         "last_workout": last,
         "day_streak": day_streaks(active, today),
-        "week_streak": week_streaks(active, today, weekly_goal),
+        "week_streak": week_streaks(per_day, today, weekly_goal),
         "totals": {
             "workouts": totals["n"],
             "active_days": len(active),

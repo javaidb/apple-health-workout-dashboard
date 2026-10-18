@@ -169,7 +169,7 @@
   function renderHero() {
     const o = state.overview;
     renderLastCard(o.last_workout);
-    renderStreakCard(o.day_streak);
+    renderStreakCard(o.week_streak);
     renderWeekCard(o.week_streak);
     const t = o.totals;
     $("brand-sub").textContent = t.workouts
@@ -191,7 +191,7 @@
       n === 1 ? ["Yesterday", "ok", "Go again today to keep the momentum."] :
       n === 2 ? ["2 days ago", "warn", "Two rest days. A short session today keeps you on track."] :
       n < 7 ? [`${n} days ago`, "bad", `It's been ${n} days. Time to get moving.`] :
-              [`${n} days ago`, "bad", "Over a week off. Any workout today restarts your streak."];
+              [`${n} days ago`, "bad", "Over a week off. One workout today gets you back on track."];
     el.className = `card hero-card last-card tone-${tone}`;
     el.dataset.id = w.id;
     const date = parseIso(w.local_date).toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
@@ -204,55 +204,65 @@
       <div class="nudge">${esc(msg)}</div>`;
   }
 
-  function renderStreakCard(s) {
-    const lit = s.current > 0;
-    let tone = "flame", msg;
-    if (s.at_risk) { tone = "warn"; msg = `Work out today to make it ${s.current + 1}`; }
-    else if (s.active_today && s.current >= s.longest && s.current > 1) msg = "Personal best streak!";
-    else if (s.active_today) msg = s.current === 1 ? "Streak started. Come back tomorrow." : "Streak extended today";
-    else { tone = "ok"; msg = "Work out today to start a streak"; }
-    const pct = s.longest ? Math.min(100, (s.current / s.longest) * 100) : 0;
-    $("streak-card").innerHTML = `<div class="eyebrow">Current streak</div>
+  // Headline streak: consecutive weeks hitting the weekly workout goal.
+  function renderStreakCard(w) {
+    const lit = w.current > 0;
+    let tone, msg;
+    if (w.this_week_met) {
+      tone = w.current >= w.longest && w.current > 1 ? "flame" : "good";
+      msg = tone === "flame" ? "Personal best streak!" : `This week is done. Streak: ${plural(w.current, "week")}`;
+    } else if (w.at_risk) {
+      tone = w.remaining > w.days_left ? "bad" : "warn";
+      const last = w.days_left === 1 ? " Today is the last day." : ` ${plural(w.days_left, "day")} left.`;
+      msg = `${plural(w.remaining, "more workout")} to make it ${plural(w.current + 1, "week")}.${last}`;
+    } else {
+      tone = "ok";
+      msg = `${plural(w.remaining, "workout")} this week starts a streak`;
+    }
+    const pct = w.longest ? Math.min(100, (w.current / w.longest) * 100) : 0;
+    $("streak-card").innerHTML = `<div class="eyebrow">Weekly streak · ${w.goal}+ workouts</div>
       <div class="streak-row">
         <svg class="flame ${lit ? "lit" : "cold"}" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-flame"/></svg>
-        <div class="big streak-num">${s.current}<span class="unit">${s.current === 1 ? "day" : "days"}</span></div>
+        <div class="big streak-num">${w.current}<span class="unit">${w.current === 1 ? "week" : "weeks"}</span></div>
       </div>
       <div>
         <div class="best-track"><i style="width:${pct}%"></i></div>
-        <div class="best-label"><span><svg viewBox="0 0 24 24"><use href="#i-trophy"/></svg>Best ${plural(s.longest, "day")}</span>
-          <span>${s.longest && s.current < s.longest ? `${s.longest - s.current} to beat it` : s.current ? "On your best" : ""}</span></div>
+        <div class="best-label"><span><svg viewBox="0 0 24 24"><use href="#i-trophy"/></svg>Best ${plural(w.longest, "week")}</span>
+          <span>${w.longest && w.current < w.longest ? `${w.longest - w.current} to beat it` : w.current ? "On your best" : ""}</span></div>
       </div>
       <div class="nudge tone-${tone}">${esc(msg)}</div>`;
   }
 
   function renderWeekCard(w) {
     const r = 34, c = 2 * Math.PI * r;
-    const pct = Math.min(1, w.this_week_days / w.goal);
+    const pct = Math.min(1, w.this_week_workouts / w.goal);
     const today = todayIso();
+    const weekSecs = w.this_week.reduce((a, d) => a + (state.yearDays.get(d.date)?.duration_s || 0), 0);
     const dots = w.this_week.map((d, i) => {
       const cls = ["wd", d.active && "on", d.date === today && "today", d.date > today && "future"].filter(Boolean).join(" ");
-      return `<div class="${cls}"><i>${d.active ? `<svg viewBox="0 0 24 24"><use href="#i-check"/></svg>` : ""}</i>${DOW[i][0]}</div>`;
+      const mark = d.workouts > 1 ? `<b>${d.workouts}</b>` : d.active ? `<svg viewBox="0 0 24 24"><use href="#i-check"/></svg>` : "";
+      return `<div class="${cls}" title="${plural(d.workouts, "workout")}"><i>${mark}</i>${DOW[i][0]}</div>`;
     }).join("");
-    const left = Math.max(0, w.goal - w.this_week_days);
-    const msg = w.this_week_met ? "Weekly goal hit" : `${plural(left, "more day")} to hit your goal`;
+    const msg = w.this_week_met ? "Weekly goal hit"
+      : `${plural(w.remaining, "more workout")} · ${plural(w.days_left, "day")} left`;
     $("week-card").innerHTML = `<div class="eyebrow">This week</div>
       <div class="week-top">
-        <svg class="ring" viewBox="0 0 84 84" role="img" aria-label="${w.this_week_days} of ${w.goal} active days">
+        <svg class="ring" viewBox="0 0 84 84" role="img" aria-label="${w.this_week_workouts} of ${w.goal} workouts this week">
           <circle class="track" cx="42" cy="42" r="${r}" fill="none" stroke-width="9"/>
           <circle class="prog" cx="42" cy="42" r="${r}" fill="none" stroke-width="9" stroke-linecap="round"
             stroke-dasharray="${c}" stroke-dashoffset="${c * (1 - pct)}" transform="rotate(-90 42 42)"/>
-          <text x="42" y="45" text-anchor="middle">${w.this_week_days}/${w.goal}</text>
-          <text class="small" x="42" y="59" text-anchor="middle">days</text>
+          <text x="42" y="45" text-anchor="middle">${w.this_week_workouts}/${w.goal}</text>
+          <text class="small" x="42" y="59" text-anchor="middle">workouts</text>
         </svg>
         <div>
-          <div class="big" style="font-size:30px">${plural(w.current, "week")}</div>
-          <div class="sub">goal streak · best ${w.longest}</div>
+          <div class="big" style="font-size:30px">${weekSecs ? fmtDuration(weekSecs) : "0m"}</div>
+          <div class="sub">trained this week · ${plural(w.this_week_days, "active day")}</div>
         </div>
       </div>
       <div class="week-dots">${dots}</div>
       <div class="week-foot">
         <span class="nudge tone-${w.this_week_met ? "good" : "ok"}" style="margin-top:0">${esc(msg)}</span>
-        <span class="goal-stepper" title="Active days per week that keep your goal streak">
+        <span class="goal-stepper" title="Workouts per week that keep your weekly streak">
           <button data-goal="-1" aria-label="Lower weekly goal">−</button>${w.goal}/wk<button data-goal="1" aria-label="Raise weekly goal">+</button>
         </span>
       </div>`;
@@ -320,13 +330,14 @@
 
     for (let week = 0; week < rows; week++) {
       const weekStart = addDays(start, week * 7);
-      let weekTime = 0, activeDays = 0;
+      let weekTime = 0, activeDays = 0, weekWorkouts = 0;
       for (let dow = 0; dow < 7; dow++) {
         const d = addDays(weekStart, dow);
         const key = iso(d);
         const ws = byDate[key] || [];
         const isActive = ws.length > 0;
         if (isActive) activeDays++;
+        weekWorkouts += ws.length;
         weekTime += ws.reduce((a, w) => a + (w.duration_s || 0), 0);
         const prevActive = dow > 0 && (byDate[iso(addDays(d, -1))] || []).length > 0;
         const nextActive = dow < 6 && (byDate[iso(addDays(d, 1))] || []).length > 0;
@@ -349,12 +360,12 @@
           <div class="day-top"><span class="num">${d.getDate()}</span>${stepsTag}${more}${key === tIso ? `<span class="today-tag">Today</span>` : ""}</div>
           <div class="chips">${chips}</div></div>`;
       }
-      const met = activeDays >= state.goal;
-      const pct = Math.min(100, (activeDays / state.goal) * 100);
+      const met = weekWorkouts >= state.goal;
+      const pct = Math.min(100, (weekWorkouts / state.goal) * 100);
       html += `<div class="week-total${met ? " met" : ""}">
         <strong>${activeDays ? fmtDuration(weekTime) : "—"}</strong>
         <div class="bar"><i style="width:${pct}%"></i></div>
-        <span class="goal">${met ? `<svg viewBox="0 0 24 24"><use href="#i-check"/></svg>Goal` : `${activeDays}/${state.goal} days`}</span></div>`;
+        <span class="goal">${met ? `<svg viewBox="0 0 24 24"><use href="#i-check"/></svg>Goal` : `${weekWorkouts}/${state.goal} workouts`}</span></div>`;
     }
     const cal = $("calendar");
     cal.style.setProperty("--rows", rows);

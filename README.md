@@ -18,7 +18,7 @@ training calendar, so you always know when you last trained and what keeps the s
 <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white">
 <img alt="SQLite" src="https://img.shields.io/badge/SQLite-003B57?logo=sqlite&logoColor=white">
 <img alt="Vanilla JS" src="https://img.shields.io/badge/frontend-vanilla%20JS-F7DF1E?logo=javascript&logoColor=black">
-<img alt="Tests" src="https://img.shields.io/badge/tests-98%20passing-34D399">
+<img alt="Tests" src="https://img.shields.io/badge/tests-100%20passing-34D399">
 <img alt="Local only" src="https://img.shields.io/badge/data-stays%20on%20your%20PC-FF6A3D">
 </p>
 
@@ -40,8 +40,8 @@ training calendar, so you always know when you last trained and what keeps the s
 
 - **Zero-touch sync.** Health Auto Export pushes new workouts in the background. Nothing to tap, no cloud
   account, no third-party server in between.
-- **Built to keep you consistent.** Time since your last workout, a live day streak with your personal best,
-  a weekly goal ring, and a GitHub-style heatmap of the last 12 months.
+- **Built to keep you consistent.** Time since your last workout, a weekly streak (weeks in a row with 3+ workouts)
+  with your personal best, this week's progress ring, and a GitHub-style heatmap of the last 12 months.
 - **Daily activity too.** Steps (with a 10k goal and 7-day bars), walking distance, active energy, flights
   and a 30-day weight trend from a second Health Metrics automation; each calendar day shows its steps.
 - **One-screen dashboard.** Everything fits a 1080p monitor without scrolling; falls back to a scrolling
@@ -186,11 +186,11 @@ All responses are JSON; errors are `{"error": {"code", "message", "details"}}`. 
 | `GET /api/v1/metrics` | this PC only — health metrics received, with date ranges |
 | `GET /api/v1/metrics/daily?names=step_count,weight_body_mass&from=&to=` | this PC only — daily values per metric |
 
-**Streak rules.** A day is active when a workout started on it (local date). The day streak counts
-consecutive active days ending today, or ending yesterday when there is no workout yet today (still alive,
-flagged `at_risk`). The week streak counts consecutive Monday-start weeks with at least `weekly_goal`
-active days; the current week joins once the goal is met. `today` comes from the viewer so streaks never
-depend on the server's timezone.
+**Streak rules.** The headline streak counts consecutive Monday-start weeks with at least `weekly_goal`
+workouts (default 3; two workouts on one day count twice). The current week joins the streak once its goal is
+met; until then the streak runs through last week and is flagged `at_risk`, with `remaining` workouts and
+`days_left` in the week. A day streak (consecutive days with a workout) is still returned as `day_streak`.
+`today` comes from the viewer so streaks never depend on the server's timezone.
 
 `from`/`to` are local dates, `from` inclusive and `to` exclusive. Distance and pace are only reported
 for distance-based categories (run, walk, hike, cycle, swim, row).
