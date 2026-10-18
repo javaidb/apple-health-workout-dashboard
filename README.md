@@ -10,7 +10,8 @@
 Log a session in <a href="https://apps.apple.com/us/app/fitbod-gym-fitness-planner/id1041517543">Fitbod</a> (or any app that writes to Apple Health),
 and <a href="https://apps.apple.com/us/app/health-auto-export-json-csv/id1115567069">Health Auto Export</a>
 pushes it to a small receiver on your PC. The dashboard turns it into streaks, a year heatmap and a
-training calendar, so you always know when you last trained and what keeps the streak alive.
+training calendar, so you always know when you last trained and what keeps the streak alive. Your
+weekly streak becomes Carl, a little climber working his way up a new mountain every two months.
 </p>
 
 <p>
@@ -18,7 +19,7 @@ training calendar, so you always know when you last trained and what keeps the s
 <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white">
 <img alt="SQLite" src="https://img.shields.io/badge/SQLite-003B57?logo=sqlite&logoColor=white">
 <img alt="Vanilla JS" src="https://img.shields.io/badge/frontend-vanilla%20JS-F7DF1E?logo=javascript&logoColor=black">
-<img alt="Tests" src="https://img.shields.io/badge/tests-101%20passing-34D399">
+<img alt="Tests" src="https://img.shields.io/badge/tests-109%20passing-34D399">
 <img alt="Local only" src="https://img.shields.io/badge/data-stays%20on%20your%20PC-FF6A3D">
 </p>
 
@@ -33,20 +34,26 @@ training calendar, so you always know when you last trained and what keeps the s
 
 <br>
 
-<img src="docs/images/dashboard.png" alt="Health &amp; Fitness Tracker dashboard showing last workout, current streak, weekly goal, a 12-month heatmap, the month calendar with streak bands, and month statistics" width="100%">
+<img src="docs/images/dashboard.png" alt="Health &amp; Fitness Tracker dashboard showing the last workout, this week's goal ring, the weekly streak with Carl's climb, a 12-month heatmap, the month calendar, recent form and daily activity" width="100%">
 <p align="center"><sub>Dashboard shown with generated demo data.</sub></p>
 
 ## Highlights
 
 - **Zero-touch sync.** Health Auto Export pushes new workouts in the background. Nothing to tap, no cloud
   account, no third-party server in between.
-- **Built to keep you consistent.** Time since your last workout, a weekly streak (weeks in a row with any workout)
-  with your personal best, a weekly goal ring (3 workouts), a GitHub-style heatmap of the last 12 months,
-  and a "Recent form" card: 12 weeks of goal history plus box plots of your last 6 sessions' duration and calories.
+- **Built to keep you consistent.** Time since your last workout with a rest-day-aware nudge, a weekly goal
+  ring (3 workouts by default, adjustable) with each day of the week ticked off, a weekly streak (weeks in a
+  row with any workout) with your personal best, and a GitHub-style heatmap of the last 12 months.
+- **Carl's climb.** The weekly streak card shows Carl climbing six themed mountains a year, one every
+  8 weeks: Pine Ridge, Red Rock Mesa, Ember Peak, Frost Spire, Canopy Crag and Summit of Stars. He pitches a
+  new camp on each summit, and after a full year the cycle repeats as a higher tier. See
+  [climb rules](#carls-climb).
+- **Recent form.** The last 12 weeks as batteries (one cell per workout of the goal), box plots of your last
+  6 sessions' duration and calories, and a smoothed workouts-per-week trend since you started.
 - **Daily activity too.** Steps (with a 10k goal and 7-day bars), walking distance, active energy, flights
   and a 30-day weight trend from a second Health Metrics automation; each calendar day shows its steps.
-- **One-screen dashboard.** Everything fits a 1080p monitor without scrolling; falls back to a scrolling
-  layout on smaller screens and phones.
+- **One-screen dashboard.** Everything fits on one screen without scrolling, from 1080p down to small laptop
+  windows (less important details hide first). It falls back to a scrolling layout on phones.
 - **Correct data.** Units normalised to metric, timezones preserved (a late-night workout stays on its day),
   re-sent workouts de-duplicated, and one malformed workout never blocks the rest of a sync.
 - **Private by default.** Token-protected ingest, dashboard reachable only from your PC, all data in a
@@ -130,7 +137,7 @@ samples. Unsummarized samples from several devices can overlap and inflate daily
 | HAE v2 → canonical model | `app/normalize.py`, `app/units.py`, `app/timeparse.py` |
 | Schema + migrations (`PRAGMA user_version`) | `app/db.py` |
 | Read queries shaped for the API | `app/queries.py` |
-| Streaks, per-day activity | `app/analytics.py` |
+| Streaks, per-day and per-week activity | `app/analytics.py` |
 | Health metrics storage + daily aggregation | `app/metrics.py` |
 | Dashboard UI (vanilla JS, no build) | `static/` |
 
@@ -184,6 +191,7 @@ All responses are JSON; errors are `{"error": {"code", "message", "details"}}`. 
 | `DELETE /api/v1/workouts/{id}` | this PC only |
 | `GET /api/v1/analytics/overview?today=YYYY-MM-DD&weekly_goal=3` | this PC only — last workout, day/week streaks, totals |
 | `GET /api/v1/analytics/days?from=&to=` | this PC only — per-day counts and time (heatmap) |
+| `GET /api/v1/analytics/weekly?today=YYYY-MM-DD` | this PC only — workouts per week since the first workout (zero-filled) |
 | `GET /api/v1/metrics` | this PC only — health metrics received, with date ranges |
 | `GET /api/v1/metrics/daily?names=step_count,weight_body_mass&from=&to=` | this PC only — daily values per metric |
 
@@ -193,6 +201,20 @@ at least one workout of any kind. Separately, `week_streak` tracks weeks reachin
 For both, the current week joins once it qualifies; until then the streak runs through last week and is
 flagged `at_risk`, with `remaining` workouts and `days_left`. `today` comes from the viewer so streaks never
 depend on the server's timezone.
+
+### Carl's climb
+
+The climb is replayed in the browser from `/analytics/weekly`, so it needs no stored state:
+
+- Each week with at least one workout is one step up. Week 4 is a rock ledge and week 8 the summit, where Carl
+  pitches a camp. His next workout starts the next mountain.
+- A missed week drops him to the base of the mountain he is on. Standing on a summit counts as being on it.
+- Missing a week while he is already at a base drops him down the previous mountain to its base, so each
+  further missed week costs one more mountain. At the first base camp there is nothing left to lose.
+- The current week only counts once it has a workout. Until then Carl hangs on (or waits at the summit)
+  with a warning.
+
+The streak number itself still follows the streak rules above and resets on any missed week.
 
 `from`/`to` are local dates, `from` inclusive and `to` exclusive. Distance and pace are only reported
 for distance-based categories (run, walk, hike, cycle, swim, row).
@@ -231,7 +253,7 @@ Example ingest response:
 ## Limitations / next steps
 - The fixture is built from the documented format; replace or extend it with a real export once the first
   sync arrives.
-- Not yet: personal records, trend charts, route map, Postgres. The schema and service
+- Not yet: personal records, route map, Postgres. The schema and service
   boundaries are set up so these are additive.
 
 ## Acknowledgements
