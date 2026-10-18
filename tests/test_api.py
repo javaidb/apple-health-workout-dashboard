@@ -78,7 +78,8 @@ def test_ingest_batch(client, batch, auth, settings):
     body = r.json()
     assert body["status"] == "succeeded"
     assert body["workouts"] == {"received": 3, "inserted": 3, "updated": 0, "unchanged": 0, "failed": 0}
-    assert body["ignored_data_types"] == {"metrics": 1}
+    assert body["metrics"]["types"] == ["step_count"] and body["metrics"]["samples_stored"] == 1
+    assert body["ignored_data_types"] == {}
     assert count(settings, "workouts") == 3
     assert count(settings, "workout_metrics") == 3 + 2 + 2 + 2 + 2
     assert count(settings, "workout_route_points") == 3

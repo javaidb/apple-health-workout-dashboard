@@ -105,6 +105,27 @@ MIGRATIONS: list[str] = [
         stored_at   TEXT NOT NULL
     );
     """,
+    # 2 — health metrics (steps, distance, energy, weight, ...)
+    """
+    CREATE TABLE health_metric_samples (
+        id            INTEGER PRIMARY KEY,
+        metric        TEXT NOT NULL,             -- slug, e.g. step_count, weight_body_mass
+        ts_utc        TEXT NOT NULL,
+        local_date    TEXT NOT NULL,             -- date in the sample's own UTC offset
+        value         REAL NOT NULL,             -- canonical unit
+        value_min     REAL,
+        value_max     REAL,
+        unit          TEXT NOT NULL,
+        source_unit   TEXT,                      -- unit as exported (e.g. lb), for display
+        source        TEXT NOT NULL DEFAULT '',  -- '' when HAE omits it, so UNIQUE still applies
+        last_batch_id INTEGER REFERENCES ingestion_batches(id),
+        updated_at    TEXT NOT NULL,
+        UNIQUE (metric, ts_utc, source)
+    );
+    CREATE INDEX ix_metric_samples_day ON health_metric_samples(metric, local_date);
+    ALTER TABLE ingestion_batches ADD COLUMN metric_samples_received INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE ingestion_batches ADD COLUMN metric_samples_stored INTEGER NOT NULL DEFAULT 0;
+    """,
 ]
 
 

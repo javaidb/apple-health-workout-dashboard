@@ -11,6 +11,8 @@ Idempotency rules
   and routes absent from the new payload are left untouched.
 - Each workout is processed inside its own savepoint: one bad workout is
   recorded in the batch errors without discarding the rest of the batch.
+- Health metrics (data.metrics) are upserted per (metric, timestamp, source); see
+  app/metrics.py. A malformed metric is recorded as an error; the rest still commit.
 """
 import hashlib
 import json
@@ -20,6 +22,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any
 
+from .metrics import MetricValidationError, normalize_metric, store_samples
 from .normalize import SOURCE, NormalizedWorkout, WorkoutValidationError, normalize_workout
 from .timeparse import to_utc_text
 
@@ -39,6 +42,11 @@ class BatchResult:
     updated: int = 0
     unchanged: int = 0
     failed: int = 0
+    metric_types: list[str] = field(default_factory=list)
+    metric_samples_received: int = 0
+    metric_samples_stored: int = 0
+    metric_samples_skipped: int = 0
+    metrics_failed: int = 0
     other_counts: dict[str, int] = field(default_factory=dict)
     errors: list[dict[str, Any]] = field(default_factory=list)
 
@@ -53,6 +61,13 @@ class BatchResult:
                 "unchanged": self.unchanged,
                 "failed": self.failed,
             },
+            "metrics": {
+                "types": self.metric_types,
+                "samples_received": self.metric_samples_received,
+                "samples_stored": self.metric_samples_stored,
+                "samples_skipped": self.metric_samples_skipped,
+                "failed": self.metrics_failed,
+            },
             "ignored_data_types": self.other_counts,
             "errors": self.errors,
         }
@@ -62,8 +77,8 @@ def _now() -> str:
     return to_utc_text(datetime.now(timezone.utc))
 
 
-def extract_workouts(payload: Any) -> tuple[list[Any], dict[str, int]]:
-    """Return the workouts array and counts of other (ignored) HAE data arrays."""
+def extract_envelope(payload: Any) -> tuple[list[Any], list[Any], dict[str, int]]:
+    """Return the workouts and metrics arrays, plus counts of other (ignored) HAE data arrays."""
     if not isinstance(payload, dict):
         raise EnvelopeError("payload must be a JSON object")
     data = payload.get("data", payload)
@@ -72,10 +87,14 @@ def extract_workouts(payload: Any) -> tuple[list[Any], dict[str, int]]:
     workouts = data.get("workouts", [])
     if not isinstance(workouts, list):
         raise EnvelopeError("'data.workouts' must be an array")
-    others = {k: len(v) for k, v in data.items() if k != "workouts" and isinstance(v, list) and v}
-    if not workouts and not others and "workouts" not in data:
-        raise EnvelopeError("no Health Auto Export data arrays found (expected data.workouts)")
-    return workouts, others
+    metrics = data.get("metrics", [])
+    if not isinstance(metrics, list):
+        raise EnvelopeError("'data.metrics' must be an array")
+    handled = {"workouts", "metrics"}
+    others = {k: len(v) for k, v in data.items() if k not in handled and isinstance(v, list) and v}
+    if not workouts and not metrics and not others and not handled & data.keys():
+        raise EnvelopeError("no Health Auto Export data arrays found (expected data.workouts or data.metrics)")
+    return workouts, metrics, others
 
 
 def payload_hash(raw: Any) -> str:
@@ -186,7 +205,7 @@ def ingest_payload(conn: sqlite3.Connection, payload: Any, payload_bytes: int, c
     result = BatchResult(batch_id=cur.lastrowid, status="processing")
 
     try:
-        workouts, result.other_counts = extract_workouts(payload)
+        workouts, metrics, result.other_counts = extract_envelope(payload)
     except EnvelopeError as exc:
         result.status = "failed"
         result.errors.append({"field": "envelope", "message": str(exc)})
@@ -216,6 +235,7 @@ def ingest_payload(conn: sqlite3.Connection, payload: Any, payload_bytes: int, c
                                       "message": type(exc).__name__})
                 continue
             setattr(result, outcome, getattr(result, outcome) + 1)
+        _ingest_metrics(conn, metrics, result)
         conn.execute("COMMIT")
     except Exception:
         conn.execute("ROLLBACK")
@@ -226,25 +246,55 @@ def ingest_payload(conn: sqlite3.Connection, payload: Any, payload_bytes: int, c
         _finish_batch(conn, result)
         raise
 
-    if result.received == 0:
+    units_in = result.received + len(metrics)
+    units_failed = result.failed + result.metrics_failed
+    if units_in == 0:
         result.status = "empty"
-    elif result.failed == 0:
+    elif units_failed == 0:
         result.status = "succeeded"
-    elif result.failed == result.received:
+    elif units_failed == units_in:
         result.status = "failed"
     else:
         result.status = "partial"
     _finish_batch(conn, result)
-    log.info("batch %s (%s): %s received=%d inserted=%d updated=%d unchanged=%d failed=%d bytes=%d",
+    log.info("batch %s (%s): %s workouts received=%d inserted=%d updated=%d unchanged=%d failed=%d "
+             "metrics types=%d samples=%d stored=%d failed=%d bytes=%d",
              result.batch_id, channel, result.status, result.received, result.inserted, result.updated,
-             result.unchanged, result.failed, payload_bytes)
+             result.unchanged, result.failed, len(metrics), result.metric_samples_received,
+             result.metric_samples_stored, result.metrics_failed, payload_bytes)
     return result
+
+
+def _ingest_metrics(conn: sqlite3.Connection, metrics: list[Any], result: BatchResult) -> None:
+    now = _now()
+    for index, raw in enumerate(metrics):
+        try:
+            name, samples, skipped = normalize_metric(raw)
+        except MetricValidationError as exc:
+            result.metrics_failed += 1
+            result.errors.append({"index": index, "field": f"metrics.{exc.field}", "message": exc.message})
+            continue
+        result.metric_samples_received += len(samples) + skipped
+        result.metric_samples_skipped += skipped
+        if name not in result.metric_types:
+            result.metric_types.append(name)
+        conn.execute("SAVEPOINT metric")
+        try:
+            result.metric_samples_stored += store_samples(conn, name, samples, result.batch_id, now)
+            conn.execute("RELEASE metric")
+        except sqlite3.Error as exc:
+            conn.execute("ROLLBACK TO metric")
+            conn.execute("RELEASE metric")
+            result.metrics_failed += 1
+            result.errors.append({"index": index, "metric": name, "field": "database",
+                                  "message": type(exc).__name__})
 
 
 def _finish_batch(conn: sqlite3.Connection, r: BatchResult) -> None:
     conn.execute(
         "UPDATE ingestion_batches SET finished_at = ?, status = ?, workouts_received = ?, inserted = ?, updated = ?, "
-        "unchanged = ?, failed = ?, other_counts = ?, errors = ? WHERE id = ?",
-        (_now(), r.status, r.received, r.inserted, r.updated, r.unchanged, r.failed,
-         json.dumps(r.other_counts), json.dumps(r.errors[:100]), r.batch_id),
+        "unchanged = ?, failed = ?, metric_samples_received = ?, metric_samples_stored = ?, other_counts = ?, "
+        "errors = ? WHERE id = ?",
+        (_now(), r.status, r.received, r.inserted, r.updated, r.unchanged, r.failed, r.metric_samples_received,
+         r.metric_samples_stored, json.dumps(r.other_counts), json.dumps(r.errors[:100]), r.batch_id),
     )

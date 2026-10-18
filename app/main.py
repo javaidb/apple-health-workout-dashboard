@@ -19,7 +19,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from . import analytics, queries
+from . import analytics, metrics, queries
 from .config import ROOT, Settings, load_settings
 from .db import connect, migrate
 from .ingest import EnvelopeError, ingest_payload
@@ -233,6 +233,24 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         date_to: str = Query(..., alias="to", description="Exclusive local date YYYY-MM-DD"),
     ):
         return analytics.days(conn, _parse_date(date_from, "from"), _parse_date(date_to, "to"))
+
+    # ---- health metrics ----------------------------------------------------
+
+    @app.get("/api/v1/metrics", dependencies=[Depends(require_local)])
+    def list_metrics(conn: sqlite3.Connection = Depends(get_conn)):
+        return metrics.available(conn)
+
+    @app.get("/api/v1/metrics/daily", dependencies=[Depends(require_local)])
+    def get_daily_metrics(
+        conn: sqlite3.Connection = Depends(get_conn),
+        names: str = Query(..., description="Comma-separated metric slugs, e.g. step_count,weight_body_mass"),
+        date_from: str = Query(..., alias="from", description="Inclusive local date YYYY-MM-DD"),
+        date_to: str = Query(..., alias="to", description="Exclusive local date YYYY-MM-DD"),
+    ):
+        wanted = [n.strip() for n in names.split(",") if n.strip()]
+        if not wanted or len(wanted) > 20:
+            raise ApiError(422, "invalid_parameter", "'names' must list between 1 and 20 metrics")
+        return metrics.daily(conn, wanted, _parse_date(date_from, "from"), _parse_date(date_to, "to"))
 
     # ---- static calendar UI ------------------------------------------------
 

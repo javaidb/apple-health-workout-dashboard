@@ -146,6 +146,7 @@ def status(conn: sqlite3.Connection) -> dict[str, Any]:
             "updated": last_batch["updated"],
             "unchanged": last_batch["unchanged"],
             "failed": last_batch["failed"],
+            "metric_samples_stored": last_batch["metric_samples_stored"],
             "errors": json.loads(last_batch["errors"]),
         },
     }
