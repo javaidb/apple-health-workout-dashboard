@@ -70,6 +70,14 @@ def test_missed_week_breaks_streak():
     assert s["current"] == 0 and s["longest"] == 1 and s["at_risk"] is False
 
 
+def test_any_workout_week_streak():
+    days = per_day("2026-10-13", "2026-10-06", "2026-09-29", "2026-09-15")  # gap: week of Sep 21
+    s = week_streaks(days, TODAY, goal=1)
+    assert s["current"] == 3 and s["longest"] == 3 and s["this_week_met"] is True
+    open_week = week_streaks(per_day("2026-10-06", "2026-09-29"), TODAY, goal=1)
+    assert open_week["current"] == 2 and open_week["at_risk"] is True and open_week["remaining"] == 1
+
+
 def test_week_streak_goal_changes_result():
     days = per_day("2026-10-12", "2026-10-14")
     assert week_streaks(days, TODAY, goal=2)["current"] == 1
@@ -91,6 +99,7 @@ def test_overview_endpoint(client, batch, auth):
     assert o["day_streak"] == {"current": 2, "longest": 2, "active_today": False, "at_risk": True}
     assert o["week_streak"]["this_week_workouts"] == 3 and o["week_streak"]["this_week_days"] == 2
     assert o["week_streak"]["current"] == 1
+    assert o["active_week_streak"]["goal"] == 1 and o["active_week_streak"]["current"] == 1
     assert o["totals"]["workouts"] == 3 and o["totals"]["active_days"] == 2
 
 

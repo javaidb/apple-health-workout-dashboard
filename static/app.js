@@ -169,7 +169,7 @@
   function renderHero() {
     const o = state.overview;
     renderLastCard(o.last_workout);
-    renderStreakCard(o.week_streak);
+    renderStreakCard(o.active_week_streak);
     renderWeekCard(o.week_streak);
     const t = o.totals;
     $("brand-sub").textContent = t.workouts
@@ -204,23 +204,23 @@
       <div class="nudge">${esc(msg)}</div>`;
   }
 
-  // Headline streak: consecutive weeks hitting the weekly workout goal.
+  // Headline streak: consecutive weeks with at least one workout.
   function renderStreakCard(w) {
     const lit = w.current > 0;
+    const left = w.days_left === 1 ? "today" : `in the next ${plural(w.days_left, "day")}`;
     let tone, msg;
     if (w.this_week_met) {
       tone = w.current >= w.longest && w.current > 1 ? "flame" : "good";
-      msg = tone === "flame" ? "Personal best streak!" : `This week is done. Streak: ${plural(w.current, "week")}`;
+      msg = tone === "flame" ? "Personal best streak!" : "This week counts. See you next week.";
     } else if (w.at_risk) {
-      tone = w.remaining > w.days_left ? "bad" : "warn";
-      const last = w.days_left === 1 ? " Today is the last day." : ` ${plural(w.days_left, "day")} left.`;
-      msg = `${plural(w.remaining, "more workout")} to make it ${plural(w.current + 1, "week")}.${last}`;
+      tone = w.days_left <= 2 ? "bad" : "warn";
+      msg = `Work out ${left} to make it ${plural(w.current + 1, "week")}`;
     } else {
       tone = "ok";
-      msg = `${plural(w.remaining, "workout")} this week starts a streak`;
+      msg = `Work out ${left} to start a streak`;
     }
     const pct = w.longest ? Math.min(100, (w.current / w.longest) * 100) : 0;
-    $("streak-card").innerHTML = `<div class="eyebrow">Weekly streak · ${w.goal}+ workouts</div>
+    $("streak-card").innerHTML = `<div class="eyebrow">Weekly streak · any workout</div>
       <div class="streak-row">
         <svg class="flame ${lit ? "lit" : "cold"}" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-flame"/></svg>
         <div class="big streak-num">${w.current}<span class="unit">${w.current === 1 ? "week" : "weeks"}</span></div>

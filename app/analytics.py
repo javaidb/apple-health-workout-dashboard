@@ -6,10 +6,11 @@ Conventions
   depend on the server's timezone.
 - Day streak: consecutive active days ending today, or ending yesterday if there
   is no workout yet today (the streak is still alive, but "at risk").
-- Week streak (the headline streak): consecutive Monday-start weeks with at least
-  `weekly_goal` workouts (two workouts on one day count twice). The current week
-  counts once its goal is met; until then the streak runs through last week and is
-  "at risk" while this week's goal is still open.
+- Week streaks: consecutive Monday-start weeks with at least N workouts (two
+  workouts on one day count twice). The current week counts once it reaches N;
+  until then the streak runs through last week and is "at risk".
+  - active_week_streak (the headline streak): N = 1, any workout keeps it going.
+  - week_streak: N = `weekly_goal`, the weekly target shown as progress.
 """
 import sqlite3
 from datetime import date, timedelta
@@ -107,6 +108,8 @@ def overview(conn: sqlite3.Connection, today: date, weekly_goal: int) -> dict[st
         "last_workout": last,
         "day_streak": day_streaks(active, today),
         "week_streak": week_streaks(per_day, today, weekly_goal),
+        # Headline streak: consecutive weeks with any workout at all.
+        "active_week_streak": week_streaks(per_day, today, 1),
         "totals": {
             "workouts": totals["n"],
             "active_days": len(active),
