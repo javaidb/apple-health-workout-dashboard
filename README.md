@@ -1,19 +1,68 @@
-# health-auto-export
+<div align="center">
 
-A local workout calendar fed by the [Health Auto Export](https://apps.apple.com/us/app/health-auto-export-json-csv/id1115567069) iOS app.
+<img src="docs/images/pipeline.png" alt="Fitbod → Apple Health → Health Auto Export → local receiver → Training Log dashboard" width="100%">
+
+<h1>Training Log</h1>
+
+<p><strong>A private, self-hosted workout dashboard that fills itself from your iPhone.</strong></p>
+
+<p>
+Log a session in <a href="https://apps.apple.com/us/app/fitbod-gym-fitness-planner/id1041517543">Fitbod</a> (or any app that writes to Apple Health),
+and <a href="https://apps.apple.com/us/app/health-auto-export-json-csv/id1115567069">Health Auto Export</a>
+pushes it to a small receiver on your PC. The dashboard turns it into streaks, a year heatmap and a
+training calendar, so you always know when you last trained and what keeps the streak alive.
+</p>
+
+<p>
+<img alt="Python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white">
+<img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white">
+<img alt="SQLite" src="https://img.shields.io/badge/SQLite-003B57?logo=sqlite&logoColor=white">
+<img alt="Vanilla JS" src="https://img.shields.io/badge/frontend-vanilla%20JS-F7DF1E?logo=javascript&logoColor=black">
+<img alt="Tests" src="https://img.shields.io/badge/tests-77%20passing-34D399">
+<img alt="Local only" src="https://img.shields.io/badge/data-stays%20on%20your%20PC-FF6A3D">
+</p>
+
+<p>
+<a href="#setup">Setup</a> ·
+<a href="#design">Design</a> ·
+<a href="#api">API</a> ·
+<a href="#security-and-privacy">Privacy</a>
+</p>
+
+</div>
+
+<br>
+
+<img src="docs/images/dashboard.png" alt="Training Log dashboard showing last workout, current streak, weekly goal, a 12-month heatmap, the month calendar with streak bands, and month statistics" width="100%">
+<p align="center"><sub>Dashboard shown with generated demo data.</sub></p>
+
+## Highlights
+
+- **Zero-touch sync.** Health Auto Export pushes new workouts in the background. Nothing to tap, no cloud
+  account, no third-party server in between.
+- **Built to keep you consistent.** Time since your last workout, a live day streak with your personal best,
+  a weekly goal ring, and a GitHub-style heatmap of the last 12 months.
+- **One-screen dashboard.** Everything fits a 1080p monitor without scrolling; falls back to a scrolling
+  layout on smaller screens and phones.
+- **Correct data.** Units normalised to metric, timezones preserved (a late-night workout stays on its day),
+  re-sent workouts de-duplicated, and one malformed workout never blocks the rest of a sync.
+- **Private by default.** Token-protected ingest, dashboard reachable only from your PC, all data in a
+  single git-ignored SQLite file.
+
+## How it works
 
 ```
 Workout → Apple Health
-   ▼  HAE "REST API" automation (background, JSON v2)
+   ▼  Health Auto Export "REST API" automation (background, JSON v2)
 POST http://<PC-IP>:8765/api/v1/ingest/health-auto-export   (Bearer token)
    ▼  validate → normalize (units, timezones) → idempotent upsert
 SQLite cache  data/workouts.db
    ▼
-Calendar UI   http://localhost:8765
+Dashboard   http://localhost:8765
 ```
 
 The receiver runs whenever the PC is on. If the PC is off when the phone tries to sync, the next sync
-catches up as long as the automation's date range overlaps (e.g. "last 7 days"). Re-sent workouts are
+catches up as long as the automation's date range overlaps (e.g. "Previous 7 Days"). Re-sent workouts are
 de-duplicated.
 
 ## Setup
@@ -152,3 +201,9 @@ Example ingest response:
   sync arrives.
 - Not yet: personal records, trend charts, route map, Postgres. The schema and service
   boundaries are set up so these are additive.
+
+## Acknowledgements
+
+Fitbod, Apple Health and Health Auto Export are products of their respective owners (Fitbod Inc.,
+Apple Inc. and HealthyApps). Their app icons are shown only to illustrate the data flow; this project is
+not affiliated with or endorsed by them.
