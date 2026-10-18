@@ -41,7 +41,8 @@ training calendar, so you always know when you last trained and what keeps the s
 - **Zero-touch sync.** Health Auto Export pushes new workouts in the background. Nothing to tap, no cloud
   account, no third-party server in between.
 - **Built to keep you consistent.** Time since your last workout, a weekly streak (weeks in a row with any workout)
-  with your personal best, a weekly goal ring (3 workouts), and a GitHub-style heatmap of the last 12 months.
+  with your personal best, a weekly goal ring (3 workouts), a GitHub-style heatmap of the last 12 months,
+  and a "Recent form" card: 12 weeks of goal history plus box plots of your last 6 sessions' duration and calories.
 - **Daily activity too.** Steps (with a 10k goal and 7-day bars), walking distance, active energy, flights
   and a 30-day weight trend from a second Health Metrics automation; each calendar day shows its steps.
 - **One-screen dashboard.** Everything fits a 1080p monitor without scrolling; falls back to a scrolling

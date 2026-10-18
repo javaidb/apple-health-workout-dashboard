@@ -10,7 +10,8 @@
     strength: "Strength", hiit: "HIIT", mobility: "Mobility", cardio: "Cardio", sport: "Sport", other: "Other",
   };
   const FIT_QUERY = matchMedia("(min-width: 1200px) and (min-height: 660px)");
-  const MAX_MIX_ROWS = 6;
+  const FORM_WEEKS = 12;
+  const FORM_SESSIONS = 6;
   const STEP_GOAL = 10000;
   const ACTIVITY_METRICS = ["step_count", "walking_running_distance", "active_energy", "flights_climbed", "weight_body_mass"];
   const DOW = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -24,6 +25,7 @@
     workouts: [],            // workouts in the visible calendar grid
     metrics: {},             // metric -> {byDate: Map(date -> value), sourceUnit} for the last 30 days
     gridSteps: new Map(),    // local date -> steps for the visible calendar grid
+    recent: [],              // most recent workouts (newest first) for the "Recent form" card
     selectedId: null,
   };
 
@@ -102,15 +104,18 @@
   async function loadOverview() {
     const today = todayIso();
     const { start, end } = heatmapRange();
-    const [overview, days] = await Promise.all([
+    const [overview, days, recent] = await Promise.all([
       api(`/analytics/overview?today=${today}&weekly_goal=${state.goal}`),
       api(`/analytics/days?from=${iso(start)}&to=${iso(end)}`),
+      api(`/workouts?sort=-start&limit=${FORM_SESSIONS}&to=${iso(end)}`),
     ]);
     state.overview = overview;
+    state.recent = recent.items;
     state.yearDays = new Map(days.days.map((d) => [d.date, d]));
     renderHero();
     renderHeatmap();
     renderSide();  // month-over-month deltas use yearDays
+    renderForm();
     loadActivity().catch(() => renderActivity());
     $("empty").hidden = overview.totals.workouts > 0;
   }
@@ -546,26 +551,83 @@
         <div class="stat"><div class="stat-label">Workout kcal</div><div class="stat-value">${Math.round(kcal).toLocaleString()}</div></div>
         ${distStats}
       </div>`;
+  }
 
-    const byCat = {};
-    for (const w of ws) {
-      const c = catOf(w.activity.category);
-      (byCat[c] ||= { n: 0, secs: 0 });
-      byCat[c].n++; byCat[c].secs += w.duration_s || 0;
+  // ---- recent form: goal history + last sessions ----------------------------
+  function quantile(sorted, q) {
+    const pos = (sorted.length - 1) * q, lo = Math.floor(pos), hi = Math.ceil(pos);
+    return sorted[lo] + (sorted[hi] - sorted[lo]) * (pos - lo);
+  }
+
+  function renderForm() {
+    const el = $("form-card");
+    const goal = state.goal;
+    const thisMonday = monday(new Date());
+
+    // Goal history: workouts per Monday-start week for the last FORM_WEEKS weeks (oldest first).
+    const weeks = Array.from({ length: FORM_WEEKS }, (_, i) => {
+      const start = addDays(thisMonday, (i - (FORM_WEEKS - 1)) * 7);
+      let n = 0;
+      for (let d = 0; d < 7; d++) n += state.yearDays.get(iso(addDays(start, d)))?.workouts || 0;
+      return { start, n, current: i === FORM_WEEKS - 1 };
+    });
+    const done = weeks.filter((w) => !w.current || w.n >= goal);
+    const hits = done.filter((w) => w.n >= goal).length;
+    const maxN = Math.max(goal, ...weeks.map((w) => w.n));
+    const bars = weeks.map((w) => {
+      const cls = w.n >= goal ? "hit" : w.n > 0 ? "part" : "none";
+      const h = w.n ? Math.max(12, (w.n / maxN) * 100) : 6;
+      const label = w.start.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+      return `<div class="gw ${cls}${w.current ? " current" : ""}" title="Week of ${label}: ${plural(w.n, "workout")}${w.current ? " (this week)" : ""}">
+        <i style="height:${h}%"></i><span>${w.n || ""}</span></div>`;
+    }).join("");
+
+    const sessions = state.recent;
+    el.innerHTML = `<div class="card-head"><h2>Recent form</h2>
+        <span class="card-sub">Goal hit <strong>${hits}</strong> of the last ${plural(done.length, "week")}</span></div>
+      <div class="goal-weeks" style="--goal:${(goal / maxN) * 100}%">${bars}</div>
+      <div class="gw-axis"><span>${FORM_WEEKS} weeks ago</span><span>${goal}/wk goal</span><span>this week</span></div>
+      <div class="form-sub">Last ${plural(sessions.length, "session")}</div>
+      ${sessions.length ? boxPlot("Duration", sessions.map((w) => ({ v: w.duration_s / 60, est: !!w.flags.duration_estimated, w })), (v) => fmtDuration(v * 60))
+                        + boxPlot("Calories", sessions.filter((w) => w.active_energy_kcal != null).map((w) => ({ v: w.active_energy_kcal, w })), (v) => `${Math.round(v)} kcal`)
+                        : `<div class="none">No workouts yet.</div>`}`;
+  }
+
+  // Horizontal box-and-whisker plot: whiskers = min..max, box = Q1..Q3, line = median,
+  // dots = sessions (hollow when estimated), latest session highlighted.
+  function boxPlot(label, points, fmt) {
+    if (!points.length) return `<div class="bp"><div class="bp-head"><span>${label}</span><span class="bp-note">no data in these sessions</span></div></div>`;
+    const vals = points.map((p) => p.v).sort((a, b) => a - b);
+    const min = vals[0], max = vals[vals.length - 1];
+    const q1 = quantile(vals, 0.25), med = quantile(vals, 0.5), q3 = quantile(vals, 0.75);
+    const span = max - min || Math.max(1, max * 0.2);
+    const lo = min - span * 0.08, hi = max + span * 0.08;
+    const W = 300, H = 34, P = 6, cy = 15;
+    const x = (v) => P + ((v - lo) / (hi - lo)) * (W - 2 * P);
+    const latest = points.find((p) => p.w === state.recent[0]);
+    const showBox = vals.length >= 3;
+    const dots = points.map((p) => {
+      const isLatest = p === latest;
+      return `<circle class="bp-dot${p.est ? " est" : ""}${isLatest ? " latest" : ""}" cx="${x(p.v).toFixed(1)}" cy="${cy}" r="${isLatest ? 5.5 : 3.6}">
+        <title>${p.w.local_date}: ${fmt(p.v)}${p.est ? " (estimated)" : ""}</title></circle>`;
+    }).join("");
+    const box = showBox ? `<line class="bp-whisker" x1="${x(min)}" x2="${x(max)}" y1="${cy}" y2="${cy}"/>
+        <line class="bp-whisker" x1="${x(min)}" x2="${x(min)}" y1="${cy - 6}" y2="${cy + 6}"/>
+        <line class="bp-whisker" x1="${x(max)}" x2="${x(max)}" y1="${cy - 6}" y2="${cy + 6}"/>
+        <rect class="bp-box" x="${x(q1)}" y="${cy - 9}" width="${Math.max(2, x(q3) - x(q1))}" height="18" rx="4"/>
+        <line class="bp-median" x1="${x(med)}" x2="${x(med)}" y1="${cy - 9}" y2="${cy + 9}"/>` : "";
+    let cmp = "";
+    if (latest && vals.length > 1) {
+      const diff = latest.v - med;
+      const same = Math.abs(diff) < (label === "Duration" ? 0.5 : 1);
+      cmp = same ? "latest ≈ median" : `latest ${diff > 0 ? "▲" : "▼"} ${fmt(Math.abs(diff))} vs median`;
     }
-    let rows = Object.entries(byCat).sort((a, b) => b[1].secs - a[1].secs);
-    if (rows.length > MAX_MIX_ROWS) {
-      const top = rows.filter(([c]) => c !== "other").slice(0, MAX_MIX_ROWS - 1);
-      const keep = new Set(top.map(([c]) => c));
-      const rest = rows.filter(([c]) => !keep.has(c)).reduce((a, [, v]) => ({ n: a.n + v.n, secs: a.secs + v.secs }), { n: 0, secs: 0 });
-      rows = [...top, ["other", rest]];
-    }
-    const maxSecs = Math.max(1, ...rows.map(([, v]) => v.secs));
-    $("mix").innerHTML = `<div class="card-head"><h2>Activity mix</h2></div>` + (rows.length
-      ? rows.map(([c, v]) => `<div class="mix-row" style="--cat:${catVar(c)}">${badge(c)}
-          <div><div class="mix-name">${CATEGORY_LABELS[c]}</div><div class="mix-bar"><i style="width:${(v.secs / maxSecs) * 100}%"></i></div></div>
-          <div class="mix-val"><strong>${fmtDuration(v.secs)}</strong>${plural(v.n, "session")}</div></div>`).join("")
-      : `<div class="none">No workouts this month yet.</div>`);
+    return `<div class="bp">
+      <div class="bp-head"><span>${label}</span><span class="bp-note">${showBox ? `median <strong>${fmt(med)}</strong> · ` : ""}${esc(cmp)}</span></div>
+      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${label} of the last ${points.length} sessions: ${fmt(min)} to ${fmt(max)}">
+        ${box}${dots}
+        <text x="${P}" y="${H - 1}">${fmt(min)}</text><text x="${W - P}" y="${H - 1}" text-anchor="end">${fmt(max)}</text>
+      </svg></div>`;
   }
 
   // ---- detail drawer ------------------------------------------------------
