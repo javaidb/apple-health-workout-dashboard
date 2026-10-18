@@ -294,8 +294,9 @@
   // The weekly streak is a series of themed mountains, one every 8 weeks (about 2 months), six
   // to a year. Each week is one step up; at 4 weeks Carl reaches a rock ledge, at 8 the summit,
   // where he celebrates and pitches a new camp before starting the next mountain. After the sixth
-  // the cycle repeats as a higher tier. Not done this week yet: he hangs on. Streak broken: he
-  // falls back to base camp.
+  // the cycle repeats as a higher tier. Not done this week yet: he hangs on. A missed week drops
+  // him to the base of the mountain he is on; missing again while at a base drops him down the
+  // previous mountain too. Summits are only lost that way, one mountain per missed week.
   const CLIMB_WEEKS = 8;     // weeks per mountain
   const CLIMB_LEDGE = 4;     // the ledge halfway up
   let climbId = 0;           // unique ids for each drawing's gradients
@@ -309,21 +310,28 @@
   ];
   const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
 
-  // Which mountain a streak of `weeks` is on, and how many steps up it (1..8; 0 = not started).
-  function mountainAt(weeks) {
-    if (weeks <= 0) return { index: 0, step: 0 };
-    const index = Math.floor((weeks - 1) / CLIMB_WEEKS);
-    return { index, step: weeks - index * CLIMB_WEEKS };
-  }
   const mountainInfo = (index) => ({ ...MOUNTAINS[index % MOUNTAINS.length], tier: Math.floor(index / MOUNTAINS.length) + 1 });
+  const campName = (index) => (index === 0 ? "base camp" : `Camp ${index + 1}`);
 
-  function lastRunBeforeGap() {
-    // Length of the most recent streak of weeks with a workout, ignoring the empty weeks after it.
+  // Replays the weekly history (oldest first, the last entry is the current week). A week with a
+  // workout is one step up; step 8 is the summit, and the next workout starts the next mountain.
+  // A missed week drops Carl to the base of his mountain (the summit counts as on it); if he is
+  // already at a base, he falls down the previous mountain to its base. The current week only
+  // counts once it has a workout, so until then it is `pending`.
+  function climbState() {
     const wk = state.weekly;
-    let i = wk.length - 1, n = 0;
-    while (i >= 0 && wk[i].workouts === 0) i--;
-    while (i >= 0 && wk[i].workouts > 0) { n++; i--; }
-    return n;
+    let index = 0, step = 0, fell = null;
+    wk.forEach((week, i) => {
+      if (week.workouts > 0) {
+        if (step === CLIMB_WEEKS) { index += 1; step = 1; } else step += 1;
+        fell = null;
+      } else if (i < wk.length - 1) {
+        if (step > 0) { fell = { from: step }; step = 0; }
+        else if (index > 0) { index -= 1; fell = { from: CLIMB_WEEKS, down: true }; }
+        else fell = null;
+      }
+    });
+    return { index, step, fell, pending: !wk.length || wk[wk.length - 1].workouts === 0 };
   }
 
   // Minimalist alpine climber. Local coordinates: feet at (0,0), facing right, up is negative y.
@@ -463,10 +471,7 @@
   }
 
   function climbHtml(w) {
-    const cur = w.current;
-    const fallFrom = cur === 0 ? lastRunBeforeGap() : 0;
-    const shownWeeks = cur > 0 ? cur : fallFrom;
-    const { index, step } = mountainAt(shownWeeks);
+    const { index, step, fell, pending } = climbState();
     const info = mountainInfo(index), next = mountainInfo(index + 1);
     const id = ++climbId;
     const scene = mountainScene(info, id);
@@ -475,35 +480,35 @@
     const lerp = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
     const pt = (k) => (k <= CLIMB_LEDGE ? lerp(base, ledge, k / CLIMB_LEDGE) : lerp(ledge, summit, (k - CLIMB_LEDGE) / (CLIMB_WEEKS - CLIMB_LEDGE)));
     const line = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => pt(a + i)).map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`).join("");
-    const atSummit = cur > 0 && step === CLIMB_WEEKS;
-    const reached = cur > 0 ? step : 0;
+    const atSummit = step === CLIMB_WEEKS;
+    const reached = step, fellFrom = fell ? fell.from : 0;
 
-    const route = (cur > 0 ? `<path class="cl-route done" d="${line(0, reached)}"/>` : fallFrom ? `<path class="cl-route old" d="${line(0, step)}"/>` : "")
+    const route = (reached > 0 ? `<path class="cl-route done" d="${line(0, reached)}"/>` : fellFrom ? `<path class="cl-route old" d="${line(0, fellFrom)}"/>` : "")
       + (reached < CLIMB_WEEKS ? `<path class="cl-route ahead" d="${line(reached, CLIMB_WEEKS)}"/>` : "");
     const arrows = Array.from({ length: CLIMB_WEEKS }, (_, k) => k).filter((k) => k !== reached - 1 && k !== reached)
-      .map((k) => routeArrow(pt(k), pt(k + 1), k < reached ? "done" : cur === 0 && k < step ? "old" : "ahead")).join("");
+      .map((k) => routeArrow(pt(k), pt(k + 1), k < reached ? "done" : k < fellFrom ? "old" : "ahead")).join("");
     const dots = Array.from({ length: CLIMB_WEEKS - 1 }, (_, i) => i + 1).filter((k) => k !== CLIMB_LEDGE)
-      .map((k) => { const [x, y] = pt(k); return `<circle class="cl-step${k <= reached ? " done" : cur === 0 && k <= step ? " old" : ""}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1.3"/>`; }).join("");
-    const ledgeRock = rockLedge(ledge[0], ledge[1] + 1.2, reached >= CLIMB_LEDGE || (cur === 0 && step >= CLIMB_LEDGE))
+      .map((k) => { const [x, y] = pt(k); return `<circle class="cl-step${k <= reached ? " done" : k <= fellFrom ? " old" : ""}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1.3"/>`; }).join("");
+    const ledgeRock = rockLedge(ledge[0], ledge[1] + 1.2, Math.max(reached, fellFrom) >= CLIMB_LEDGE)
       + `<text class="cl-label" x="${ledge[0] - 15}" y="${ledge[1] + 3}" text-anchor="end">1 mo</text>`;
     const flag = `<g class="cl-summit${atSummit ? " won" : ""}" transform="translate(${summit[0]},${summit[1]})"><path d="M0 0V-10"/><path class="flag" d="M0 -10L6 -8L0 -6Z"/></g>`;
-    const camp = index === 0 ? "base camp" : `Camp ${index + 1}`;
+    const camp = campName(index);
     const ground = `<path class="cl-ground" d="M2,${G}H98"/>`;
 
     let figure = "", extra = "", sub;
     const cs = 1.25;
-    if (cur > 0) {
+    if (step > 0) {
       const [x, y] = pt(step), facingLeft = step > CLIMB_LEDGE;
       const [px, py] = pt(step - 1);
-      const hang = !w.this_week_met && !atSummit;
+      const hang = pending && !atSummit;
       const hip = hang ? [x, y + 4.5] : step === CLIMB_LEDGE ? [x, y - .5] : [x + (facingLeft ? -.3 : .3), y - 5];
       const rope = atSummit ? "" : `<path class="cl-rope" d="M${hip[0].toFixed(1)},${hip[1].toFixed(1)} Q${((hip[0] + px) / 2).toFixed(1)},${(Math.max(hip[1], py) + 5).toFixed(1)} ${px.toFixed(1)},${py.toFixed(1)}"/>`;
       if (atSummit) {
         figure = `<g class="cl-newcamp">${tent(scene.tentAt[0], scene.tentAt[1], "", 1.1)}</g>` + climber("cheer", summit[0], summit[1], false, cs)
           + `<g class="cl-confetti">${[[-14, -16, "a"], [-4, -22, "b"], [8, -18, "c"], [14, -10, "a"], [-18, -6, "c"], [2, -28, "b"]]
             .map(([dx, dy, c]) => `<rect class="cf ${c}" x="${summit[0] + dx}" y="${summit[1] + dy}" width="1.6" height="1.6" rx=".3"/>`).join("")}</g>`;
-        if (!w.this_week_met) extra = `<text class="cl-alert" x="${summit[0] - 16}" y="${summit[1] - 4}" text-anchor="middle">!</text>`;
-        sub = w.this_week_met ? `Summit! Next: ${next.name}` : `Summit reached · work out to start ${next.name}`;
+        if (pending) extra = `<text class="cl-alert" x="${summit[0] - 16}" y="${summit[1] - 4}" text-anchor="middle">!</text>`;
+        sub = pending ? `Summit reached · work out to start ${next.name}` : `Summit! Next: ${next.name}`;
       } else if (hang) {
         figure = rope + climber("hang", x, y + 9.5, facingLeft, cs);
         extra = `<text class="cl-alert" x="${(x + (facingLeft ? 10 : -10)).toFixed(1)}" y="${(y + 3).toFixed(1)}" text-anchor="middle">!</text>`;
@@ -512,20 +517,20 @@
         figure = rope + climber(step === CLIMB_LEDGE ? "rest" : "climb", x, y, facingLeft, cs);
         sub = `${plural(CLIMB_WEEKS - step, "wk")} to the summit`;
       }
-    } else if (fallFrom > 0) {
-      const [fx, fy] = pt(step);
+    } else if (fell) {
+      const [fx, fy] = pt(fell.from);
       extra = `<path class="cl-fall" d="M${fx.toFixed(1)},${fy.toFixed(1)} Q${(fx + (fx > 50 ? 16 : -16)).toFixed(1)},${((fy + G) / 2).toFixed(1)} 52,${G - 3}"/>`;
       figure = climber("fallen", 52, G, false, cs);
-      sub = `Fell on ${info.name}${index > 0 ? ` · back to ${MOUNTAINS[0].name}` : ""}`;
+      sub = `${fell.down ? "Fell down" : "Fell on"} ${info.name} · back to ${camp}`;
     } else {
       figure = climber("stand", 52, G, false, cs);
       sub = "Help Carl reach the top!";
     }
 
-    const label = cur > 0
+    const label = step > 0
       ? `Carl on ${info.name}, ${atSummit ? "at the summit" : `${plural(step, "week")} up, ${plural(CLIMB_WEEKS - step, "week")} to the summit`}`
-      : fallFrom ? `Carl fell from ${info.name} and is back at base camp` : "Carl at base camp, ready to climb Pine Ridge";
-    const doneInYear = (cur > 0 ? index + (atSummit ? 1 : 0) : 0) % MOUNTAINS.length;
+      : fell ? `Carl fell ${fell.down ? "down" : "on"} ${info.name} and is back at ${camp}` : `Carl at ${camp}, ready to climb ${info.name}`;
+    const doneInYear = (index + (atSummit ? 1 : 0)) % MOUNTAINS.length;
     return climbCaption(info, sub, atSummit && doneInYear === 0 ? MOUNTAINS.length : doneInYear) + `<div class="climb-art">
       <svg class="th-${info.key}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMax meet" role="img" aria-label="${label}">
         <defs><linearGradient id="g-sky-${id}" x1="0" y1="0" x2="0" y2="1">
