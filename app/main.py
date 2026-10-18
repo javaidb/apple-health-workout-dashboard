@@ -235,6 +235,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         day = date.fromisoformat(_parse_date(today, "today")) if today else date.today()
         return analytics.overview(conn, day, weekly_goal)
 
+    @app.get("/api/v1/analytics/weekly", dependencies=[Depends(require_local)])
+    def get_weekly(
+        conn: sqlite3.Connection = Depends(get_conn),
+        today: str | None = Query(None, description="Viewer's local date YYYY-MM-DD (defaults to server date)"),
+    ):
+        day = date.fromisoformat(_parse_date(today, "today")) if today else date.today()
+        return analytics.weekly(conn, day)
+
     @app.get("/api/v1/analytics/days", dependencies=[Depends(require_local)])
     def get_days(
         conn: sqlite3.Connection = Depends(get_conn),

@@ -123,3 +123,14 @@ def test_days_endpoint(client, batch, auth):
     assert oct15["workouts"] == 2 and oct15["categories"] == ["strength", "walk"]
     assert oct15["duration_s"] == 3120 + 2100
     assert client.get("/api/v1/analytics/days", params={"from": "2026-10-01"}).status_code == 422
+
+
+def test_weekly_counts_are_zero_filled_from_first_week(client, batch, auth):
+    _post(client, batch, auth)
+    w = client.get("/api/v1/analytics/weekly", params={"today": "2026-10-28"}).json()["weeks"]
+    assert [x["start"] for x in w] == ["2026-10-12", "2026-10-19", "2026-10-26"]
+    assert [x["workouts"] for x in w] == [3, 0, 0]
+
+
+def test_weekly_empty(client):
+    assert client.get("/api/v1/analytics/weekly", params={"today": "2026-10-28"}).json() == {"weeks": []}

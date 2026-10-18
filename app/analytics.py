@@ -134,3 +134,19 @@ def days(conn: sqlite3.Connection, date_from: str, date_to: str) -> dict[str, An
                   "active_energy_kcal": None if r["kcal"] is None else round(r["kcal"], 1),
                   "categories": sorted(r["cats"].split(","))} for r in rows],
     }
+
+
+def weekly(conn: sqlite3.Connection, today: date) -> dict[str, Any]:
+    """Workouts per Monday-start week from the first workout's week to the current week (zero-filled)."""
+    per_day = _workouts_per_day(conn, today)
+    if not per_day:
+        return {"weeks": []}
+    per_week: dict[date, int] = {}
+    for d, n in per_day.items():
+        per_week[_monday(d)] = per_week.get(_monday(d), 0) + n
+    week, last = _monday(min(per_day)), _monday(today)
+    weeks = []
+    while week <= last:
+        weeks.append({"start": week.isoformat(), "workouts": per_week.get(week, 0)})
+        week += timedelta(weeks=1)
+    return {"weeks": weeks}
