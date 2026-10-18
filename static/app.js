@@ -391,7 +391,7 @@
         const more = ws.length > shown
           ? `<button class="more-badge" data-date="${key}" title="${plural(ws.length, "workout")}">+${ws.length - shown}</button>` : "";
         html += `<div class="${cls}" data-date="${key}" role="gridcell" aria-label="${d.toDateString()}, ${plural(ws.length, "workout")}">
-          ${isActive ? `<span class="band"></span><svg class="day-tick" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-check"/></svg>` : ""}
+          ${isActive ? `<span class="band"></span><svg class="day-tick" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-dumbbell"/></svg>` : ""}
           <div class="day-top"><span class="num">${d.getDate()}</span>${stepsTag}${more}${key === tIso ? `<span class="today-tag">Today</span>` : ""}</div>
           <div class="chips">${chips}</div></div>`;
       }
