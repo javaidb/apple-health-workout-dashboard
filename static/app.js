@@ -13,6 +13,7 @@
   const APP_ICONS = { fitbod: "img/fitbod.png" };  // source app (lower-case) -> small icon
   const FORM_WEEKS = 12;
   const FORM_SESSIONS = 6;
+  const TREND_WINDOW = 8;    // weeks in the moving average
   const STEP_GOAL = 10000;
   const ACTIVITY_METRICS = ["step_count", "walking_running_distance", "active_energy", "flights_climbed", "weight_body_mass"];
   const DOW = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -27,6 +28,7 @@
     metrics: {},             // metric -> {byDate: Map(date -> value), sourceUnit} for the last 30 days
     gridSteps: new Map(),    // local date -> steps for the visible calendar grid
     recent: [],              // most recent workouts (newest first) for the "Recent form" card
+    weekly: [],              // workouts per week since the first workout, oldest first
     selectedId: null,
   };
 
@@ -105,13 +107,15 @@
   async function loadOverview() {
     const today = todayIso();
     const { start, end } = heatmapRange();
-    const [overview, days, recent] = await Promise.all([
+    const [overview, days, recent, weekly] = await Promise.all([
       api(`/analytics/overview?today=${today}&weekly_goal=${state.goal}`),
       api(`/analytics/days?from=${iso(start)}&to=${iso(end)}`),
       api(`/workouts?sort=-start&limit=${FORM_SESSIONS}&to=${iso(end)}`),
+      api(`/analytics/weekly?today=${today}`),
     ]);
     state.overview = overview;
     state.recent = recent.items;
+    state.weekly = weekly.weeks;
     state.yearDays = new Map(days.days.map((d) => [d.date, d]));
     renderHero();
     renderHeatmap();
@@ -618,7 +622,35 @@
       <div class="form-sub">Last ${plural(sessions.length, "session")}</div>
       ${sessions.length ? boxPlot("Duration", sessions.map((w) => ({ v: w.duration_s / 60, est: !!w.flags.duration_estimated, w })), (v) => fmtDuration(v * 60))
                         + boxPlot("Calories", sessions.filter((w) => w.active_energy_kcal != null).map((w) => ({ v: w.active_energy_kcal, w })), (v) => `${Math.round(v)} kcal`)
-                        : `<div class="none">No workouts yet.</div>`}`;
+                        : `<div class="none">No workouts yet.</div>`}
+      ${trendLine()}`;
+  }
+
+  // Slim line: trailing moving average of workouts per week since the first workout.
+  function trendLine() {
+    const weeks = state.weekly;
+    if (weeks.length < 2) return "";
+    const ma = weeks.map((_, i) => {
+      const slice = weeks.slice(Math.max(0, i - TREND_WINDOW + 1), i + 1);
+      return slice.reduce((a, w) => a + w.workouts, 0) / slice.length;
+    });
+    const W = 300, H = 30, P = 2;
+    const top = Math.max(...ma, 1) * 1.1;
+    const x = (i) => (i / (ma.length - 1)) * W;
+    const y = (v) => P + (1 - v / top) * (H - 2 * P);
+    const d = ma.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join("");
+    const peak = Math.max(...ma), now = ma[ma.length - 1];
+    const first = parseIso(weeks[0].start).toLocaleDateString(undefined, { month: "short", year: "numeric" });
+    return `<div class="trend">
+      <div class="bp-head"><span>Workouts / week</span>
+        <span class="bp-note">${TREND_WINDOW}-wk avg · now <strong>${now.toFixed(1)}</strong> · peak ${peak.toFixed(1)}</span></div>
+      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img"
+        aria-label="${TREND_WINDOW}-week moving average of workouts per week since ${first}: now ${now.toFixed(1)}, peak ${peak.toFixed(1)}">
+        <path class="trend-line" d="${d}"/>
+        <circle class="trend-now" cx="${x(ma.length - 1)}" cy="${y(now)}" r="2.6"/>
+      </svg>
+      <div class="trend-axis"><span>${first}</span><span>now</span></div>
+    </div>`;
   }
 
   // Horizontal box-and-whisker plot: whiskers = min..max, box = Q1..Q3, line = median,
