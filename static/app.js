@@ -390,7 +390,12 @@
     }
     const today = new Date();
     const tIso = iso(today);
-    const steps = metricOn("step_count", tIso) ?? 0;
+    const todaySteps = metricOn("step_count", tIso);
+    const steps = todaySteps ?? 0;
+    const yesterday = metricOn("step_count", iso(addDays(today, -1)));
+    const stepsSub = todaySteps == null
+      ? `today not synced yet${yesterday != null ? ` · yesterday ${Math.round(yesterday).toLocaleString()}` : ""}`
+      : `steps today · ${steps >= STEP_GOAL ? "goal hit" : `${Math.round(STEP_GOAL - steps).toLocaleString()} to ${STEP_GOAL / 1000}k`}`;
     const r = 26, c = 2 * Math.PI * r, pct = Math.min(1, steps / STEP_GOAL);
 
     // Last 7 days of steps, oldest first.
@@ -423,8 +428,8 @@
             stroke-dasharray="${c}" stroke-dashoffset="${c * (1 - pct)}" transform="rotate(-90 32 32)"/>
         </svg>
         <div>
-          <div class="act-steps">${Math.round(steps).toLocaleString()}</div>
-          <div class="sub">steps today · ${steps >= STEP_GOAL ? "goal hit" : `${Math.round(STEP_GOAL - steps).toLocaleString()} to ${STEP_GOAL / 1000}k`}</div>
+          <div class="act-steps">${todaySteps == null ? "—" : Math.round(steps).toLocaleString()}</div>
+          <div class="sub">${esc(stepsSub)}</div>
         </div>
         <div class="step-bars" style="--goal:${goalPct}%">${bars}</div>
       </div>
