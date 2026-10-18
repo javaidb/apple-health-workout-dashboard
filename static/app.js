@@ -177,21 +177,50 @@
       : "Waiting for your first workout";
   }
 
+  // Nudge for the last-workout card. Rules are checked in order; the first match wins.
+  //   n     days since the last workout (0 = today)
+  //   goal  week_streak:        weekly target (default 3 workouts), remaining, days_left (incl. today)
+  //   any   active_week_streak: consecutive weeks with any workout
+  // A rest day is offered only after a workout yesterday, and only if skipping today still
+  // leaves enough days to reach the weekly goal at one workout per day.
+  function lastWorkoutNudge(n, goal, any) {
+    const R = goal.remaining, D = goal.days_left, more = plural(R, "more workout");
+    if (n === 0) {
+      return goal.this_week_met
+        ? ["good", goal.this_week_workouts === goal.goal ? "That's your weekly goal done. Great work." : "Done for today. Weekly goal already hit."]
+        : ["good", `Done for today. ${more} this week.`];
+    }
+    if (any.at_risk && D <= 2) {
+      return ["bad", `Last chance: train ${D === 1 ? "today" : "by tomorrow"} to keep your ${any.current}-week streak.`];
+    }
+    if (R > D) {
+      return ["warn", `${goal.goal} a week is out of reach this week, but a session today still counts.`];
+    }
+    if (R > 0 && R === D) {
+      return ["warn", D === 1 ? "Last day of the week: one more workout hits your goal."
+                              : `No rest today: ${plural(R, "workout")} left and ${plural(D, "day")} to do them.`];
+    }
+    if (n === 1) {
+      return ["good", `Well done yesterday. You've earned a rest day today.${R ? ` ${R} more to go this week.` : ""}`];
+    }
+    if (R === 0) return ["good", "Weekly goal done. A bonus session is up to you."];
+    if (n === 2) return ["ok", "Rest day done. Time to train."];
+    if (n < 7) return ["bad", `It's been ${n} days. Time to get moving.`];
+    return ["bad", "Over a week off. One workout today gets you back on track."];
+  }
+
   function renderLastCard(w) {
     const el = $("last-card");
     if (!w) {
-      el.style.removeProperty("--tone");
+      el.className = "card hero-card last-card";
       el.innerHTML = `<div class="eyebrow">Last workout</div><div class="big">—</div>
-        <div class="last-meta">Your workouts will appear here after the first sync.</div>`;
+        <div class="last-meta">Your workouts will appear here after the first sync.</div>
+        <div class="nudge tone-ok">Log your first workout to get started.</div>`;
       return;
     }
     const n = w.days_ago;
-    const [when, tone, msg] =
-      n === 0 ? ["Today", "good", "Done for today. Nice work."] :
-      n === 1 ? ["Yesterday", "ok", "Go again today to keep the momentum."] :
-      n === 2 ? ["2 days ago", "warn", "Two rest days. A short session today keeps you on track."] :
-      n < 7 ? [`${n} days ago`, "bad", `It's been ${n} days. Time to get moving.`] :
-              [`${n} days ago`, "bad", "Over a week off. One workout today gets you back on track."];
+    const when = n === 0 ? "Today" : n === 1 ? "Yesterday" : `${n} days ago`;
+    const [tone, msg] = lastWorkoutNudge(n, state.overview.week_streak, state.overview.active_week_streak);
     el.className = `card hero-card last-card tone-${tone}`;
     el.dataset.id = w.id;
     const date = parseIso(w.local_date).toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
