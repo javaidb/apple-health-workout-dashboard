@@ -703,3 +703,40 @@ code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; font-
   .hero .wd i svg, .hero .wd.missed i svg { width: 56%; height: 56%; }
   .hero .week-foot { padding-top: 0; }
 }
+
+/* ---------- the climb (weekly streak card) ---------------------------- */
+.streak-card { flex-direction: row !important; gap: 14px; }
+.streak-main { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.climb { flex: 0 0 44%; min-width: 0; min-height: 150px; position: relative; }
+.climb svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; }  /* always scales to fit its box */
+.cl-mtn { fill: color-mix(in srgb, var(--text) 4.5%, transparent); stroke: color-mix(in srgb, var(--text) 10%, transparent); stroke-width: .6; stroke-linejoin: round; }
+.cl-crack { fill: none; stroke: color-mix(in srgb, var(--text) 9%, transparent); stroke-width: .7; stroke-linecap: round; stroke-linejoin: round; }
+.cl-step { fill: var(--faint); opacity: .55; }
+.cl-step.done { fill: var(--accent); opacity: 1; }
+.cl-step.old { fill: var(--faint); opacity: .8; }
+.cl-ground { stroke: var(--border-strong); stroke-width: 1.4; stroke-linecap: round; }
+.cl-ledge { stroke: var(--border-strong); stroke-width: 2.4; stroke-linecap: round; }
+.cl-ledge.done { stroke: color-mix(in srgb, var(--accent) 55%, var(--border-strong)); }
+.cl-label { fill: var(--faint); font-size: 6px; font-weight: 600; letter-spacing: .02em; }
+.cl-route { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.cl-route.done { stroke: var(--accent); stroke-width: 1.8; filter: drop-shadow(0 0 2px color-mix(in srgb, var(--accent) 60%, transparent)); }
+.cl-route.ahead { stroke: var(--faint); stroke-width: 1; stroke-dasharray: 2 2.5; opacity: .7; }
+.cl-route.old { stroke: var(--faint); stroke-width: 1.2; opacity: .55; }
+.cl-fall { fill: none; stroke: var(--bad); stroke-width: 1; stroke-dasharray: 1.5 2; opacity: .8; }
+.climber path { fill: none; stroke: var(--text); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.climber .cl-head { fill: var(--text); }
+.climber.hang { animation: cl-sway 2.4s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 0; }
+.cl-alert { fill: var(--warn); font-size: 9px; font-weight: 800; animation: cl-blink 1.6s ease-in-out infinite; }
+.cl-best path { stroke: var(--warn); stroke-width: 1; fill: none; }
+.cl-best .flag { fill: var(--warn); stroke: none; }
+@keyframes cl-sway { 0%, 100% { rotate: -4deg; } 50% { rotate: 4deg; } }
+@keyframes cl-blink { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .climber.hang, .cl-alert { animation: none; } }
+@media (max-width: 720px) { .climb { min-height: 140px; } }
+
+@media (min-width: 1100px) and (min-height: 560px) {
+  .hero .climb { min-height: 0; }  /* in the one-screen layout the drawing simply fills the card height */
+}
+@media (min-width: 1100px) and (min-height: 560px) {
+  .hero .streak-main { justify-content: space-between; }
+}

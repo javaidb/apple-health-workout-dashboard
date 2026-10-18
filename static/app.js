@@ -276,17 +276,118 @@
       msg = `Work out ${left} to start a streak`;
     }
     const pct = w.longest ? Math.min(100, (w.current / w.longest) * 100) : 0;
-    $("streak-card").innerHTML = `<div class="eyebrow">Weekly streak · any workout</div>
+    $("streak-card").innerHTML = `<div class="streak-main"><div class="eyebrow">Weekly streak · any workout</div>
       <div class="streak-row">
         <svg class="flame ${lit ? "lit" : "cold"}" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-flame"/></svg>
         <div class="big streak-num">${w.current}<span class="unit">${w.current === 1 ? "week" : "weeks"}</span></div>
       </div>
-      <div>
+      <div data-opt="1">
         <div class="best-track"><i style="width:${pct}%"></i></div>
         <div class="best-label"><span><svg viewBox="0 0 24 24"><use href="#i-trophy"/></svg>Best ${plural(w.longest, "week")}</span>
           <span>${w.longest && w.current < w.longest ? `${w.longest - w.current} to beat it` : w.current ? "On your best" : ""}</span></div>
       </div>
-      <div class="nudge tone-${tone}">${esc(msg)}</div>`;
+      <div class="nudge tone-${tone}">${esc(msg)}</div></div>
+      <div class="climb">${climbSvg(w)}</div>`;
+  }
+
+  // ---- the climb: a minimalist climber on an endless mountain -----------------
+  // Each week of the streak is one step up a zigzag route; every 4 weeks (a month) the route
+  // reaches a ledge and switches direction. The summit is lost in mist, and the view follows
+  // the climber. Not done this week yet: he hangs on. Streak broken: he has fallen to base camp.
+  const CLIMB_LEG = 4;     // weeks per traverse (one ledge per month)
+  const CLIMB_STEP = 15;   // height gained per week, in SVG units
+  let climbId = 0;         // unique ids for each drawing's mist gradient and mask
+
+  function climbPoint(k) {
+    const m = Math.floor(k / CLIMB_LEG), t = (k - m * CLIMB_LEG) / CLIMB_LEG;
+    return [m % 2 === 0 ? 20 + 60 * t : 80 - 60 * t, k * CLIMB_STEP];
+  }
+
+  function lastRunBeforeGap() {
+    // Length of the most recent streak of weeks with a workout, ignoring the empty weeks after it.
+    const wk = state.weekly;
+    let i = wk.length - 1, n = 0;
+    while (i >= 0 && wk[i].workouts === 0) i--;
+    while (i >= 0 && wk[i].workouts > 0) { n++; i--; }
+    return n;
+  }
+
+  function climber(pose, x, y, facingLeft) {
+    const flip = facingLeft ? " scale(-1,1)" : "";
+    const parts = {
+      climb: `<circle cx="0" cy="-10.5" r="2.1" class="cl-head"/><path d="M0 -8.4V-3.2M0 -3.2L-2.4 0M0 -3.2L2 -.4M0 -7L3.4 -10.8M0 -7L-2.4 -5"/>`,
+      stand: `<circle cx="0" cy="-10.5" r="2.1" class="cl-head"/><path d="M0 -8.4V-3.2M0 -3.2L-2 0M0 -3.2L2 0M0 -7L-2.6 -4.4M0 -7L4 -9.8"/>`,
+      rest: `<circle cx="-.6" cy="-7.6" r="2.1" class="cl-head"/><path d="M-.2 -5.5L.4 -1.4M.4 -1.4L4 -1.4L4.6 .6M-.1 -4.4L2.6 -2.6"/>`,
+      hang: `<circle cx="0" cy="-6" r="2.1" class="cl-head"/><path d="M0 -3.9V1.4M0 -2.6L-1.6 -9.4M0 -2.6L1.6 -9.4M0 1.4L-1.4 4.6M0 1.4L1.2 4.8"/>`,
+      fallen: `<circle cx="5.2" cy="-1.6" r="1.9" class="cl-head"/><path d="M3.2 -1.4L-2.4 -1.2M-2.4 -1.2L-5.2 -3M-2.4 -1.2L-5.6 .2M1.6 -1.4L2.6 -4.2"/>`,
+    };
+    return `<g class="climber ${pose}" transform="translate(${x.toFixed(1)},${y.toFixed(1)})${flip}">${parts[pose]}</g>`;
+  }
+
+  function climbSvg(w) {
+    const cur = w.current;
+    const fallFrom = cur === 0 ? lastRunBeforeGap() : 0;
+    const focus = cur > 0 ? cur : fallFrom;
+    const lo = Math.max(0, focus - 7), hi = Math.max(focus + 4, lo + 8);
+    const W = 100, H = (hi - lo) * CLIMB_STEP + 26;
+    const sx = (x) => x, sy = (y) => H - 10 - (y - lo * CLIMB_STEP);
+    const pt = (k) => { const [x, y] = climbPoint(k); return [sx(x), sy(y)]; };
+    const line = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => pt(a + i)).map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`).join("");
+
+    // Rock face: jagged edges that keep rising above the view, so the summit is never in sight.
+    const f = (v) => (v * H).toFixed(1);
+    const mountain = `<path class="cl-mtn" d="M0 ${H} L0 ${f(.72)} L5 ${f(.6)} L2 ${f(.42)} L8 ${f(.28)} L4 ${f(.12)} L10 -10
+        L90 -10 L96 ${f(.16)} L92 ${f(.3)} L98 ${f(.46)} L94 ${f(.62)} L100 ${f(.76)} L100 ${H} Z"/>
+      <path class="cl-crack" d="M14 ${f(.86)} l7 -${(.08 * H).toFixed(1)} l-3 -${(.05 * H).toFixed(1)} M78 ${f(.7)} l-6 -${(.07 * H).toFixed(1)} l4 -${(.06 * H).toFixed(1)}
+        M30 ${f(.34)} l6 -${(.05 * H).toFixed(1)} M66 ${f(.24)} l-5 -${(.06 * H).toFixed(1)}"/>`;
+    const dots = Array.from({ length: hi - lo + 1 }, (_, i) => lo + i).filter((k) => k > 0 && k % CLIMB_LEG !== 0)
+      .map((k) => { const [x, y] = pt(k); return `<circle class="cl-step${k <= Math.max(cur, fallFrom) && (cur > 0 || k <= fallFrom) ? (cur > 0 ? " done" : " old") : ""}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1.3"/>`; }).join("");
+    const ledges = [];
+    for (let k = Math.max(CLIMB_LEG, Math.ceil(lo / CLIMB_LEG) * CLIMB_LEG); k <= hi; k += CLIMB_LEG) {
+      const [x, y] = pt(k);
+      ledges.push(`<path class="cl-ledge${k <= Math.max(cur, fallFrom) ? " done" : ""}" d="M${(x - 11).toFixed(1)},${(y + 1.6).toFixed(1)}h22"/>`);
+      ledges.push(`<text class="cl-label" x="${(x + (x > 50 ? -13 : 13)).toFixed(1)}" y="${(y + 7).toFixed(1)}" text-anchor="${x > 50 ? "end" : "start"}">${k / CLIMB_LEG} mo</text>`);
+    }
+    const base = lo === 0 ? `<path class="cl-ground" d="M2,${sy(0) + 1.6}H98"/><text class="cl-label" x="50" y="${sy(0) + 9}" text-anchor="middle">base camp</text>` : "";
+
+    let route = `<path class="cl-route ahead" d="${line(Math.max(lo, cur), hi)}"/>`;
+    let figure, extra = "";
+    if (cur > 0) {
+      route = `<path class="cl-route done" d="${line(lo, cur)}"/>` + route;
+      const [x, y] = pt(cur), facingLeft = Math.floor(cur / CLIMB_LEG) % 2 === 1;
+      if (!w.this_week_met) {
+        figure = climber("hang", x, y + 7, facingLeft);
+        extra = `<text class="cl-alert" x="${(x + (x > 50 ? -9 : 9)).toFixed(1)}" y="${(y + 2).toFixed(1)}" text-anchor="middle">!</text>`;
+      } else {
+        figure = climber(cur % CLIMB_LEG === 0 ? "rest" : "climb", x, y, facingLeft);
+      }
+    } else if (fallFrom > 0) {
+      route = `<path class="cl-route old" d="${line(lo, Math.min(fallFrom, hi))}"/>` + route;
+      const [fx, fy] = pt(Math.min(fallFrom, hi));
+      extra = `<path class="cl-fall" d="M${fx.toFixed(1)},${fy.toFixed(1)} Q${(fx + (fx > 50 ? 14 : -14)).toFixed(1)},${((fy + sy(0)) / 2).toFixed(1)} 50,${(sy(0) - 3).toFixed(1)}"/>`;
+      figure = climber("fallen", 50, sy(0), false);
+    } else {
+      figure = climber("stand", 50, sy(0), false);
+    }
+    const best = w.longest > 0 && w.longest >= lo && w.longest <= hi && w.longest !== cur
+      ? (() => { const [x, y] = pt(w.longest); return `<g class="cl-best" transform="translate(${x.toFixed(1)},${y.toFixed(1)})"><path d="M0 0V-9"/><path class="flag" d="M0 -9L5.5 -7.2L0 -5.4Z"/></g>`; })()
+      : "";
+    const label = cur > 0
+      ? `Climber ${plural(cur, "week")} up the mountain${w.this_week_met ? "" : ", hanging on until a workout this week"}`
+      : fallFrom ? `Climber fell from ${plural(fallFrom, "week")} up and is back at base camp` : "Climber at base camp";
+    // Mist: everything fades out towards the top of the view.
+    const mistEnd = (Math.min(H * 0.38, 70) / H).toFixed(3), id = ++climbId;
+    return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMax meet" role="img" aria-label="${label}">
+      <defs>
+        <linearGradient id="g-mist-${id}" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="${mistEnd}" stop-color="#fff" stop-opacity="1"/>
+        </linearGradient>
+        <mask id="m-mist-${id}" maskUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${H}">
+          <rect x="0" y="0" width="${W}" height="${H}" fill="url(#g-mist-${id})"/>
+        </mask>
+      </defs>
+      <g mask="url(#m-mist-${id})">${mountain}${base}${ledges.join("")}${route}${dots}${best}${extra}${figure}</g>
+    </svg>`;
   }
 
   function renderWeekCard(w) {
