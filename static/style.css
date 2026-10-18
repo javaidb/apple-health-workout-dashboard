@@ -638,7 +638,7 @@ code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; font-
   .best-label { margin-top: 3px; }
   .ring { width: 54px; height: 54px; }
   .week-top { gap: 10px; }
-  .week-top .big { font-size: 22px !important; }
+  .week-top .big { font-size: 22px; }
   .week-dots { margin-top: 4px; gap: 4px; }
   .wd i { width: 20px; height: 20px; border-radius: 6px; }
   .week-foot { padding-top: 4px; }
@@ -664,4 +664,36 @@ code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; font-
 @container (max-width: 64px) {
   #month-stats .stat-label { font-size: 8.5px; letter-spacing: 0; }
   #month-stats .stat-value { font-size: 14px; }
+}
+
+/* Left column (one-screen layout): content scales with each card's own height (cqh = 1% of
+   the card's height) and is spread evenly through the card, so the three cards fill their
+   space on any window. Selectors start with .hero to win over the compact rules above. */
+@media (min-width: 1100px) and (min-height: 560px) {
+  .hero .hero-card { container-type: size; justify-content: space-between; }
+  .hero .hero-card .nudge { margin-top: 0; }
+  .hero .eyebrow { font-size: clamp(10.5px, 4cqh, 13.5px); }
+  .hero .nudge { font-size: clamp(11.5px, 4.6cqh, 15px); padding: clamp(4px, 1.9cqh, 9px) clamp(10px, 3.8cqh, 16px); }
+
+  .hero .last-card .big { font-size: clamp(30px, 25cqh, 76px); }
+  .hero .last-activity { font-size: clamp(13px, 6.4cqh, 20px); gap: clamp(8px, 3.4cqh, 13px); margin-top: 0; }
+  .hero .last-activity .cat-badge { width: clamp(24px, 13cqh, 42px); height: clamp(24px, 13cqh, 42px); font-size: clamp(12px, 5.4cqh, 18px); }
+  .hero .last-meta { font-size: clamp(12px, 5cqh, 16px); }
+
+  .hero .streak-row { gap: clamp(12px, 5cqh, 22px); margin-top: 0; }
+  .hero .flame { width: clamp(38px, 34cqh, 104px); height: clamp(38px, 34cqh, 104px); }
+  .hero .streak-num { font-size: clamp(30px, 28cqh, 84px); }
+  .hero .streak-num .unit { font-size: clamp(13px, 6.4cqh, 21px); }
+  .hero .best-track { height: clamp(5px, 2.6cqh, 10px); margin-top: 0; }
+  .hero .best-label { font-size: clamp(11.5px, 4.6cqh, 15px); margin-top: clamp(3px, 1.6cqh, 8px); }
+
+  .hero .ring { width: clamp(48px, 43cqh, 136px); height: clamp(48px, 43cqh, 136px); }
+  .hero .week-top { gap: clamp(10px, 6cqh, 26px); margin-top: 0; }
+  .hero .week-time { font-size: clamp(22px, 17cqh, 52px); }
+  .hero .week-top .sub { font-size: clamp(12px, 5cqh, 16px); }
+  .hero .week-dots { margin-top: 0; gap: clamp(4px, 2.4cqh, 10px); }
+  .hero .wd { font-size: clamp(10px, 4.2cqh, 14px); gap: clamp(3px, 1.4cqh, 6px); }
+  .hero .wd i { width: clamp(18px, 14cqh, 46px); height: clamp(18px, 14cqh, 46px); border-radius: clamp(6px, 3.6cqh, 12px); }
+  .hero .wd i svg, .hero .wd.missed i svg { width: 56%; height: 56%; }
+  .hero .week-foot { padding-top: 0; }
 }

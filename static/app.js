@@ -314,7 +314,7 @@
           <text class="small" x="42" y="59" text-anchor="middle">workouts</text>
         </svg>
         <div>
-          <div class="big" style="font-size:30px">${weekSecs ? fmtDuration(weekSecs) : "0m"}</div>
+          <div class="big week-time">${weekSecs ? fmtDuration(weekSecs) : "0m"}</div>
           <div class="sub" data-opt="1">trained this week · ${plural(w.this_week_days, "active day")}</div>
         </div>
       </div>
