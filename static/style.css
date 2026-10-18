@@ -217,8 +217,13 @@ svg { display: block; }
 .wd.missed i svg { width: 15px; height: 15px; }
 .wd.missed { color: var(--muted); }
 .wd.on i { background: linear-gradient(135deg, #34d399, #22d3ee); border-color: transparent; }
-.wd.today { color: var(--text); }
-.wd.today i { border-color: var(--text); }
+.wd.today { color: var(--accent); font-weight: 800; }
+.wd.today i {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 22%, var(--surface-2));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent), 0 0 12px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.wd.today.on i { background: linear-gradient(135deg, #34d399, #22d3ee); }  /* trained today: green box, orange ring */
 .wd.future i { opacity: .45; }
 .goal-stepper { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; }
 .goal-stepper button {
