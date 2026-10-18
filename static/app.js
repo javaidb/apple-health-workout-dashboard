@@ -312,16 +312,60 @@
     return n;
   }
 
-  function climber(pose, x, y, facingLeft) {
-    const flip = facingLeft ? " scale(-1,1)" : "";
+  // Minimalist alpine climber. Local coordinates: feet at (0,0), facing right, up is negative y.
+  function climber(pose, x, y, facingLeft, scale = 1.25) {
+    const flip = facingLeft ? -scale : scale;
+    const helmet = (cx, cy, r = 2.05) =>
+      `<circle class="cl-face" cx="${cx}" cy="${cy}" r="${r}"/>` +
+      `<path class="cl-helmet" d="M${cx - r - .35} ${cy - .15} A${r + .35} ${r + .35} 0 0 1 ${cx + r + .35} ${cy - .15} Z"/>` +
+      `<path class="cl-brim" d="M${cx - r - .6} ${cy - .1}H${cx + r + .9}"/>`;
     const parts = {
-      climb: `<circle cx="0" cy="-10.5" r="2.1" class="cl-head"/><path d="M0 -8.4V-3.2M0 -3.2L-2.4 0M0 -3.2L2 -.4M0 -7L3.4 -10.8M0 -7L-2.4 -5"/>`,
-      stand: `<circle cx="0" cy="-10.5" r="2.1" class="cl-head"/><path d="M0 -8.4V-3.2M0 -3.2L-2 0M0 -3.2L2 0M0 -7L-2.6 -4.4M0 -7L4 -9.8"/>`,
-      rest: `<circle cx="-.6" cy="-7.6" r="2.1" class="cl-head"/><path d="M-.2 -5.5L.4 -1.4M.4 -1.4L4 -1.4L4.6 .6M-.1 -4.4L2.6 -2.6"/>`,
-      hang: `<circle cx="0" cy="-6" r="2.1" class="cl-head"/><path d="M0 -3.9V1.4M0 -2.6L-1.6 -9.4M0 -2.6L1.6 -9.4M0 1.4L-1.4 4.6M0 1.4L1.2 4.8"/>`,
-      fallen: `<circle cx="5.2" cy="-1.6" r="1.9" class="cl-head"/><path d="M3.2 -1.4L-2.4 -1.2M-2.4 -1.2L-5.2 -3M-2.4 -1.2L-5.6 .2M1.6 -1.4L2.6 -4.2"/>`,
+      // leaning into the face, right hand reaching up for the next hold, left foot stepping up
+      climb: `<rect class="cl-pack" x="-3.7" y="-9.6" width="2.9" height="4.8" rx="1" transform="rotate(-18 -2.2 -7.2)"/>
+        <path class="cl-body" d="M.2 -4.2L1.9 -8.7"/>
+        <path class="cl-limb" d="M1.7 -8.1L3.9 -10.2L5.3 -13M1.6 -7.6L3.6 -6.4L5.1 -6.9M.2 -4.2L2.9 -2.6L2.6 .1M.2 -4.2L-.9 -1.7L-2.4 .2"/>
+        <path class="cl-harness" d="M-.5 -4.5L1.1 -3.9"/>${helmet(2.9, -11.2)}`,
+      // standing at base camp, looking up, one hand shading the eyes
+      stand: `<rect class="cl-pack" x="-3.4" y="-9.4" width="2.8" height="4.9" rx="1"/>
+        <path class="cl-body" d="M0 -3.8V-8.6"/>
+        <path class="cl-limb" d="M0 -8.1L2.4 -9.6L2.2 -11.2M0 -7.8L-1.4 -5.5L-1 -3.8M0 -3.8L-1.5 -1.8L-1.6 .1M0 -3.8L1.4 -1.8L1.7 .1"/>
+        <path class="cl-harness" d="M-.8 -4.2H.9"/>${helmet(.3, -10.9)}`,
+      // resting on the ledge: sitting, legs over the edge, pack beside him
+      rest: `<rect class="cl-pack" x="-6.4" y="-4.6" width="3" height="4.6" rx="1"/>
+        <path class="cl-body" d="M-.4 -.4L.2 -5.2"/>
+        <path class="cl-limb" d="M-.4 -.4L3 -.6L3.6 2.6M-.4 -.4L2.3 .2L2.4 3.2M.1 -4.6L2.3 -3L3.4 -1.4M.1 -4.6L-1.6 -2.6L-1.8 -.6"/>
+        ${helmet(.5, -7.4)}`,
+      // hanging from the ledge by both hands, feet scrabbling
+      hang: `<rect class="cl-pack" x="-3.6" y="-6.6" width="2.8" height="4.7" rx="1"/>
+        <path class="cl-body" d="M0 -6.8V-1.8"/>
+        <path class="cl-limb" d="M0 -6.4L-1.4 -9L-1.2 -11.4M0 -6.4L1.5 -9L1.4 -11.4M0 -1.8L-1.6 .6L-.6 2.8M0 -1.8L1.2 .4L2.6 1.6"/>
+        <path class="cl-harness" d="M-.8 -2.2H.9"/>${helmet(0, -8.9)}`,
+      // fallen at base camp, lying on his back, helmet knocked aside
+      fallen: `<rect class="cl-pack" x="-1.8" y="-1.6" width="4.6" height="1.8" rx=".8"/>
+        <path class="cl-body" d="M3.6 -1.6L-1.8 -1.4"/>
+        <path class="cl-limb" d="M-1.8 -1.4L-4.2 -3.4L-6 -2.6M-1.8 -1.4L-4.6 -.2L-6.4 .2M2.4 -1.6L3.4 -4.2L5.2 -4.8M2.6 -1.6L4.6 -.4"/>
+        <circle class="cl-face" cx="5.8" cy="-1.9" r="1.9"/>
+        <path class="cl-helmet" d="M8.6 -4.6A2.4 2.4 0 0 1 12.8 -4.8Z" transform="rotate(24 10.7 -4.7)"/>
+        <path class="cl-stars" d="M5 -6.6l.5 1 .9-.6-.3 1 1 .3-1 .3.3 1-.9-.6-.5 1-.5-1-.9.6.3-1-1-.3 1-.3-.3-1 .9.6z"/>`,
     };
-    return `<g class="climber ${pose}" transform="translate(${x.toFixed(1)},${y.toFixed(1)})${flip}">${parts[pose]}</g>`;
+    return `<g class="climber ${pose}" transform="translate(${x.toFixed(1)},${y.toFixed(1)}) scale(${flip},${scale})">${parts[pose]}</g>`;
+  }
+
+  // Irregular rock slab for a month ledge, centred on (x, y) with its flat top at y.
+  function rockLedge(x, y, done) {
+    const p = (dx, dy) => `${(x + dx).toFixed(1)},${(y + dy).toFixed(1)}`;
+    return `<g class="cl-rock${done ? " done" : ""}">
+      <path d="M${p(-12, .4)} L${p(-9, -.6)} L${p(-3, -.2)} L${p(4, -.7)} L${p(10, -.3)} L${p(12.5, .9)} L${p(10.5, 3)} L${p(6, 3.6)}
+        L${p(3.5, 5.6)} L${p(-.5, 4.2)} L${p(-4, 6.2)} L${p(-7.5, 4)} L${p(-11, 3.4)} Z"/>
+      <path class="cl-rock-top" d="M${p(-11.4, .2)} L${p(-9, -.6)} L${p(-3, -.2)} L${p(4, -.7)} L${p(10, -.3)} L${p(12, .7)}"/>
+      <path class="cl-rock-crack" d="M${p(-2, 1.6)} l1.4 1.8 M${p(6, 1)} l-1 1.6"/>
+    </g>`;
+  }
+
+  // Small chevron at the midpoint of a route segment, pointing in the climbing direction.
+  function routeArrow([x1, y1], [x2, y2], cls) {
+    const mx = (x1 + x2) / 2, my = (y1 + y2) / 2, deg = (Math.atan2(y2 - y1, x2 - x1) * 180) / Math.PI;
+    return `<path class="cl-arrow ${cls}" d="M-1.7,-1.9 L.9,0 L-1.7,1.9" transform="translate(${mx.toFixed(1)},${my.toFixed(1)}) rotate(${deg.toFixed(1)})"/>`;
   }
 
   function climbSvg(w) {
@@ -345,21 +389,29 @@
     const ledges = [];
     for (let k = Math.max(CLIMB_LEG, Math.ceil(lo / CLIMB_LEG) * CLIMB_LEG); k <= hi; k += CLIMB_LEG) {
       const [x, y] = pt(k);
-      ledges.push(`<path class="cl-ledge${k <= Math.max(cur, fallFrom) ? " done" : ""}" d="M${(x - 11).toFixed(1)},${(y + 1.6).toFixed(1)}h22"/>`);
-      ledges.push(`<text class="cl-label" x="${(x + (x > 50 ? -13 : 13)).toFixed(1)}" y="${(y + 7).toFixed(1)}" text-anchor="${x > 50 ? "end" : "start"}">${k / CLIMB_LEG} mo</text>`);
+      ledges.push(rockLedge(x, y + 1.2, k <= Math.max(cur, fallFrom)));
+      ledges.push(`<text class="cl-label" x="${(x + (x > 50 ? -14 : 14)).toFixed(1)}" y="${(y + 9).toFixed(1)}" text-anchor="${x > 50 ? "end" : "start"}">${k / CLIMB_LEG} mo</text>`);
     }
     const base = lo === 0 ? `<path class="cl-ground" d="M2,${sy(0) + 1.6}H98"/><text class="cl-label" x="50" y="${sy(0) + 9}" text-anchor="middle">base camp</text>` : "";
 
+    const climbedTo = cur > 0 ? cur : 0;
+    const arrows = Array.from({ length: hi - lo }, (_, i) => lo + i)
+      .filter((k) => k !== cur - 1 && k !== cur)  // keep the climber's own step clear
+      .map((k) => routeArrow(pt(k), pt(k + 1), k < climbedTo ? "done" : cur === 0 && k < fallFrom ? "old" : "ahead")).join("");
     let route = `<path class="cl-route ahead" d="${line(Math.max(lo, cur), hi)}"/>`;
     let figure, extra = "";
     if (cur > 0) {
       route = `<path class="cl-route done" d="${line(lo, cur)}"/>` + route;
       const [x, y] = pt(cur), facingLeft = Math.floor(cur / CLIMB_LEG) % 2 === 1;
+      // rope from the harness back down to the previous step, with a little slack
+      const [px, py] = pt(Math.max(lo, cur - 1));
+      const hip = !w.this_week_met ? [x, y + 4.5] : cur % CLIMB_LEG === 0 ? [x + (facingLeft ? .5 : -.5), y - .5] : [x + (facingLeft ? -.3 : .3), y - 5];
+      const rope = `<path class="cl-rope" d="M${hip[0].toFixed(1)},${hip[1].toFixed(1)} Q${((hip[0] + px) / 2).toFixed(1)},${(Math.max(hip[1], py) + 5).toFixed(1)} ${px.toFixed(1)},${py.toFixed(1)}"/>`;
       if (!w.this_week_met) {
-        figure = climber("hang", x, y + 7, facingLeft);
-        extra = `<text class="cl-alert" x="${(x + (x > 50 ? -9 : 9)).toFixed(1)}" y="${(y + 2).toFixed(1)}" text-anchor="middle">!</text>`;
+        figure = rope + climber("hang", x, y + 9.5, facingLeft);
+        extra = `<text class="cl-alert" x="${(x + (x > 50 ? -10 : 10)).toFixed(1)}" y="${(y + 3).toFixed(1)}" text-anchor="middle">!</text>`;
       } else {
-        figure = climber(cur % CLIMB_LEG === 0 ? "rest" : "climb", x, y, facingLeft);
+        figure = rope + climber(cur % CLIMB_LEG === 0 ? "rest" : "climb", x, y, facingLeft);
       }
     } else if (fallFrom > 0) {
       route = `<path class="cl-route old" d="${line(lo, Math.min(fallFrom, hi))}"/>` + route;
@@ -386,7 +438,7 @@
           <rect x="0" y="0" width="${W}" height="${H}" fill="url(#g-mist-${id})"/>
         </mask>
       </defs>
-      <g mask="url(#m-mist-${id})">${mountain}${base}${ledges.join("")}${route}${dots}${best}${extra}${figure}</g>
+      <g mask="url(#m-mist-${id})">${mountain}${base}${route}${arrows}${dots}${ledges.join("")}${best}${extra}${figure}</g>
     </svg>`;
   }
 
