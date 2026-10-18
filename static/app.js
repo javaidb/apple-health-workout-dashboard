@@ -13,7 +13,7 @@
   const APP_ICONS = { fitbod: "img/fitbod.png" };  // source app (lower-case) -> small icon
   const FORM_WEEKS = 12;
   const FORM_SESSIONS = 6;
-  const TREND_WINDOW = 12;   // weeks in the moving average
+  const TREND_WINDOW = 12;   // smoothing width of the trend line, in weeks
   const STEP_GOAL = 10000;
   const ACTIVITY_METRICS = ["step_count", "walking_running_distance", "active_energy", "flights_climbed", "weight_body_mass"];
   const DOW = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -654,10 +654,22 @@
   function trendLine() {
     const weeks = state.weekly;
     if (weeks.length < 2) return "";
-    const ma = weeks.map((_, i) => {
-      const slice = weeks.slice(Math.max(0, i - TREND_WINDOW + 1), i + 1);
-      return slice.reduce((a, w) => a + w.workouts, 0) / slice.length;
+    // Rough trend, not exact: Gaussian-smooth the weekly counts, then keep ~40 points.
+    const counts = weeks.map((w) => w.workouts);
+    const sigma = TREND_WINDOW / 2, reach = Math.ceil(sigma * 3);
+    const smooth = counts.map((_, i) => {
+      let sum = 0, wsum = 0;
+      for (let k = -reach; k <= reach; k++) {
+        const j = i + k;
+        if (j < 0 || j >= counts.length) continue;
+        const wt = Math.exp(-(k * k) / (2 * sigma * sigma));
+        sum += counts[j] * wt; wsum += wt;
+      }
+      return sum / wsum;
     });
+    const step = Math.max(1, Math.round(smooth.length / 40));
+    const idx = smooth.map((_, i) => i).filter((i) => i % step === 0 || i === smooth.length - 1);
+    const ma = idx.map((i) => smooth[i]);
     const W = 300, H = 60, P = 4;
     const top = Math.max(...ma, 1) * 1.08;
     const x = (i) => (i / (ma.length - 1)) * W;
@@ -667,9 +679,9 @@
     const first = parseIso(weeks[0].start).toLocaleDateString(undefined, { month: "short", year: "numeric" });
     return `<div class="trend">
       <div class="bp-head"><span>Workouts / week</span>
-        <span class="bp-note">${TREND_WINDOW}-wk avg · now <strong>${now.toFixed(1)}</strong> · peak ${peak.toFixed(1)}</span></div>
+        <span class="bp-note">trend · now <strong>~${now.toFixed(1)}</strong> · peak ~${peak.toFixed(1)}</span></div>
       <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img"
-        aria-label="${TREND_WINDOW}-week moving average of workouts per week since ${first}: now ${now.toFixed(1)}, peak ${peak.toFixed(1)}">
+        aria-label="Smoothed trend of workouts per week since ${first}: now about ${now.toFixed(1)}, peak about ${peak.toFixed(1)}">
         <path class="trend-glow" d="${d}"/>
         <path class="trend-line" d="${d}"/>
         <path class="trend-now" d="M${x(ma.length - 1).toFixed(1)},${y(now).toFixed(1)}h0"/>

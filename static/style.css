@@ -599,9 +599,8 @@ code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; font-
   .mini-value { font-size: 14px; }
   #form-card { flex: 1 1 0; min-height: 0; overflow: hidden; }  /* never scrolls: see fitCard() */
   #form-card { display: flex; flex-direction: column; }
-  #form-card > [data-opt="4"] { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
-  #form-card .trend { flex: 1 1 auto; min-height: 0; }
-  #form-card .trend svg { flex: 1 1 auto; height: auto; min-height: 34px; max-height: 160px; }
+  #form-card .trend svg { height: 56px; }  /* slim, fixed height */
+  #form-card .goal-weeks { flex: 1 1 auto; height: auto; min-height: 48px; max-height: 120px; }  /* batteries take spare height */
   .hero-card, #month-stats, .activity-card { overflow: hidden; }
   .goal-weeks { height: clamp(48px, 6.5vh, 62px); }
 }
