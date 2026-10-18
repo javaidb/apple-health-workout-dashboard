@@ -18,7 +18,7 @@ training calendar, so you always know when you last trained and what keeps the s
 <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white">
 <img alt="SQLite" src="https://img.shields.io/badge/SQLite-003B57?logo=sqlite&logoColor=white">
 <img alt="Vanilla JS" src="https://img.shields.io/badge/frontend-vanilla%20JS-F7DF1E?logo=javascript&logoColor=black">
-<img alt="Tests" src="https://img.shields.io/badge/tests-90%20passing-34D399">
+<img alt="Tests" src="https://img.shields.io/badge/tests-98%20passing-34D399">
 <img alt="Local only" src="https://img.shields.io/badge/data-stays%20on%20your%20PC-FF6A3D">
 </p>
 
@@ -157,6 +157,12 @@ without an offset are rejected, never assumed UTC.
 Re-sent samples update in place. Daily values are computed on read: cumulative metrics (steps, distance,
 energy, flights) are summed, body measurements (weight, body fat) use the day's latest reading, everything
 else is averaged.
+
+**One session, one record.** A workout of the same category starting within 2 minutes of a stored one is
+treated as the same session, regardless of its id (Fitbod sometimes writes one workout to Apple Health twice).
+Sources are ranked, with Apple Health via HAE above one-off imports: a duplicate of an equal or higher-ranked
+record is skipped, and an Apple Health record arriving later replaces an imported copy. Ingest responses
+report both counts under `deduplication`.
 
 **Known HAE quirk.** `heartRateData` sometimes contains the post-workout recovery series
 ([issue #60](https://github.com/Lybron/health-auto-export/issues/60)). If every sample is at/after the
