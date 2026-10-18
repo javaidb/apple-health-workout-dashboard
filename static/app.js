@@ -13,7 +13,7 @@
   const APP_ICONS = { fitbod: "img/fitbod.png" };  // source app (lower-case) -> small icon
   const FORM_WEEKS = 12;
   const FORM_SESSIONS = 6;
-  const TREND_WINDOW = 8;    // weeks in the moving average
+  const TREND_WINDOW = 12;   // weeks in the moving average
   const STEP_GOAL = 10000;
   const ACTIVITY_METRICS = ["step_count", "walking_running_distance", "active_energy", "flights_climbed", "weight_body_mass"];
   const DOW = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -658,11 +658,11 @@
       const slice = weeks.slice(Math.max(0, i - TREND_WINDOW + 1), i + 1);
       return slice.reduce((a, w) => a + w.workouts, 0) / slice.length;
     });
-    const W = 300, H = 30, P = 2;
-    const top = Math.max(...ma, 1) * 1.1;
+    const W = 300, H = 60, P = 4;
+    const top = Math.max(...ma, 1) * 1.08;
     const x = (i) => (i / (ma.length - 1)) * W;
     const y = (v) => P + (1 - v / top) * (H - 2 * P);
-    const d = ma.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join("");
+    const d = smoothPath(ma.map((v, i) => [x(i), y(v)]));
     const peak = Math.max(...ma), now = ma[ma.length - 1];
     const first = parseIso(weeks[0].start).toLocaleDateString(undefined, { month: "short", year: "numeric" });
     return `<div class="trend">
@@ -670,11 +670,25 @@
         <span class="bp-note">${TREND_WINDOW}-wk avg · now <strong>${now.toFixed(1)}</strong> · peak ${peak.toFixed(1)}</span></div>
       <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img"
         aria-label="${TREND_WINDOW}-week moving average of workouts per week since ${first}: now ${now.toFixed(1)}, peak ${peak.toFixed(1)}">
+        <path class="trend-glow" d="${d}"/>
         <path class="trend-line" d="${d}"/>
-        <circle class="trend-now" cx="${x(ma.length - 1)}" cy="${y(now)}" r="2.6"/>
+        <path class="trend-now" d="M${x(ma.length - 1).toFixed(1)},${y(now).toFixed(1)}h0"/>
       </svg>
       <div class="trend-axis"><span>${first}</span><span>now</span></div>
     </div>`;
+  }
+
+  // Smooth curve through points (Catmull-Rom converted to cubic Bezier segments).
+  function smoothPath(pts) {
+    const t = 1 / 6;
+    let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[Math.max(0, i - 1)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Math.min(pts.length - 1, i + 2)];
+      const c1 = [p1[0] + (p2[0] - p0[0]) * t, p1[1] + (p2[1] - p0[1]) * t];
+      const c2 = [p2[0] - (p3[0] - p1[0]) * t, p2[1] - (p3[1] - p1[1]) * t];
+      d += `C${c1[0].toFixed(1)},${c1[1].toFixed(1)} ${c2[0].toFixed(1)},${c2[1].toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+    }
+    return d;
   }
 
   // Horizontal box-and-whisker plot: whiskers = min..max, box = Q1..Q3, line = median,
