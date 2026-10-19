@@ -724,6 +724,24 @@
       .map((k) => routeArrow(...mid(k), k < reached ? "done" : k < fellFrom ? "old" : "ahead")).join("");
     const dots = Array.from({ length: N - 1 }, (_, i) => i + 1).filter((k) => k !== LEDGE)
       .map((k) => { const [x, y] = pt(k); return `<circle class="cl-step${golds[k - 1] ? " gold" : k <= reached ? " done" : k <= fellFrom ? " old" : ""}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1.3"/>`; }).join("");
+    // a winding dirt road from the drawing's bottom edge back to the foot of the route: wide and
+    // swinging up close, narrowing into the scene (the rope from the This week card meets its near end)
+    const roadFoot = [pt(0)[0] + 10, 200];
+    const road = (() => {
+      const [ax, ay] = pt(0), [x0, y0] = roadFoot, steps = 24;
+      const c = Array.from({ length: steps + 1 }, (_, i) => {
+        const t = i / steps, d = 1 - (1 - t) ** 1.35, ease = Math.min(1, t * 5);
+        return [x0 + (ax - x0) * d + 8 * (1 - t) * Math.sin(t * Math.PI * 1.6) * ease * ease, y0 + (ay - y0) * d, 10 * (1 - t) + 1.6 * t];
+      });
+      const side = (k) => c.map(([x, y, w], i) => {
+        const [px, py] = c[Math.max(0, i - 1)], [nx, ny] = c[Math.min(steps, i + 1)], len = Math.hypot(nx - px, ny - py) || 1;
+        return [x + (k * (ny - py) / len) * w / 2, y - (k * (nx - px) / len) * w / 2];
+      });
+      const P = (pts) => pts.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`).join("");
+      const l = side(1), r = side(-1);
+      return `<g class="cl-road"><path class="surface" d="${P(l)}${P(r.slice().reverse()).replace("M", "L")}Z"/>
+        <path class="edge" d="${P(l)}${P(r)}"/><path class="centre" d="${P(c.slice(0, -3))}"/></g>`;
+    })();
     const ledgeRock = rockLedge(ledge[0], ledge[1] + 1.2, Math.max(reached, fellFrom) >= LEDGE)
       + `<text class="cl-label" x="${ledge[0] - 15}" y="${ledge[1] + 3}" text-anchor="end">${LEDGE === 4 ? "1 mo" : `${LEDGE} wks`}</text>`;
     const flag = `<g class="cl-summit${atSummit ? " won" : ""}" transform="translate(${summit[0]},${summit[1]})"><path d="M0 0V-10"/><path class="flag" d="M0 -10L6 -8L0 -6Z"/></g>`;
@@ -774,14 +792,14 @@
       : fell ? `Carl fell ${fell.down ? "down" : "on"} ${info.name} and is back at ${camp}` : `Carl at ${camp}, ready to climb ${info.name}`;
     const doneInYear = (index + (atSummit ? 1 : 0)) % MOUNTAINS.length;
     return climbCaption(info, sub, atSummit && doneInYear === 0 ? MOUNTAINS.length : doneInYear, medals, Math.floor(index / MOUNTAINS.length) * MOUNTAINS.length) + `<div class="climb-art">
-      <svg class="th-${info.key}${night ? " night" : ""}" data-anchor="${pt(0)[0].toFixed(1)},${pt(0)[1].toFixed(1)}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMax meet" role="img" aria-label="${label}">
+      <svg class="th-${info.key}${night ? " night" : ""}" data-anchor="${pt(0)[0].toFixed(1)},${pt(0)[1].toFixed(1)}" data-foot="${roadFoot.join(",")}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMax meet" role="img" aria-label="${label}">
         <defs><linearGradient id="g-sky-${id}" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" style="stop-color:var(--sky1)"/><stop offset="1" style="stop-color:var(--sky2)"/>
         </linearGradient></defs>
         <rect x="0" y="0" width="${W}" height="${H}" rx="8" fill="url(#g-sky-${id})"/>${sky.back}
         ${scene.sky}<path class="th-back" d="${scene.back}"/>
         <path class="th-mtn" d="${scene.path}"/>${scene.detail}${scene.deco}${cameo(info.key, state.weekly.length)}
-        ${ground}${sky.front}<g class="cl-anchor"><circle cx="${pt(0)[0].toFixed(1)}" cy="${pt(0)[1].toFixed(1)}" r="1.5"/><circle class="eye" cx="${pt(0)[0].toFixed(1)}" cy="${pt(0)[1].toFixed(1)}" r=".6"/></g>${route}${arrows}${dots}${ledgeRock}${flag}${extra}${figure}
+        ${ground}${sky.front}${road}<g class="cl-anchor"><circle cx="${pt(0)[0].toFixed(1)}" cy="${pt(0)[1].toFixed(1)}" r="1.5"/><circle class="eye" cx="${pt(0)[0].toFixed(1)}" cy="${pt(0)[1].toFixed(1)}" r=".6"/></g>${route}${arrows}${dots}${ledgeRock}${flag}${extra}${figure}
       </svg></div>`;
   }
 
@@ -871,10 +889,10 @@
 
   // Carl's way up, drawn on a layer above the cards: a railing from the camp to the This week card's
   // right edge, a grappling hook lodged on the top edge with its rope hanging down that edge, a
-  // railing along the top edge, then a rope across the gap to the anchor at the start of the
-  // route. Everything hugs the card's outline, so none of its
+  // railing along the top edge, then a second grappling hook's rope across the gap to the bottom
+  // of the mountain drawing, where a winding road leads to the start of the route. Everything hugs the card's outline, so none of its
   // content is covered. Things Carl left behind sit on the way: his trainers (he changed into
-  // climbing shoes), a flashlight still on, a water bottle and a carabiner on the rail. Only drawn
+  // climbing shoes), a flashlight still on and a water bottle. Only drawn
   // when the mountain is above the camp (the stacked layout).
   let ropeKey = "";
   function drawRopes(onlyIfMoved = false) {
@@ -923,25 +941,34 @@
       <g class="trail-sway" style="transform-origin:${f(hangTop[0])}px ${f(hangTop[1])}px">
         <path class="trail-hookrope" d="M${f(hangTop[0])},${f(hangTop[1])}C${f(R + 5)},${f(T + (floor - T) * .4)} ${f(R + 1)},${f(T + (floor - T) * .7)} ${f(hangEnd[0])},${f(hangEnd[1])}q1.6 3.4 -1.4 4.6"/>
         <path class="trail-hookrope-tex" d="M${f(hangTop[0])},${f(hangTop[1])}C${f(R + 5)},${f(T + (floor - T) * .4)} ${f(R + 1)},${f(T + (floor - T) * .7)} ${f(hangEnd[0])},${f(hangEnd[1])}"/></g>`;
-    const rope = `<path class="rope" d="M${f(topX)},${f(T - 2)}Q${f((topX + b[0]) / 2 + 10)},${f((T + b[1]) / 2)} ${f(b[0])},${f(b[1])}"/>
-      <path class="rope-tex" d="M${f(topX)},${f(T - 2)}Q${f((topX + b[0]) / 2 + 10)},${f((T + b[1]) / 2)} ${f(b[0])},${f(b[1])}"/>
-      <circle class="rope-knot" cx="${f(b[0])}" cy="${f(b[1])}" r="2.2"/>`;
+    // a rope from the top railing up across the gap to the bottom edge of the mountain drawing, where
+    // a winding road (drawn in the climb itself) carries on to the start of the route
+    const foot = map(to, ...(to.dataset.foot || to.dataset.anchor).split(",").map(Number));
+    // a smaller grappling hook lodged on the drawing's bottom edge, its brown rope down to the rail
+    const eye = [foot[0] - 1, foot[1] + 4.2];
+    const post = [topX + 11, T - 8.4];                   // tied off on the top railing's end post
+    const ropePath = `M${f(post[0])},${f(post[1])}Q${f((post[0] + eye[0]) / 2 + 6)},${f((post[1] + eye[1]) / 2 + 2)} ${f(eye[0])},${f(eye[1])}`;
+    const rope = `<path class="trail-hookrope" d="${ropePath}"/><path class="trail-hookrope-tex" d="${ropePath}"/>
+      <g class="trail-hook" transform="translate(${f(eye[0])},${f(eye[1])}) rotate(104) scale(.6)">
+        <path class="shank" d="M0,0L-11.5,.4"/>
+        <path class="prong" d="M-11.5,.4C-15.6,.6 -16.6,4.8 -12.4,6.4M-11.5,.4C-15.2,-.2 -16.4,-3.8 -13,-5.4M-11.5,.4C-14.2,-.4 -15.6,-.6 -16.2,-2.6"/>
+        <circle class="eye" r="1.7"/></g>
+      <circle class="trail-knot" cx="${f(post[0])}" cy="${f(post[1])}" r="1.6"/>`;
 
     // left-behind things
     const shoe = (x, y, flip) => `<path class="trail-shoe" transform="translate(${f(x)},${f(y)}) scale(${flip ? -1 : 1},1)" d="M-4.5 0V-2.6Q-4.5 -4 -3 -4H-1L.4 -2.6L3.6 -1.8Q4.6 -1.4 4.6 0Z"/>
       <path class="trail-lace" transform="translate(${f(x)},${f(y)}) scale(${flip ? -1 : 1},1)" d="M-2.4 -3.4L-.6 -2.2M-1.6 -3.8L.2 -2.6"/>`;
     const shoes = shoe(R - 10, floor, false) + shoe(R - 19, floor + .4, true);
-    const fx = (hx - 18 + topX) / 2;
+    const fx = (hx - 18 + topX + 30) / 2;
     const flashlight = `<g class="trail-torch" transform="translate(${f(fx)},${f(T)})"><path class="beam" d="M-5 -2.6L-26 -9V3.4Z"/>
         <rect class="body" x="-5" y="-4.2" width="10" height="3.6" rx="1"/><rect class="head" x="-6.4" y="-4.8" width="2.6" height="4.8" rx=".6"/><circle class="lens" cx="-6.4" cy="-2.4" r="1.1"/></g>`;
-    const bottle = `<g class="trail-bottle" transform="translate(${f(topX + 12)},${f(T)})"><rect class="body" x="-2" y="-9" width="4" height="9" rx="1.2"/><rect class="cap" x="-1.3" y="-10.8" width="2.6" height="2" rx=".5"/><rect class="label" x="-2" y="-6" width="4" height="2.4"/></g>`;
-    const biner = `<path class="trail-biner" d="M${f(topX - 3)},${f(T - 9)}a3 4 0 1 0 6 0a3 4 0 1 0 -6 0"/>`;
+    const bottle = `<g class="trail-bottle" transform="translate(${f(topX + 24)},${f(T)})"><rect class="body" x="-2" y="-9" width="4" height="9" rx="1.2"/><rect class="cap" x="-1.3" y="-10.8" width="2.6" height="2" rx=".5"/><rect class="label" x="-2" y="-6" width="4" height="2.4"/></g>`;
 
     const de = document.documentElement, W = fixed ? innerWidth : de.scrollWidth, H = fixed ? innerHeight : de.scrollHeight;
     layer.setAttribute("width", W); layer.setAttribute("height", H);
     layer.setAttribute("viewBox", `0 0 ${W} ${H}`);
-    layer.innerHTML = railing(a[0] + 2, R - 3, floor, 8) + shoes + railing(hx - 18, topX - 6, T, 9) + hang + hook
-      + flashlight + bottle + rope + biner;
+    layer.innerHTML = railing(a[0] + 2, R - 3, floor, 8) + shoes + railing(hx - 18, topX + 11, T, 9) + hang + hook
+      + rope + flashlight + bottle;
   }
 
   function renderWeekCard(w) {
