@@ -1027,6 +1027,7 @@ svg.night .cl-campfire .flame { filter: drop-shadow(0 0 2.4px #f97316); }
 .trail-rail .bar { stroke: #dc2626; stroke-width: 1; stroke-linecap: round; }
 .trail-hook .shank, .trail-hook .prong { fill: none; stroke: #6b7280; stroke-width: 1.5; stroke-linecap: round; }
 .trail-hook .eye { fill: none; stroke: #6b7280; stroke-width: 1.1; }
+.trail-bolt { fill: #9ca3af; stroke: #374151; stroke-width: .8; }
 .trail-knot { fill: #8b5a2b; stroke: #5b3a1c; stroke-width: .6; }
 .trail-scuff { stroke: color-mix(in srgb, var(--text) 30%, transparent); stroke-width: .6; stroke-linecap: round; }
 .trail-hookrope { fill: none; stroke: #8b5a2b; stroke-width: 1.8; stroke-linecap: round; }

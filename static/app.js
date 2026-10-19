@@ -889,8 +889,8 @@
 
   // Carl's way up, drawn on a layer above the cards: a railing from the camp to the This week card's
   // right edge, a grappling hook lodged on the top edge with its rope hanging down that edge, a
-  // railing along the top edge, then a second grappling hook's rope across the gap to the bottom
-  // of the mountain drawing, where a winding road leads to the start of the route. Everything hugs the card's outline, so none of its
+  // railing along the top edge, then a rope hung across the gap to the mountain drawing's
+  // bottom-left corner. Inside the drawing a winding road leads to the start of the route. Everything hugs the card's outline, so none of its
   // content is covered. Things Carl left behind sit on the way: his trainers (he changed into
   // climbing shoes), a flashlight still on and a water bottle. Only drawn
   // when the mountain is above the camp (the stacked layout).
@@ -941,19 +941,13 @@
       <g class="trail-sway" style="transform-origin:${f(hangTop[0])}px ${f(hangTop[1])}px">
         <path class="trail-hookrope" d="M${f(hangTop[0])},${f(hangTop[1])}C${f(R + 5)},${f(T + (floor - T) * .4)} ${f(R + 1)},${f(T + (floor - T) * .7)} ${f(hangEnd[0])},${f(hangEnd[1])}q1.6 3.4 -1.4 4.6"/>
         <path class="trail-hookrope-tex" d="M${f(hangTop[0])},${f(hangTop[1])}C${f(R + 5)},${f(T + (floor - T) * .4)} ${f(R + 1)},${f(T + (floor - T) * .7)} ${f(hangEnd[0])},${f(hangEnd[1])}"/></g>`;
-    // a rope from the top railing up across the gap to the bottom edge of the mountain drawing, where
-    // a winding road (drawn in the climb itself) carries on to the start of the route
-    const foot = map(to, ...(to.dataset.foot || to.dataset.anchor).split(",").map(Number));
-    // a second grappling hook lodged on the drawing's bottom edge, its brown rope down to the rail
-    const eye = [foot[0] - 2, foot[1] + 8.6];
-    const post = [topX + 11, T - 8.4];                   // tied off on the top railing's end post
-    const ropePath = `M${f(post[0])},${f(post[1])}Q${f((post[0] + eye[0]) / 2 + 6)},${f((post[1] + eye[1]) / 2 + 2)} ${f(eye[0])},${f(eye[1])}`;
+    // a rope hung free between the top of the railing's end post and the bottom-left corner of the
+    // mountain drawing, sagging under its own weight (but never below the card's top edge)
+    const corner = map(to, 2.4, 197.6), post = [topX + 11, T - 9];
+    const sagY = Math.min((post[1] + corner[1]) / 2 + 22, (4 * (T - 3) - post[1] - corner[1]) / 2);
+    const ropePath = `M${f(post[0])},${f(post[1])}Q${f((post[0] + corner[0]) / 2)},${f(sagY)} ${f(corner[0])},${f(corner[1])}`;
     const rope = `<path class="trail-hookrope" d="${ropePath}"/><path class="trail-hookrope-tex" d="${ropePath}"/>
-      <g class="trail-hook" transform="translate(${f(eye[0])},${f(eye[1])}) rotate(104)">
-        <path class="shank" d="M0,0L-11.5,.4"/>
-        <path class="prong" d="M-11.5,.4C-15.6,.6 -16.6,4.8 -12.4,6.4M-11.5,.4C-15.2,-.2 -16.4,-3.8 -13,-5.4M-11.5,.4C-14.2,-.4 -15.6,-.6 -16.2,-2.6"/>
-        <circle class="eye" r="1.7"/></g>
-      <circle class="trail-knot" cx="${f(post[0])}" cy="${f(post[1])}" r="1.6"/>`;
+      <circle class="trail-knot" cx="${f(post[0])}" cy="${f(post[1])}" r="1.6"/><circle class="trail-bolt" cx="${f(corner[0])}" cy="${f(corner[1])}" r="1.8"/>`;
 
     // left-behind things
     const shoe = (x, y, flip) => `<path class="trail-shoe" transform="translate(${f(x)},${f(y)}) scale(${flip ? -1 : 1},1)" d="M-4.5 0V-2.6Q-4.5 -4 -3 -4H-1L.4 -2.6L3.6 -1.8Q4.6 -1.4 4.6 0Z"/>
