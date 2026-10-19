@@ -984,6 +984,57 @@
       + rope + flashlight + bottle;
   }
 
+  // String lights powered by the Recent form batteries: a wire runs along the tops of the 12
+  // batteries (touching each terminal), out of the card, across the gap and along the calendar's
+  // top edge, where bulbs perch on the edge. The fuller the batteries, the brighter the bulbs.
+  let lightsKey = "";
+  function drawLights(onlyIfMoved = false) {
+    const layer = $("lights");
+    const fixed = FIT_QUERY.matches, sx = fixed ? 0 : scrollX, sy = fixed ? 0 : scrollY;
+    layer.style.position = fixed ? "fixed" : "absolute";
+    const batts = [...document.querySelectorAll("#form-card .goal-weeks .batt")].map((b) => b.getBoundingClientRect());
+    const cal = document.querySelector(".calendar-card")?.getBoundingClientRect(), form = $("form-card").getBoundingClientRect();
+    const cells = document.querySelectorAll("#form-card .goal-weeks .batt i");
+    const charge = cells.length ? document.querySelectorAll("#form-card .goal-weeks .batt i.on").length / cells.length : 0;
+    const key = [cal, form, batts[0], batts[batts.length - 1]].map((r) => (r ? [r.left, r.top, r.right].map(Math.round).join(",") : "-")).join("|") + `|${charge}`;
+    if (onlyIfMoved && key === lightsKey) return;
+    lightsKey = key;
+    layer.setAttribute("width", 0); layer.setAttribute("height", 0); layer.innerHTML = "";
+    // only in the column layout, with the calendar to the left of Recent form at about the same height
+    if (!batts.length || !cal || form.left < cal.right || Math.abs(batts[0].top - cal.top) > 160) return;
+
+    const f = (n) => n.toFixed(1);
+    const wy = batts[0].top - 3 + sy;                    // wire height over the terminals
+    const gx = (cal.right + form.left) / 2 + sx;         // middle of the gap between the cards
+    const T = cal.top + sy, R = cal.right + sx, Lx = cal.left + sx;
+    const terminals = batts.map((b) => [(b.left + b.right) / 2 + sx, b.top - .5 + sy]);
+    const last = terminals[terminals.length - 1];
+    // along the battery tops from the newest to the oldest, a little drop to each terminal
+    let d = `M${f(last[0] + 6)},${f(wy)}`;
+    for (const [x, y] of terminals.slice().reverse()) d += `H${f(x + 2)}Q${f(x)},${f(wy)} ${f(x)},${f(y)}Q${f(x)},${f(wy)} ${f(x - 2)},${f(wy)}`;
+    // out of the card, down the gap, over the calendar's corner and along its top edge
+    const rad = 16;
+    d += `H${f(gx + 3)}Q${f(gx)},${f(wy)} ${f(gx)},${f(wy + 3)}V${f(T - 4)}Q${f(gx)},${f(T - .6)} ${f(R - 2)},${f(T - .6)}H${f(R - rad)}`;
+    const startX = R - rad - 10, endX = Lx + rad + 8, n = Math.max(6, Math.floor((startX - endX) / 26));
+    const bulbs = [];
+    let edge = "";
+    for (let i = 0; i <= n; i++) {
+      const x = startX - ((startX - endX) * i) / n, y = T - .6 + Math.sin(i * 1.7) * .5;
+      edge += `L${f(x)},${f(y)}`;
+      bulbs.push([x, y, i % 2 ? 14 : -14, ["#fde68a", "#fca5a5", "#86efac", "#93c5fd", "#f9a8d4"][i % 5]]);
+    }
+    d += edge;
+    const glow = charge, bulb = ([x, y, tilt, color], i) => `<g transform="translate(${f(x)},${f(y)}) rotate(${tilt}) scale(1.3)">
+        <circle class="bulb-halo" cy="-5" r="${f(3 + 5 * glow)}" fill="${color}" style="opacity:${f(.55 * glow)};animation-delay:${(i * .37 % 3).toFixed(2)}s"/>
+        <rect class="bulb-cap" x="-1.1" y="-2.4" width="2.2" height="2.4" rx=".4"/>
+        <path class="bulb-glass" d="M0,-2.2C-2.4,-3.4 -2.2,-7.6 0,-8.6C2.2,-7.6 2.4,-3.4 0,-2.2Z" fill="${color}" style="opacity:${f(.22 + .78 * glow)}"/></g>`;
+    const de = document.documentElement, W = fixed ? innerWidth : de.scrollWidth, H = fixed ? innerHeight : de.scrollHeight;
+    layer.setAttribute("width", W); layer.setAttribute("height", H);
+    layer.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    layer.innerHTML = `<g class="lights${glow > .66 ? " bright" : ""}"><title>String lights: ${Math.round(charge * 100)}% charged from the last 12 weeks</title>
+      <path class="light-wire" d="${d}"/>${bulbs.map(bulb).join("")}</g>`;
+  }
+
   function renderWeekCard(w) {
     const r = 34, c = 2 * Math.PI * r;
     const pct = Math.min(1, w.this_week_workouts / w.goal);
@@ -1351,10 +1402,10 @@
   let fitTimer = 0, ropeTimer = 0;
   function scheduleFit() {
     clearTimeout(fitTimer);
-    fitTimer = setTimeout(() => { document.querySelectorAll(".card").forEach(fitCard); drawRopes(); }, 40);
+    fitTimer = setTimeout(() => { document.querySelectorAll(".card").forEach(fitCard); drawRopes(); drawLights(); }, 40);
     // late layout shifts (fonts, the calendar redrawing) can move the rope's ends, so check again
     clearTimeout(ropeTimer);
-    ropeTimer = setTimeout(drawRopes, 600);
+    ropeTimer = setTimeout(() => { drawRopes(); drawLights(); }, 600);
   }
 
   // Slim line: trailing moving average of workouts per week since the first workout.
@@ -1623,7 +1674,7 @@
   new ResizeObserver(scheduleFit).observe(document.querySelector(".page"));
   document.fonts?.ready.then(scheduleFit);
   // catch any late layout shift that moves the rope's ends without resizing the page
-  setInterval(() => { if (!document.hidden) drawRopes(true); }, 1500);
+  setInterval(() => { if (!document.hidden) { drawRopes(true); drawLights(true); } }, 1500);
   window.addEventListener("load", scheduleFit);
 
   let resizeTimer;

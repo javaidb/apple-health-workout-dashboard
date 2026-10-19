@@ -1087,3 +1087,12 @@ svg.night .cl-campfire .flame { filter: drop-shadow(0 0 2.4px #f97316); }
 .trail-weeks { fill: var(--faint); font-size: 5px; }
 svg.night :is(.th-crown-sun, .th-crown-sun-glow, .th-crown-rays) { display: none; }
 @media (prefers-reduced-motion: reduce) { .th-bolt, .th-rain, .th-glint, .th-cloudsea ellipse { animation: none; } .th-bolt { opacity: .6; } }
+
+/* ---- string lights powered by the Recent form batteries ---- */
+.light-wire { fill: none; stroke: #4b5563; stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 .5px .5px rgba(255, 255, 255, .08)); }
+.bulb-cap { fill: #4b5563; }
+.bulb-glass { stroke: rgba(255, 255, 255, .25); stroke-width: .4; }
+.bulb-halo { filter: blur(2.4px); }
+.lights.bright .bulb-halo { animation: bulb-twinkle 3s ease-in-out infinite; }
+@keyframes bulb-twinkle { 50% { opacity: .25; } }
+@media (prefers-reduced-motion: reduce) { .lights .bulb-halo { animation: none; } }
