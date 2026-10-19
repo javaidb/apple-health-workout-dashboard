@@ -1013,7 +1013,11 @@ svg.night .cl-campfire .flame { filter: drop-shadow(0 0 2.4px #f97316); }
 /* ---- camp in the This week card, and the rope up to the mountain ---- */
 .week-top > div:nth-child(2) { min-width: 0; }
 .week-camp { flex: none; margin-left: auto; align-self: stretch; display: flex; align-items: flex-end; }
-.week-camp svg { height: 100%; max-height: 92px; aspect-ratio: 54 / 32; display: block; overflow: visible; }
+.week-camp svg { height: 100%; max-height: 104px; aspect-ratio: 54 / 38; display: block; overflow: visible; }
+.cave-rock-stop { stop-color: color-mix(in srgb, var(--text) 13%, var(--surface)); }
+.cave-inside { fill: rgba(0, 0, 0, .38); }
+.cave-crack { fill: none; stroke: rgba(0, 0, 0, .35); stroke-width: .5; stroke-linecap: round; stroke-linejoin: round; }
+.cave-drip { fill: color-mix(in srgb, var(--text) 13%, var(--surface)); }
 .camp-name { fill: var(--faint); font-size: 3.4px; font-weight: 650; }
 .cl-stake path:first-child { stroke: color-mix(in srgb, var(--text) 60%, transparent); stroke-width: .7; stroke-linecap: round; }
 .cl-stake .coil { fill: none; stroke: #facc15; stroke-width: .6; }

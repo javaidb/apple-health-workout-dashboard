@@ -885,9 +885,20 @@
     } else if (waiting) {
       carl = climber("stand", 45.5, G, false, 1.35);
     }
-    const label = waiting ? `${name}: Carl is waiting to start the climb` : `${name}: Carl's camp at the foot of the mountain`;
-    return `<svg class="camp-scene${night ? " night" : ""}" viewBox="-2 160 54 32" data-anchor="39,183.4" role="img" aria-label="${esc(label)}">
-        <path class="cl-ground" d="M-2 ${G}H52"/>
+    const label = waiting ? `${name}: Carl is waiting to start the climb` : `${name}: Carl's camp in a cave at the foot of the mountain`;
+    // the camp sits in a cave: rock arching over it (fading into the card on the left), a dark
+    // interior lit by the campfire, stalactites, and a mouth opening right towards the card's edge
+    const id = ++climbId;
+    const cave = `<defs>
+        <linearGradient id="cave-rock-${id}" x1="-2" x2="50" y1="0" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" class="cave-rock-stop" stop-opacity="0"/><stop offset=".24" class="cave-rock-stop"/></linearGradient>
+        <radialGradient id="cave-glow-${id}" cx="22" cy="184" r="24" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#f59e0b" stop-opacity="${night ? .3 : .18}"/><stop offset="1" stop-color="#f59e0b" stop-opacity="0"/></radialGradient></defs>
+      <path class="cave-inside" d="M1 ${G}V171Q2 163.4 11 163H33Q42 162.6 45.4 168.8L47 ${G}Z"/>
+      <path fill="url(#cave-glow-${id})" d="M1 ${G}V171Q2 163.4 11 163H33Q42 162.6 45.4 168.8L47 ${G}Z"/>
+      <path fill="url(#cave-rock-${id})" d="M-2 155H42L46.4 156.6L49.4 161.2L47.4 164.8L49 169.4H45.4Q42 162.6 33 163H11Q2 163.4 1 171V${G}H-2Z"/>
+      <path class="cave-crack" d="M14 157.4l2 2.2l-.6 1.8M30 156.8l-1.4 2.4l1.2 1.4M41 158.6l1.6 2"/>
+      <path class="cave-drip" d="M15.6 163l.9 3.4l.9-3.4ZM24 163l.7 2.4l.7-2.4ZM29.4 163l1 3.8l1-3.8ZM37.6 163.4l.6 2.2l.6-2.2Z"/>`;
+    return `<svg class="camp-scene${night ? " night" : ""}" viewBox="-2 154 54 38" data-anchor="39,183.4" role="img" aria-label="${esc(label)}">
+        ${cave}<path class="cl-ground" d="M-2 ${G}H52"/>
         ${tent(11, G, "", 1.4)}${campUpgrades(goalWeeks, G)}
         <g class="cl-stake"><path d="M39 ${G + .4}V182.6"/><path class="coil" d="M36.2 ${G}a2.8 1.3 0 1 0 5.6 0a2.8 1.3 0 1 0 -5.6 0M36.8 ${G - .8}a2.2 1 0 1 0 4.4 0"/></g>
         ${carl}
