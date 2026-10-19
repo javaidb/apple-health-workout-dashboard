@@ -220,6 +220,16 @@ The climb is replayed in the browser from `/analytics/weekly`, so it needs no st
 
 The streak number itself still follows the streak rules above and resets on any missed week.
 
+The weekly goal (3 workouts by default) adds rewards on top of the climb, without changing it:
+
+- **Gold steps and medals.** A week that hits the goal turns its step of the route gold. Each summit earns
+  a medal for how many of its 8 weeks hit the goal: gold for 7 or more, silver for 4 to 6, bronze below
+  that. A medal is lost only if the summit is lost.
+- **Base camp grows.** Lifetime goal weeks unlock camp upgrades that are never taken away: a campfire (1),
+  a flag (3), a lantern (6), string lights (10), a woodpile (15) and a second tent (21).
+
+Goal weeks use the weekly goal currently set on the dashboard, so changing it re-scores past weeks.
+
 `from`/`to` are local dates, `from` inclusive and `to` exclusive. Distance and pace are only reported
 for distance-based categories (run, walk, hike, cycle, swim, row).
 

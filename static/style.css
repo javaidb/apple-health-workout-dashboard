@@ -717,7 +717,8 @@ code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; font-
 .souv { width: 12px; height: 12px; display: block; flex: none; }
 .souv.todo { filter: grayscale(1) brightness(.8); opacity: .22; }
 .souv.now { filter: grayscale(1); opacity: .5; animation: souv-now 2.4s ease-in-out infinite; }
-.gold .souv.done { filter: drop-shadow(0 0 1.6px #fbbf24); }
+.souv.m-gold { filter: drop-shadow(0 0 1.8px #fbbf24); }
+.souv.m-silver { filter: drop-shadow(0 0 1.4px #cbd5e1); }
 @keyframes souv-now { 50% { opacity: .8; } }
 .cl-tent-body { fill: #f5a524; stroke: #fff3d6; stroke-width: .5; stroke-linejoin: round; }
 .cl-tent-door { fill: #6b3a0c; }
@@ -972,3 +973,36 @@ svg.th-frost .th-shade { fill: rgba(30, 80, 130, .25); }
 @media (prefers-reduced-motion: reduce) {
   .cf-flick, .cf-spark, .cf-ember, .cf-smoke, .cm-glide, .cm-flap, .cm-shoot, .cl-zzz text, .souv.now { animation: none; }
 }
+
+/* ---- goal weeks: gold steps, medals, base camp upgrades ---- */
+.cl-route.gold { stroke: #fbbf24; stroke-width: 2.2; filter: drop-shadow(0 0 2.4px #fbbf24); }
+.cl-step.gold { fill: #fde68a; stroke: #f59e0b; stroke-width: .5; }
+.cl-medal circle { stroke-width: .5; }
+.cl-medal .ribbon { fill: none; stroke: #ef4444; stroke-width: 1; stroke-linecap: round; }
+.cl-medal.gold circle { fill: #fbbf24; stroke: #b45309; } .cl-medal.gold .shine { fill: #fef3c7; stroke: none; }
+.cl-medal.silver circle { fill: #cbd5e1; stroke: #64748b; } .cl-medal.silver .shine { fill: #f8fafc; stroke: none; }
+.cl-medal.bronze circle { fill: #d08a4e; stroke: #7c4a22; } .cl-medal.bronze .shine { fill: #f3c79c; stroke: none; }
+.cl-tent2 .cl-tent-body { fill: #38bdf8; }
+.cl-tent2 .cl-tent-door { fill: #0c4a6e; }
+.cl-camp-flag .pole { stroke: color-mix(in srgb, var(--text) 70%, transparent); stroke-width: .6; }
+.cl-camp-flag .pennant { fill: var(--accent); transform-box: fill-box; transform-origin: 0 50%; animation: cl-wave 1.8s ease-in-out infinite alternate; }
+@keyframes cl-wave { to { transform: scaleX(.8) skewY(4deg); } }
+.cl-lantern .arm { fill: none; stroke: color-mix(in srgb, var(--text) 60%, transparent); stroke-width: .4; }
+.cl-lantern .body { fill: #ffd27a; }
+.cl-lantern .halo { fill: #ffd27a; opacity: .14; filter: blur(1px); }
+.climb svg.night .cl-lantern .halo { opacity: .35; }
+.cl-lights .wire { fill: none; stroke: color-mix(in srgb, var(--text) 45%, transparent); stroke-width: .3; }
+.cl-lights .bulb { animation: th-twinkle 2s ease-in-out infinite; }
+.cl-lights .bulb.a { fill: #f472b6; } .cl-lights .bulb.b { fill: #fde047; animation-delay: .6s; } .cl-lights .bulb.c { fill: #4ade80; animation-delay: 1.2s; }
+.cl-woodpile circle { fill: #9a6a3c; stroke: #5b3a1c; stroke-width: .4; }
+.cl-campfire .logs { stroke: #7c4a2a; stroke-width: 1; stroke-linecap: round; }
+.cl-campfire .flame path { fill: #f97316; }
+.cl-campfire .flame .core { fill: #fde68a; }
+.cl-campfire .flame { transform-box: fill-box; transform-origin: 50% 100%; animation: cf-flick .8s ease-in-out infinite alternate; }
+.climb svg.night .cl-campfire .flame { filter: drop-shadow(0 0 2.4px #f97316); }
+.shelf-item.m-gold { border-color: color-mix(in srgb, #fbbf24 55%, var(--border)); }
+.shelf-item.m-silver { border-color: color-mix(in srgb, #cbd5e1 45%, var(--border)); }
+.shelf-item.m-bronze { border-color: color-mix(in srgb, #d08a4e 45%, var(--border)); }
+.trail-camp { margin-top: 6px; color: var(--muted); font-size: 13px; }
+@media (prefers-reduced-motion: reduce) { .cl-camp-flag .pennant, .cl-lights .bulb, .cl-campfire .flame { animation: none; } }
+.climb svg.night :is(.th-sun, .th-sun-glow, .th-haze) { display: none; }
