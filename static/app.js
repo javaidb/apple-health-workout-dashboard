@@ -986,7 +986,8 @@
 
   // String lights powered by the Recent form batteries: a wire runs along the tops of the 12
   // batteries (touching each terminal), out of the card, across the gap and along the calendar's
-  // top edge, where bulbs perch on the edge. The fuller the batteries, the brighter the bulbs.
+  // top edge, where it hangs in uneven arches between pins with the bulbs dangling. The fuller the
+  // batteries, the brighter the bulbs.
   let lightsKey = "";
   function drawLights(onlyIfMoved = false) {
     const layer = $("lights");
@@ -1015,15 +1016,27 @@
     // out of the card, down the gap, over the calendar's corner and along its top edge
     const rad = 16;
     d += `H${f(gx + 3)}Q${f(gx)},${f(wy)} ${f(gx)},${f(wy + 3)}V${f(T - 4)}Q${f(gx)},${f(T - .6)} ${f(R - 2)},${f(T - .6)}H${f(R - rad)}`;
-    const startX = R - rad - 10, endX = Lx + rad + 8, n = Math.max(6, Math.floor((startX - endX) / 26));
-    const bulbs = [];
-    let edge = "";
-    for (let i = 0; i <= n; i++) {
-      const x = startX - ((startX - endX) * i) / n, y = T - .6 + Math.sin(i * 1.7) * .5;
-      edge += `L${f(x)},${f(y)}`;
-      bulbs.push([x, y, i % 2 ? 14 : -14, ["#fde68a", "#fca5a5", "#86efac", "#93c5fd", "#f9a8d4"][i % 5]]);
-    }
-    d += edge;
+    // pins along the top edge at uneven spacing; the string droops between them in arches of
+    // different widths and depths, with the bulbs hanging down from it
+    const startX = R - rad - 6, endX = Lx + rad + 6, rnd = (k) => { const v = Math.sin(k * 91.7 + 3.1) * 4373.13; return v - Math.floor(v); };
+    const pins = [startX];
+    for (let k = 0; pins[pins.length - 1] - endX > 40; k++) pins.push(Math.max(endX, pins[pins.length - 1] - (70 + rnd(k) * 80)));
+    if (pins[pins.length - 1] - endX > 0) pins.push(endX);
+    const pinY = T - 3.5, bulbs = [], colors = ["#fde68a", "#fca5a5", "#86efac", "#93c5fd", "#f9a8d4"];
+    let edge = "", nb = 0;
+    pins.slice(1).forEach((x1, k) => {
+      const x0 = pins[k], span = x0 - x1, sag = 3 + rnd(k + 20) * 4.5;           // arch depth 3-7.5px
+      const cy = pinY + 2 * sag, at = (t) => [x0 + (x1 - x0) * t, (1 - t) ** 2 * pinY + 2 * (1 - t) * t * cy + t * t * pinY];
+      edge += `Q${f((x0 + x1) / 2)},${f(cy)} ${f(x1)},${f(pinY)}`;
+      const count = Math.max(1, Math.round(span / 24));
+      for (let b = 1; b <= count; b++) {
+        const [x, y] = at(b / (count + 1));
+        bulbs.push([x, y, 180 + (rnd(nb + 40) - .5) * 24, colors[nb % colors.length]]);
+        nb += 1;
+      }
+    });
+    d += `L${f(startX)},${f(pinY)}` + edge;
+    const tacks = pins.map((x) => `<circle class="light-tack" cx="${f(x)}" cy="${f(pinY)}" r="1.5"/>`).join("");
     const glow = charge, bulb = ([x, y, tilt, color], i) => `<g transform="translate(${f(x)},${f(y)}) rotate(${tilt}) scale(1.3)">
         <circle class="bulb-halo" cy="-5" r="${f(3 + 5 * glow)}" fill="${color}" style="opacity:${f(.55 * glow)};animation-delay:${(i * .37 % 3).toFixed(2)}s"/>
         <rect class="bulb-cap" x="-1.1" y="-2.4" width="2.2" height="2.4" rx=".4"/>
@@ -1032,7 +1045,7 @@
     layer.setAttribute("width", W); layer.setAttribute("height", H);
     layer.setAttribute("viewBox", `0 0 ${W} ${H}`);
     layer.innerHTML = `<g class="lights${glow > .66 ? " bright" : ""}"><title>String lights: ${Math.round(charge * 100)}% charged from the last 12 weeks</title>
-      <path class="light-wire" d="${d}"/>${bulbs.map(bulb).join("")}</g>`;
+      <path class="light-wire" d="${d}"/>${bulbs.map(bulb).join("")}${tacks}</g>`;
   }
 
   function renderWeekCard(w) {

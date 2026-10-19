@@ -1091,6 +1091,7 @@ svg.night :is(.th-crown-sun, .th-crown-sun-glow, .th-crown-rays) { display: none
 /* ---- string lights powered by the Recent form batteries ---- */
 .light-wire { fill: none; stroke: #4b5563; stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 .5px .5px rgba(255, 255, 255, .08)); }
 .bulb-cap { fill: #4b5563; }
+.light-tack { fill: #6b7280; stroke: #1f2937; stroke-width: .6; }
 .bulb-glass { stroke: rgba(255, 255, 255, .25); stroke-width: .4; }
 .bulb-halo { filter: blur(2.4px); }
 .lights.bright .bulb-halo { animation: bulb-twinkle 3s ease-in-out infinite; }
