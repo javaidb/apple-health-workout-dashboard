@@ -791,6 +791,8 @@ code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; font-
 :is(.climb, .trail) svg.th-ember  { --sky1: color-mix(in srgb, #ff5a1f 4%, transparent);  --sky2: color-mix(in srgb, #ff5a1f 12%, transparent); --mtn: color-mix(in srgb, #2a1e1e 70%, var(--surface)); --mtn-edge: color-mix(in srgb, #ff6a3d 35%, transparent); }
 :is(.climb, .trail) svg.th-frost  { --sky1: color-mix(in srgb, #d8f1ff 26%, transparent); --sky2: color-mix(in srgb, #8fd8ff 14%, transparent); --mtn: color-mix(in srgb, #7cc6ee 40%, var(--surface)); --mtn-edge: color-mix(in srgb, #e0f6ff 60%, transparent); }
 :is(.climb, .trail) svg.th-canopy { --sky1: color-mix(in srgb, #5fd38d 5%, transparent);  --sky2: color-mix(in srgb, #2fbf71 12%, transparent); --mtn: color-mix(in srgb, #1f7a46 32%, var(--surface)); --mtn-edge: color-mix(in srgb, #43c67f 40%, transparent); }
+:is(.climb, .trail) svg.th-storm  { --sky1: color-mix(in srgb, #1e293b 75%, transparent); --sky2: color-mix(in srgb, #475569 18%, transparent); --mtn: color-mix(in srgb, #475569 40%, var(--surface)); --mtn-edge: color-mix(in srgb, #94a3b8 45%, transparent); }
+:is(.climb, .trail) svg.th-crown  { --sky1: color-mix(in srgb, #fb923c 22%, transparent); --sky2: color-mix(in srgb, #fde68a 14%, transparent); --mtn: color-mix(in srgb, #b7791f 42%, var(--surface)); --mtn-edge: color-mix(in srgb, #fde68a 55%, transparent); }
 :is(.climb, .trail) svg.th-stars  { --sky1: color-mix(in srgb, #1e0b4b 70%, transparent); --sky2: color-mix(in srgb, #6d28d9 16%, transparent); --mtn: color-mix(in srgb, #6b2fb3 34%, var(--surface)); --mtn-edge: color-mix(in srgb, #d8b4fe 45%, transparent); }
 .th-mtn { fill: var(--mtn); stroke: var(--mtn-edge); stroke-width: .7; stroke-linejoin: round; }
 .th-back { fill: color-mix(in srgb, var(--mtn) 45%, transparent); opacity: .7; }
@@ -960,7 +962,7 @@ svg.night .cl-tent-door { fill: #ffd27a; filter: drop-shadow(0 0 2.5px #ffb84d);
 .trail-stats span { color: var(--faint); font-size: 11px; font-weight: 650; text-transform: uppercase; letter-spacing: .05em; }
 .trail-stats b { font-size: 15px; }
 .trail-shelf-title { margin-top: 16px; }
-.trail-shelf { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-top: 8px; }
+.trail-shelf { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 8px; }
 .shelf-item { display: flex; align-items: center; gap: 10px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 10px; }
 .shelf-item .souv { width: 28px; height: 28px; }
 .shelf-item div { display: flex; flex-direction: column; min-width: 0; }
@@ -1042,3 +1044,26 @@ svg.night .cl-campfire .flame { filter: drop-shadow(0 0 2.4px #f97316); }
 .trail-bottle .label { fill: #f8fafc; opacity: .8; }
 .trail-biner { fill: none; stroke: #94a3b8; stroke-width: 1.3; }
 @media (prefers-reduced-motion: reduce) { .trail-torch .beam, .trail-sway { animation: none; } }
+
+/* ---- Thunderhead and Gilded Crown ---- */
+.th-stormcloud path { fill: rgba(30, 41, 59, .85); }
+.th-stormcloud .c2 { fill: rgba(51, 65, 85, .6); }
+.th-bolt { fill: #fef08a; opacity: 0; filter: drop-shadow(0 0 3px #fde047); animation: th-bolt 7s linear infinite; }
+@keyframes th-bolt { 0%, 88%, 100% { opacity: 0; } 89% { opacity: 1; } 90% { opacity: .2; } 91% { opacity: .95; } 94% { opacity: 0; } }
+.th-rain path { stroke: rgba(191, 219, 254, .35); stroke-width: .5; stroke-linecap: round; }
+.th-rain { animation: th-rain .8s linear infinite; }
+@keyframes th-rain { from { transform: translate(0, -6px); } to { transform: translate(-2px, 6px); } }
+.th-wet { fill: none; stroke: rgba(148, 163, 184, .22); stroke-width: .8; stroke-linecap: round; }
+.th-puddle { fill: rgba(148, 163, 184, .3); }
+.cm-goat { fill: none; stroke: #e5e7eb; stroke-width: .9; stroke-linecap: round; stroke-linejoin: round; }
+.cm-horn { fill: none; stroke: #a8a29e; stroke-width: .7; stroke-linecap: round; }
+.th-crown-sun { fill: #fde68a; opacity: .9; }
+.th-crown-sun-glow { fill: #fb923c; opacity: .18; filter: blur(4px); }
+.th-crown-rays { stroke: rgba(253, 230, 138, .25); stroke-width: 1.4; stroke-linecap: round; }
+.th-gold { fill: none; stroke: #fcd34d; stroke-width: .7; stroke-linecap: round; stroke-linejoin: round; opacity: .7; filter: drop-shadow(0 0 1px #fbbf24); }
+.th-glint { stroke: #fffbeb; stroke-width: .5; stroke-linecap: round; animation: th-twinkle 2.4s ease-in-out infinite; }
+.th-cloudsea ellipse { fill: rgba(255, 247, 237, .16); filter: blur(1.4px); animation: th-mist 16s ease-in-out infinite alternate; }
+.cm-dragon { fill: #b91c1c; stroke: #fca5a5; stroke-width: .3; stroke-linejoin: round; }
+.trail-weeks { fill: var(--faint); font-size: 5px; }
+svg.night :is(.th-crown-sun, .th-crown-sun-glow, .th-crown-rays) { display: none; }
+@media (prefers-reduced-motion: reduce) { .th-bolt, .th-rain, .th-glint, .th-cloudsea ellipse { animation: none; } .th-bolt { opacity: .6; } }

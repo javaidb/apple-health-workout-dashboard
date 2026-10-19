@@ -44,8 +44,9 @@ weekly streak becomes Carl, a little climber working his way up a new mountain e
 - **Built to keep you consistent.** Time since your last workout with a rest-day-aware nudge, a weekly goal
   ring (3 workouts by default, adjustable) with each day of the week ticked off, a weekly streak (weeks in a
   row with any workout) with your personal best, and a GitHub-style heatmap of the last 12 months.
-- **Carl's climb.** The weekly streak card shows Carl climbing six themed mountains a year, one every
-  8 weeks: Pine Ridge, Red Rock Mesa, Ember Peak, Frost Spire, Canopy Crag and Summit of Stars. He pitches a
+- **Carl's climb.** The weekly streak card shows Carl climbing a range of eight themed mountains that get
+  longer through the year: Pine Ridge, Red Rock Mesa and Ember Peak (a month each), Frost Spire and Canopy
+  Crag (six weeks each), then Summit of Stars, Thunderhead and Gilded Crown (two months each). He pitches a
   new camp on each summit, and after a full year the cycle repeats as a higher tier. Each summit
   brings home a souvenir, wildlife drops by on some weeks, and the sky follows your clock (Carl sleeps in
   his tent or climbs by headlamp at night). Click the climb for the trail map: the whole range, your best
@@ -211,8 +212,9 @@ depend on the server's timezone.
 
 The climb is replayed in the browser from `/analytics/weekly`, so it needs no stored state:
 
-- Each week with at least one workout is one step up. Week 4 is a rock ledge and week 8 the summit, where Carl
-  pitches a camp. His next workout starts the next mountain.
+- Each week with at least one workout is one step up. Halfway up is a rock ledge and the top is the summit
+  (4, 6 or 8 weeks depending on the mountain; 48 weeks for the whole range), where Carl pitches a camp. His
+  next workout starts the next mountain.
 - A missed week drops him to the base of the mountain he is on. Standing on a summit counts as being on it.
 - Missing a week while he is already at a base drops him down the previous mountain to its base, so each
   further missed week costs one more mountain. At the first base camp there is nothing left to lose.
@@ -224,8 +226,8 @@ The streak number itself still follows the streak rules above and resets on any 
 The weekly goal (3 workouts by default) adds rewards on top of the climb, without changing it:
 
 - **Gold steps and medals.** A week that hits the goal turns its step of the route gold. Each summit earns
-  a medal for how many of its 8 weeks hit the goal: gold for 7 or more, silver for 4 to 6, bronze below
-  that. A medal is lost only if the summit is lost.
+  a medal for how many of its weeks hit the goal: gold for all but one or more, silver for at least half,
+  bronze below that. A medal is lost only if the summit is lost.
 - **Base camp grows.** Lifetime goal weeks unlock camp upgrades that are never taken away: a campfire (1),
   a flag (3), a lantern (6), string lights (10), a woodpile (15) and a second tent (21).
 
