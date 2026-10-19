@@ -834,18 +834,26 @@
       </svg>`;
   }
 
-  // The rope: Carl runs it from the camp's stake to the card's right edge, clips it to bolts up the
-  // card's outline (right edge, the rounded corner, the top edge), then across the gap to the anchor
-  // at the start of the route. It hugs the border so it never covers the card's content. Drawn on a
-  // layer above the cards, and only when the mountain is above the camp (the stacked layout).
+  // Carl's way up, drawn on a layer above the cards: a railing from the camp to the This week card's
+  // right edge, a ladder up that edge, a railing along the top edge, then a rope across the gap to
+  // the anchor at the start of the route. Everything hugs the card's outline, so none of its
+  // content is covered. Things Carl left behind sit on the way: his trainers (he changed into
+  // climbing shoes), a flashlight still on, a water bottle and a carabiner on the rail. Only drawn
+  // when the mountain is above the camp (the stacked layout).
   let ropeKey = "";
   function drawRopes(onlyIfMoved = false) {
     const layer = $("ropes");
+    // One-screen layout: nothing scrolls, so the layer is fixed and uses viewport coordinates (body
+    // is its own clipping box there, and an absolute layer would drift if it were ever scrolled).
+    // Scrolling layout: an absolute layer in document coordinates.
+    const fixed = FIT_QUERY.matches, sx = fixed ? 0 : scrollX, sy = fixed ? 0 : scrollY;
+    layer.style.position = fixed ? "fixed" : "absolute";
     const from = document.querySelector(".week-camp:not([hidden]) svg"), to = document.querySelector(".climb-art svg");
-    const at = (svg) => {
-      const [x, y] = svg.dataset.anchor.split(",").map(Number), m = svg.getScreenCTM();
-      return m ? [x * m.a + y * m.c + m.e + scrollX, x * m.b + y * m.d + m.f + scrollY] : null;
+    const map = (svg, x, y) => {
+      const m = svg.getScreenCTM();
+      return m ? [x * m.a + y * m.c + m.e + sx, x * m.b + y * m.d + m.f + sy] : null;
     };
+    const at = (svg) => map(svg, ...svg.dataset.anchor.split(",").map(Number));
     const a = from && at(from), b = to && at(to);
     const box = $("week-card").getBoundingClientRect();
     const key = [a, b, [box.left, box.top, box.right]].map((p) => (p ? p.map(Math.round).join(",") : "-")).join("|");
@@ -854,23 +862,41 @@
     // collapse first so the layer's own old size never props the page open
     layer.setAttribute("width", 0); layer.setAttribute("height", 0); layer.innerHTML = "";
     if (!a || !b || b[1] > a[1] - 24) return;
-    const L = box.left + scrollX, R = box.right + scrollX, T = box.top + scrollY;
-    const rad = parseFloat(getComputedStyle($("week-card")).borderTopRightRadius) || 16, k = rad * (1 - Math.SQRT1_2);
-    const topX = Math.min(R - rad - 18, Math.max(L + 24, b[0]));
-    // anchors along the outline, and how each span bows (x, y): outward from the card, or a little
-    // sag where gravity would pull it
-    const pts = [a, [R, a[1]], [R, T + (a[1] - T) * .5], [R - k, T + k], [topX, T], b];
-    const bows = [[0, 3], [5, 0], [3, -2], [0, 2], [10, 0]];
-    const d = pts.slice(1).map(([x, y], i) => {
-      const [px, py] = pts[i], [bx, by] = bows[i];
-      return `${i ? "" : `M${px.toFixed(1)},${py.toFixed(1)}`}Q${((px + x) / 2 + bx).toFixed(1)},${((py + y) / 2 + by).toFixed(1)} ${x.toFixed(1)},${y.toFixed(1)}`;
-    }).join("");
-    const de = document.documentElement;
-    layer.setAttribute("width", de.scrollWidth); layer.setAttribute("height", de.scrollHeight);
-    layer.setAttribute("viewBox", `0 0 ${de.scrollWidth} ${de.scrollHeight}`);
-    layer.innerHTML = `<path class="rope" d="${d}"/><path class="rope-tex" d="${d}"/>`
-      + pts.slice(1, -1).map(([x, y]) => `<g class="rope-bolt" transform="translate(${x.toFixed(1)},${y.toFixed(1)})"><circle r="3.4"/><circle class="ring" r="1.5"/></g>`).join("")
-      + `<circle class="rope-knot" cx="${b[0].toFixed(1)}" cy="${b[1].toFixed(1)}" r="2.2"/>`;
+
+    const L = box.left + sx, R = box.right + sx, T = box.top + sy;
+    const floor = map(from, 39, 186)[1];                 // the camp's ground line
+    const lx = R - 6;                                    // ladder runs up the right edge
+    const topX = Math.min(R - 34, Math.max(L + 24, b[0]));
+    const f = (n) => n.toFixed(1);
+    const posts = (x0, x1, y, h, step) => {
+      const n = Math.max(1, Math.round(Math.abs(x1 - x0) / step));
+      return Array.from({ length: n + 1 }, (_, i) => x0 + ((x1 - x0) * i) / n).map((x) => `M${f(x)},${f(y)}V${f(y - h)}`).join("");
+    };
+    const railing = (x0, x1, y, h) => `<g class="trail-rail"><path class="posts" d="${posts(x0, x1, y, h, 13)}"/>
+        <path class="bar" d="M${f(x0)},${f(y - h)}H${f(x1)}M${f(x0)},${f(y - h / 2)}H${f(x1)}"/></g>`;
+    const ladderTop = T - 8;
+    const rungs = Array.from({ length: Math.floor((floor - ladderTop) / 6.5) }, (_, i) => floor - 3 - i * 6.5)
+      .map((y) => `M${f(lx - 4)},${f(y)}H${f(lx + 4)}`).join("");
+    const ladder = `<g class="trail-ladder"><path class="rails" d="M${f(lx - 4)},${f(floor)}V${f(ladderTop)}M${f(lx + 4)},${f(floor)}V${f(ladderTop)}"/><path class="rungs" d="${rungs}"/></g>`;
+    const rope = `<path class="rope" d="M${f(topX)},${f(T - 2)}Q${f((topX + b[0]) / 2 + 10)},${f((T + b[1]) / 2)} ${f(b[0])},${f(b[1])}"/>
+      <path class="rope-tex" d="M${f(topX)},${f(T - 2)}Q${f((topX + b[0]) / 2 + 10)},${f((T + b[1]) / 2)} ${f(b[0])},${f(b[1])}"/>
+      <circle class="rope-knot" cx="${f(b[0])}" cy="${f(b[1])}" r="2.2"/>`;
+
+    // left-behind things
+    const shoe = (x, y, flip) => `<path class="trail-shoe" transform="translate(${f(x)},${f(y)}) scale(${flip ? -1 : 1},1)" d="M-4.5 0V-2.6Q-4.5 -4 -3 -4H-1L.4 -2.6L3.6 -1.8Q4.6 -1.4 4.6 0Z"/>
+      <path class="trail-lace" transform="translate(${f(x)},${f(y)}) scale(${flip ? -1 : 1},1)" d="M-2.4 -3.4L-.6 -2.2M-1.6 -3.8L.2 -2.6"/>`;
+    const shoes = shoe(lx - 14, floor, false) + shoe(lx - 23, floor + .4, true);
+    const fx = (R - 16 + topX) / 2;
+    const flashlight = `<g class="trail-torch" transform="translate(${f(fx)},${f(T)})"><path class="beam" d="M-5 -2.6L-26 -9V3.4Z"/>
+        <rect class="body" x="-5" y="-4.2" width="10" height="3.6" rx="1"/><rect class="head" x="-6.4" y="-4.8" width="2.6" height="4.8" rx=".6"/><circle class="lens" cx="-6.4" cy="-2.4" r="1.1"/></g>`;
+    const bottle = `<g class="trail-bottle" transform="translate(${f(topX + 12)},${f(T)})"><rect class="body" x="-2" y="-9" width="4" height="9" rx="1.2"/><rect class="cap" x="-1.3" y="-10.8" width="2.6" height="2" rx=".5"/><rect class="label" x="-2" y="-6" width="4" height="2.4"/></g>`;
+    const biner = `<path class="trail-biner" d="M${f(topX - 3)},${f(T - 9)}a3 4 0 1 0 6 0a3 4 0 1 0 -6 0"/>`;
+
+    const de = document.documentElement, W = fixed ? innerWidth : de.scrollWidth, H = fixed ? innerHeight : de.scrollHeight;
+    layer.setAttribute("width", W); layer.setAttribute("height", H);
+    layer.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    layer.innerHTML = railing(a[0] + 2, lx - 4, floor, 8) + shoes + ladder + railing(lx - 4, topX - 6, T, 9)
+      + flashlight + bottle + rope + biner;
   }
 
   function renderWeekCard(w) {
