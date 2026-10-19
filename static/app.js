@@ -726,12 +726,15 @@
       .map((k) => { const [x, y] = pt(k); return `<circle class="cl-step${golds[k - 1] ? " gold" : k <= reached ? " done" : k <= fellFrom ? " old" : ""}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1.3"/>`; }).join("");
     // a winding dirt road from the drawing's bottom edge back to the foot of the route: wide and
     // swinging up close, narrowing into the scene (the rope from the This week card meets its near end)
-    const roadFoot = [pt(0)[0] + 10, 200];
+    const roadFoot = [pt(0)[0] + 4, 199.2];
     const road = (() => {
-      const [ax, ay] = pt(0), [x0, y0] = roadFoot, steps = 24;
+      const [ax, ay] = pt(0), [x0, y0] = roadFoot, steps = 48;
       const c = Array.from({ length: steps + 1 }, (_, i) => {
-        const t = i / steps, d = 1 - (1 - t) ** 1.35, ease = Math.min(1, t * 5);
-        return [x0 + (ax - x0) * d + 8 * (1 - t) * Math.sin(t * Math.PI * 1.6) * ease * ease, y0 + (ay - y0) * d, 10 * (1 - t) + 1.6 * t];
+        const t = i / steps, d = 1 - (1 - t) ** 1.25, ease = Math.sin(Math.min(1, t * 3.5) * Math.PI / 2) ** 2;
+        // switchbacks: several wide swings that shrink as the road recedes (eased in so the first
+        // bend isn't tighter than the road is wide)
+        const swing = 12 * (1 - t) ** .9 * Math.sin(t * Math.PI * 3.2) * ease;
+        return [x0 + (ax - x0) * d + swing, y0 + (ay - y0) * d, 5.2 * (1 - t) + 1.3 * t];
       });
       const side = (k) => c.map(([x, y, w], i) => {
         const [px, py] = c[Math.max(0, i - 1)], [nx, ny] = c[Math.min(steps, i + 1)], len = Math.hypot(nx - px, ny - py) || 1;
@@ -739,7 +742,9 @@
       });
       const P = (pts) => pts.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`).join("");
       const l = side(1), r = side(-1);
-      return `<g class="cl-road"><path class="surface" d="${P(l)}${P(r.slice().reverse()).replace("M", "L")}Z"/>
+      // a footpath along the bottom of the drawing, from the rope's corner bolt to the road
+      const path = `<path class="cl-footpath" d="M2.4,197.6C${(x0 * .4).toFixed(1)},198.6 ${(x0 * .7).toFixed(1)},197 ${(x0 - 2).toFixed(1)},${y0.toFixed(1)}"/>`;
+      return `${path}<g class="cl-road"><path class="surface" d="${P(l)}${P(r.slice().reverse()).replace("M", "L")}Z"/>
         <path class="edge" d="${P(l)}${P(r)}"/><path class="centre" d="${P(c.slice(0, -3))}"/></g>`;
     })();
     const ledgeRock = rockLedge(ledge[0], ledge[1] + 1.2, Math.max(reached, fellFrom) >= LEDGE)

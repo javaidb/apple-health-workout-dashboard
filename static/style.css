@@ -1020,6 +1020,7 @@ svg.night .cl-campfire .flame { filter: drop-shadow(0 0 2.4px #f97316); }
 .cl-anchor .eye { fill: var(--surface); stroke: none; }
 .rope-layer { position: absolute; left: 0; top: 0; pointer-events: none; z-index: 15; overflow: visible; }
 .trail-rail { opacity: .55; }
+.cl-footpath { fill: none; stroke: #6b5a48; stroke-width: 1.3; stroke-linecap: round; stroke-dasharray: 1.4 1; opacity: .85; }
 .cl-road .surface { fill: #57504a; opacity: .92; }
 .cl-road .edge { fill: none; stroke: rgba(214, 211, 209, .3); stroke-width: .35; stroke-linejoin: round; }
 .cl-road .centre { fill: none; stroke: rgba(253, 230, 138, .5); stroke-width: .4; stroke-dasharray: 1.6 1.8; stroke-linecap: round; }
