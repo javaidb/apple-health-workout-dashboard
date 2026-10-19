@@ -699,7 +699,7 @@ code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; font-
   .hero .week-top .sub { font-size: clamp(12px, 4.0cqh, 12.6px); }
   .hero .week-dots { margin-top: 0; gap: clamp(4px, 1.9cqh, 7.2px); }
   .hero .wd { font-size: clamp(10px, 3.3cqh, 10.8px); gap: clamp(3px, 1.1cqh, 4.5px); }
-  .hero .wd i { width: clamp(18px, 11.1cqh, 36.0px); height: clamp(18px, 11.1cqh, 36.0px); border-radius: clamp(6px, 2.9cqh, 9.0px); }
+  .hero .wd i { width: clamp(18px, 13.6cqh, 44px); height: clamp(18px, 13.6cqh, 44px); border-radius: clamp(6px, 3.4cqh, 11px); }
   .hero .wd i svg, .hero .wd.missed i svg { width: 56%; height: 56%; }
 }
 
