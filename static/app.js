@@ -759,7 +759,9 @@
       const [x, y] = pt(step), facingLeft = step > LEDGE;
       const [px, py] = pt(step - 1);
       const hang = pending && !atSummit;
-      const hip = hang ? [x, y + 4.5] : step === LEDGE ? [x, y - .5] : [x + (facingLeft ? -.3 : .3), y - 5];
+      // hanging: hands on the ledge's lip, or on a small rock hold between ledges
+      const HANG = 15.2;
+      const hip = hang ? [x, y + HANG - 2.6] : step === LEDGE ? [x, y - .5] : [x + (facingLeft ? -.3 : .3), y - 5];
       const rope = atSummit ? "" : `<path class="cl-rope" d="M${hip[0].toFixed(1)},${hip[1].toFixed(1)} Q${((hip[0] + px) / 2).toFixed(1)},${(Math.max(hip[1], py) + 5).toFixed(1)} ${px.toFixed(1)},${py.toFixed(1)}"/>`;
       if (atSummit) {
         figure = tent(scene.tentAt[0], scene.tentAt[1], "", 1.2) + climber("cheer", summit[0], summit[1], false, cs)
@@ -770,9 +772,10 @@
         figure += medalBadge(medal, summit[0] - 10, summit[1] - 12, 1.3);
         sub = pending ? `${cap(medal)} medal · work out to start ${next.name}` : `Summit! ${cap(medal)} medal · Next: ${next.name}`;
       } else if (hang) {
-        figure = rope + climber("hang", x, y + 9.5, facingLeft, cs);
-        extra = `<text class="cl-alert" x="${(x + (facingLeft ? 10 : -10)).toFixed(1)}" y="${(y + 3).toFixed(1)}" text-anchor="middle">!</text>`;
-        sub = `Hang on, ${plural(N - step + 1, "wk")} to the summit`;
+        const hold = step === LEDGE ? "" : `<path class="cl-hold" d="M${(x - 3.4).toFixed(1)},${(y + 1.8).toFixed(1)}L${(x - 2.2).toFixed(1)},${(y - .2).toFixed(1)}L${(x + 1.4).toFixed(1)},${(y - .7).toFixed(1)}L${(x + 3.4).toFixed(1)},${(y + 1).toFixed(1)}L${(x + 1.2).toFixed(1)},${(y + 2.6).toFixed(1)}Z"/>`;
+        figure = rope + hold + climber("hang", x, y + HANG, facingLeft, cs);
+        extra = `<text class="cl-alert" x="${(x + (facingLeft ? 10 : -10)).toFixed(1)}" y="${(y + 9).toFixed(1)}" text-anchor="middle">!</text>`;
+        sub = `Hang on, ${plural(N - step, "wk")} to the summit`;  // this week counts as one of them
       } else {
         figure = rope + climber(step === LEDGE ? "rest" : "climb", x, y, facingLeft, cs);
         sub = `${plural(N - step, "wk")} to the summit`;
@@ -788,7 +791,7 @@
     }
     // a headlamp glow while he climbs at night
     if (night && step > 0 && !atSummit) {
-      const [x, y] = pt(step), hy = pending ? y + 3 : y - 9;
+      const [x, y] = pt(step), hy = pending ? y + 4.2 : y - 9;
       figure = `<circle class="cl-lamp" cx="${x.toFixed(1)}" cy="${hy.toFixed(1)}" r="9"/>` + figure;
     }
 

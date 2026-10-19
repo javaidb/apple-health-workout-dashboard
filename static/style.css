@@ -748,6 +748,7 @@ code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; font-
 .cl-arrow.done { stroke: color-mix(in srgb, var(--accent) 70%, #fff); }
 .cl-arrow.ahead { stroke: var(--faint); opacity: .8; }
 .cl-arrow.old { stroke: var(--faint); opacity: .6; }
+.cl-hold { fill: color-mix(in srgb, var(--text) 16%, var(--surface)); stroke: color-mix(in srgb, var(--text) 28%, transparent); stroke-width: .4; stroke-linejoin: round; }
 .cl-rock path:first-child { fill: color-mix(in srgb, var(--text) 13%, var(--surface)); stroke: color-mix(in srgb, var(--text) 22%, transparent); stroke-width: .5; stroke-linejoin: round; }
 .cl-rock .cl-rock-top { fill: none; stroke: color-mix(in srgb, var(--text) 35%, transparent); stroke-width: .9; stroke-linecap: round; stroke-linejoin: round; }
 .cl-rock .cl-rock-crack { fill: none; stroke: color-mix(in srgb, var(--text) 18%, transparent); stroke-width: .5; stroke-linecap: round; }
