@@ -835,8 +835,9 @@
   }
 
   // Carl's way up, drawn on a layer above the cards: a railing from the camp to the This week card's
-  // right edge, a ladder up that edge, a railing along the top edge, then a rope across the gap to
-  // the anchor at the start of the route. Everything hugs the card's outline, so none of its
+  // right edge, a grappling hook lodged on the top edge with its rope hanging down that edge, a
+  // railing along the top edge, then a rope across the gap to the anchor at the start of the
+  // route. Everything hugs the card's outline, so none of its
   // content is covered. Things Carl left behind sit on the way: his trainers (he changed into
   // climbing shoes), a flashlight still on, a water bottle and a carabiner on the rail. Only drawn
   // when the mountain is above the camp (the stacked layout).
@@ -865,7 +866,7 @@
 
     const L = box.left + sx, R = box.right + sx, T = box.top + sy;
     const floor = map(from, 39, 186)[1];                 // the camp's ground line
-    const lx = R - 6;                                    // ladder runs up the right edge
+    const lx = R - 6;                                    // where the way up meets the right edge
     const topX = Math.min(R - 34, Math.max(L + 24, b[0]));
     const f = (n) => n.toFixed(1);
     const posts = (x0, x1, y, h, step) => {
@@ -874,10 +875,19 @@
     };
     const railing = (x0, x1, y, h) => `<g class="trail-rail"><path class="posts" d="${posts(x0, x1, y, h, 13)}"/>
         <path class="bar" d="M${f(x0)},${f(y - h)}H${f(x1)}M${f(x0)},${f(y - h / 2)}H${f(x1)}"/></g>`;
-    const ladderTop = T - 8;
-    const rungs = Array.from({ length: Math.floor((floor - ladderTop) / 6.5) }, (_, i) => floor - 3 - i * 6.5)
-      .map((y) => `M${f(lx - 4)},${f(y)}H${f(lx + 4)}`).join("");
-    const ladder = `<g class="trail-ladder"><path class="rails" d="M${f(lx - 4)},${f(floor)}V${f(ladderTop)}M${f(lx + 4)},${f(floor)}V${f(ladderTop)}"/><path class="rungs" d="${rungs}"/></g>`;
+    // grappling hook lodged on the top edge by the corner; its brown rope runs over the corner and
+    // hangs free down the outside of the right edge
+    const hx = R - 2.4, hy = T - 2.6;                    // the hook's eye, pulled up by the rope
+    const hook = `<g class="trail-hook" transform="translate(${f(hx)},${f(hy)}) rotate(-17)">
+        <path class="shank" d="M0,0L-11.5,.4"/>
+        <path class="prong" d="M-11.5,.4C-15.6,.6 -16.6,4.8 -12.4,6.4M-11.5,.4C-15.2,-.2 -16.4,-3.8 -13,-5.4M-11.5,.4C-14.2,-.4 -15.6,-.6 -16.2,-2.6"/>
+        <circle class="eye" r="1.7"/></g>
+      <path class="trail-scuff" d="M${f(hx - 16)},${f(T + .6)}l-2.4 1.4M${f(hx - 13.4)},${f(T + .8)}l-1.8 1.6"/>`;
+    const hangTop = [R + 2.6, T + 6], hangEnd = [R + 3.4, floor - 5];
+    const hang = `<path class="trail-hookrope" d="M${f(hx)},${f(hy)}Q${f(R + 2.6)},${f(T - 1)} ${f(hangTop[0])},${f(hangTop[1])}"/>
+      <g class="trail-sway" style="transform-origin:${f(hangTop[0])}px ${f(hangTop[1])}px">
+        <path class="trail-hookrope" d="M${f(hangTop[0])},${f(hangTop[1])}C${f(R + 5)},${f(T + (floor - T) * .4)} ${f(R + 1)},${f(T + (floor - T) * .7)} ${f(hangEnd[0])},${f(hangEnd[1])}q1.6 3.4 -1.4 4.6"/>
+        <path class="trail-hookrope-tex" d="M${f(hangTop[0])},${f(hangTop[1])}C${f(R + 5)},${f(T + (floor - T) * .4)} ${f(R + 1)},${f(T + (floor - T) * .7)} ${f(hangEnd[0])},${f(hangEnd[1])}"/></g>`;
     const rope = `<path class="rope" d="M${f(topX)},${f(T - 2)}Q${f((topX + b[0]) / 2 + 10)},${f((T + b[1]) / 2)} ${f(b[0])},${f(b[1])}"/>
       <path class="rope-tex" d="M${f(topX)},${f(T - 2)}Q${f((topX + b[0]) / 2 + 10)},${f((T + b[1]) / 2)} ${f(b[0])},${f(b[1])}"/>
       <circle class="rope-knot" cx="${f(b[0])}" cy="${f(b[1])}" r="2.2"/>`;
@@ -885,8 +895,8 @@
     // left-behind things
     const shoe = (x, y, flip) => `<path class="trail-shoe" transform="translate(${f(x)},${f(y)}) scale(${flip ? -1 : 1},1)" d="M-4.5 0V-2.6Q-4.5 -4 -3 -4H-1L.4 -2.6L3.6 -1.8Q4.6 -1.4 4.6 0Z"/>
       <path class="trail-lace" transform="translate(${f(x)},${f(y)}) scale(${flip ? -1 : 1},1)" d="M-2.4 -3.4L-.6 -2.2M-1.6 -3.8L.2 -2.6"/>`;
-    const shoes = shoe(lx - 14, floor, false) + shoe(lx - 23, floor + .4, true);
-    const fx = (R - 16 + topX) / 2;
+    const shoes = shoe(R - 10, floor, false) + shoe(R - 19, floor + .4, true);
+    const fx = (hx - 18 + topX) / 2;
     const flashlight = `<g class="trail-torch" transform="translate(${f(fx)},${f(T)})"><path class="beam" d="M-5 -2.6L-26 -9V3.4Z"/>
         <rect class="body" x="-5" y="-4.2" width="10" height="3.6" rx="1"/><rect class="head" x="-6.4" y="-4.8" width="2.6" height="4.8" rx=".6"/><circle class="lens" cx="-6.4" cy="-2.4" r="1.1"/></g>`;
     const bottle = `<g class="trail-bottle" transform="translate(${f(topX + 12)},${f(T)})"><rect class="body" x="-2" y="-9" width="4" height="9" rx="1.2"/><rect class="cap" x="-1.3" y="-10.8" width="2.6" height="2" rx=".5"/><rect class="label" x="-2" y="-6" width="4" height="2.4"/></g>`;
@@ -895,7 +905,7 @@
     const de = document.documentElement, W = fixed ? innerWidth : de.scrollWidth, H = fixed ? innerHeight : de.scrollHeight;
     layer.setAttribute("width", W); layer.setAttribute("height", H);
     layer.setAttribute("viewBox", `0 0 ${W} ${H}`);
-    layer.innerHTML = railing(a[0] + 2, lx - 4, floor, 8) + shoes + ladder + railing(lx - 4, topX - 6, T, 9)
+    layer.innerHTML = railing(a[0] + 2, R - 3, floor, 8) + shoes + railing(hx - 18, topX - 6, T, 9) + hang + hook
       + flashlight + bottle + rope + biner;
   }
 
