@@ -1037,6 +1037,36 @@
     });
     d += `L${f(startX)},${f(pinY)}` + edge;
     const tacks = pins.map((x) => `<circle class="light-tack" cx="${f(x)}" cy="${f(pinY)}" r="1.5"/>`).join("");
+
+    // The electrician: a window-washer cradle hung from a trolley on a rail along the calendar's top
+    // edge, sliding back and forth through the empty middle of the header (between the month nav
+    // and the Today button) while he works on the lights.
+    let elec = "";
+    const nav = $("next")?.getBoundingClientRect(), today = $("today")?.getBoundingClientRect();
+    if (nav && today) {
+      const CW = 44, from = nav.right + 28 + sx, to = today.left - 28 - CW + sx;
+      if (to > from) {
+        const travel = to - from;
+        elec = `<path class="elec-rail" d="M${f(from - 8)},${f(T + .4)}H${f(to + CW + 8)}"/>
+          <g class="elec-ride" style="--travel:${f(travel)}px" transform="translate(${f(from)},${f(T)})">
+            <circle class="elec-wheel" cx="6" cy="-1.6" r="1.9"/><circle class="elec-wheel" cx="38" cy="-1.6" r="1.9"/>
+            <path class="elec-trolley" d="M3 -1.6H41"/>
+            <path class="elec-cable" d="M6 0L3 17M38 0L41 17"/>
+            <g class="elec-man" transform="translate(27,25) scale(1.2)">
+              <path class="e-body" d="M0 -3.6V-11.4"/>
+              <rect class="e-vest" x="-1.9" y="-11" width="3.8" height="5.6" rx="1"/>
+              <path class="e-limb" d="M-.2 -10.4L-3 -7.4L-4.6 -6"/>
+              <g class="elec-arm"><path class="e-limb" d="M.2 -10.4L2.6 -14.4L3.6 -18"/><path class="e-bulb" d="M3.6 -18.2c-1.4 -.8 -1.2 -3.4 0 -3.8c1.2 .4 1.4 3 0 3.8Z"/>
+                <path class="e-spark" d="M5.4 -21l1.6 -1.2M5.8 -19l2 .2M4.6 -22.6l.6 -1.8"/></g>
+              <circle class="e-face" cx=".3" cy="-13.6" r="1.9"/>
+              <path class="e-hat" d="M-2.3 -14.1A2.4 2.4 0 0 1 2.9 -14.1Z"/><path class="e-brim" d="M-2.6 -14H3.6"/></g>
+            <rect class="elec-panel" x="0" y="19.5" width="${CW}" height="6.5" rx="1"/>
+            <path class="elec-railing" d="M0 17H${CW}M0 17V26M11 17V19.5M22 17V19.5M33 17V19.5M${CW} 17V26"/>
+            <rect class="elec-toolbox" x="5" y="15.4" width="7" height="4.1" rx=".6"/><path class="elec-toolbox-lid" d="M7 15.4v-1.2h3v1.2"/>
+            <title>The electrician keeps the lights running. Charge them with workouts.</title>
+          </g>`;
+      }
+    }
     const glow = charge, bulb = ([x, y, tilt, color], i) => `<g transform="translate(${f(x)},${f(y)}) rotate(${tilt}) scale(1.3)">
         <circle class="bulb-halo" cy="-5" r="${f(3 + 5 * glow)}" fill="${color}" style="opacity:${f(.55 * glow)};animation-delay:${(i * .37 % 3).toFixed(2)}s"/>
         <rect class="bulb-cap" x="-1.1" y="-2.4" width="2.2" height="2.4" rx=".4"/>
@@ -1045,7 +1075,7 @@
     layer.setAttribute("width", W); layer.setAttribute("height", H);
     layer.setAttribute("viewBox", `0 0 ${W} ${H}`);
     layer.innerHTML = `<g class="lights${glow > .66 ? " bright" : ""}"><title>String lights: ${Math.round(charge * 100)}% charged from the last 12 weeks</title>
-      <path class="light-wire" d="${d}"/>${bulbs.map(bulb).join("")}${tacks}</g>`;
+      <path class="light-wire" d="${d}"/>${bulbs.map(bulb).join("")}${tacks}</g>${elec}`;
   }
 
   function renderWeekCard(w) {
