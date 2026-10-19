@@ -801,6 +801,32 @@ code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; font-
 .th-trunk { stroke: color-mix(in srgb, #8a5a3a 70%, transparent); stroke-width: .8; }
 .th-strata { fill: none; stroke: color-mix(in srgb, #f0a070 30%, transparent); stroke-width: .8; stroke-dasharray: 5 3; }
 .th-cactus { fill: none; stroke: color-mix(in srgb, #4caf6a 75%, transparent); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+.th-band.a { fill: rgba(255, 170, 110, .13); } .th-band.b { fill: rgba(120, 40, 20, .2); } .th-band.c { fill: rgba(255, 210, 150, .1); }
+.th-groove { fill: none; stroke: rgba(60, 20, 10, .35); stroke-width: .7; stroke-linecap: round; }
+.th-hollow { fill: rgba(40, 12, 6, .45); }
+.th-arch { fill: color-mix(in srgb, #c2582e 70%, var(--surface)); stroke: color-mix(in srgb, #f0a070 40%, transparent); stroke-width: .4; }
+.th-saguaro { fill: #3f9a5a; stroke: #2d6e40; stroke-width: .35; }
+.th-scrub { fill: #8a7a3a; opacity: .85; }
+.th-tumble { animation: th-tumble 6s ease-in-out infinite alternate; }
+.th-tumble circle { fill: none; stroke: #b08850; stroke-width: .5; stroke-dasharray: 1.4 .8; }
+.th-tumble path { fill: none; stroke: #b08850; stroke-width: .4; }
+@keyframes th-tumble { from { transform: translateX(-4px) rotate(-120deg); } to { transform: translateX(6px) rotate(200deg); } }
+.th-sun { fill: #fdba74; opacity: .9; }
+.th-sun-glow { fill: #fb923c; opacity: .14; filter: blur(3px); }
+.th-haze { stroke: rgba(255, 200, 150, .18); stroke-width: .8; stroke-linecap: round; animation: th-drift 6s ease-in-out infinite; }
+.th-leaf { opacity: .9; } .th-leaf.l0 { fill: #1f7a46; } .th-leaf.l1 { fill: #2a9457; } .th-leaf.l2 { fill: #166b3c; }
+.th-bloom { fill: #f472b6; } .th-bloom.b { fill: #fb923c; }
+.th-vleaf { fill: #4ade80; opacity: .85; }
+.th-pool { fill: rgba(125, 211, 252, .45); }
+.th-spray { fill: rgba(224, 242, 254, .5); animation: th-drift 2.4s ease-in-out infinite; }
+.th-palm-trunk { fill: none; stroke: #8a5a3a; stroke-width: 1.3; stroke-linecap: round; }
+.th-palm { fill: #2fae64; }
+.th-fern { fill: none; stroke: #3fbf72; stroke-width: .8; stroke-linecap: round; }
+.th-mist ellipse { fill: rgba(236, 253, 245, .16); filter: blur(1.6px); animation: th-mist 14s ease-in-out infinite alternate; }
+.th-mist ellipse:nth-child(2) { animation-duration: 18s; animation-delay: -6s; }
+@keyframes th-mist { from { transform: translateX(-8px); } to { transform: translateX(8px); } }
+.th-rays { fill: rgba(240, 255, 220, .05); }
+.th-bird { fill: none; stroke: color-mix(in srgb, var(--text) 45%, transparent); stroke-width: .5; stroke-linecap: round; }
 .th-lava { fill: none; stroke: #ff6a1f; stroke-width: 1.3; stroke-linecap: round; opacity: .85; filter: drop-shadow(0 0 2px #ff5a1f); }
 .th-smoke { fill: color-mix(in srgb, var(--text) 10%, transparent); animation: th-drift 5s ease-in-out infinite; }
 .th-snow { fill: color-mix(in srgb, #ffffff 82%, transparent); }
@@ -834,7 +860,7 @@ svg.th-frost .th-shade { fill: rgba(30, 80, 130, .25); }
 @keyframes th-twinkle { 0%, 100% { opacity: .9; } 50% { opacity: .3; } }
 @keyframes th-flow { to { stroke-dashoffset: -10; } }
 @keyframes cf-pop { 0%, 100% { opacity: 1; transform: translateY(0); } 50% { opacity: .4; transform: translateY(-2px); } }
-@media (prefers-reduced-motion: reduce) { .th-smoke, .th-flake, .th-fall, .th-star, .th-cstar, .th-aurora path, .cl-confetti .cf { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .th-smoke, .th-flake, .th-fall, .th-star, .th-cstar, .th-aurora path, .th-tumble, .th-haze, .th-spray, .th-mist ellipse, .cl-confetti .cf { animation: none; } }
 
 
 /* ---- campfire on the last-workout card ---- */
