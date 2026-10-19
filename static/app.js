@@ -522,7 +522,7 @@
       const hip = hang ? [x, y + 4.5] : step === CLIMB_LEDGE ? [x, y - .5] : [x + (facingLeft ? -.3 : .3), y - 5];
       const rope = atSummit ? "" : `<path class="cl-rope" d="M${hip[0].toFixed(1)},${hip[1].toFixed(1)} Q${((hip[0] + px) / 2).toFixed(1)},${(Math.max(hip[1], py) + 5).toFixed(1)} ${px.toFixed(1)},${py.toFixed(1)}"/>`;
       if (atSummit) {
-        figure = `<g class="cl-newcamp">${tent(scene.tentAt[0], scene.tentAt[1], "", 1.1)}</g>` + climber("cheer", summit[0], summit[1], false, cs)
+        figure = tent(scene.tentAt[0], scene.tentAt[1], "", 1.2) + climber("cheer", summit[0], summit[1], false, cs)
           + `<g class="cl-confetti">${[[-14, -16, "a"], [-4, -22, "b"], [8, -18, "c"], [14, -10, "a"], [-18, -6, "c"], [2, -28, "b"]]
             .map(([dx, dy, c]) => `<rect class="cf ${c}" x="${summit[0] + dx}" y="${summit[1] + dy}" width="1.6" height="1.6" rx=".3"/>`).join("")}</g>`;
         if (pending) extra = `<text class="cl-alert" x="${summit[0] - 16}" y="${summit[1] - 4}" text-anchor="middle">!</text>`;
@@ -557,7 +557,7 @@
         <rect x="0" y="0" width="${W}" height="${H}" rx="8" fill="url(#g-sky-${id})"/>
         <path class="th-back" d="${scene.back}"/>
         <path class="th-mtn" d="${scene.path}"/>${scene.detail}${scene.deco}
-        ${ground}${tent(9, G, camp)}${route}${arrows}${dots}${ledgeRock}${flag}${extra}${figure}
+        ${ground}${tent(11, G, camp, 1.4)}${route}${arrows}${dots}${ledgeRock}${flag}${extra}${figure}
       </svg></div>`;
   }
 

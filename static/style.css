@@ -717,11 +717,9 @@ code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; font-
 .cc-peak { width: 9px; height: 7px; display: block; background: var(--surface-3); clip-path: polygon(50% 0, 100% 100%, 0 100%); }
 .cc-peak.done { background: var(--accent); }
 .cc-peak.now { background: color-mix(in srgb, var(--accent) 45%, var(--surface-3)); outline: none; }
-.cl-tent-body { fill: color-mix(in srgb, var(--good) 38%, var(--surface-2)); }
-.cl-newcamp .cl-tent-body { fill: #f0a03c; }
-.cl-newcamp .cl-tent-door { fill: #7a4a14; }
-.cl-tent-door { fill: color-mix(in srgb, var(--good) 14%, var(--surface)); }
-.cl-tent-line { fill: none; stroke: var(--faint); stroke-width: .6; stroke-linecap: round; }
+.cl-tent-body { fill: #f5a524; stroke: #fff3d6; stroke-width: .5; stroke-linejoin: round; }
+.cl-tent-door { fill: #6b3a0c; }
+.cl-tent-line { fill: none; stroke: color-mix(in srgb, var(--text) 55%, transparent); stroke-width: .6; stroke-linecap: round; }
 .cl-mtn { fill: color-mix(in srgb, var(--text) 4.5%, transparent); stroke: color-mix(in srgb, var(--text) 10%, transparent); stroke-width: .6; stroke-linejoin: round; }
 .cl-crack { fill: none; stroke: color-mix(in srgb, var(--text) 9%, transparent); stroke-width: .7; stroke-linecap: round; stroke-linejoin: round; }
 .cl-step { fill: var(--faint); opacity: .55; }
