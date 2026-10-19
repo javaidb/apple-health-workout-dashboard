@@ -236,6 +236,30 @@
       </div>`).join("");
   }
 
+  // Campfire on the last-workout card: blazing on a training day, then dying down a step each day
+  // after, to embers and finally a wisp of smoke. The next workout relights it.
+  const FIRE_STAGES = ["Blazing: you trained today", "Burning well", "Burning low", "Flickering out",
+    "Just embers left", "Gone out: a workout relights it"];
+  const FLAME = "M20 3C25 11 30.5 15.5 29.5 23.5C28.8 29.2 24.8 32 20 32C15.2 32 11.2 29.2 10.5 23.5C9.9 18 14 14.5 15.6 8.5C17.6 12.6 19 13.6 20 3Z";
+  function campfire(daysAgo) {
+    const heat = Math.max(0, 5 - daysAgo), f = .3 + .14 * heat, stage = FIRE_STAGES[Math.min(daysAgo, 5)];
+    const at = (k) => `translate(20 32) scale(${k}) translate(-20 -32)`;
+    const flames = heat >= 2 ? `<g transform="${at(f)}">
+        <g class="cf-flick a"><path class="cf-outer" d="${FLAME}"/></g>
+        <g class="cf-flick b" transform="${at(.68)}"><path class="cf-mid" d="${FLAME}"/></g>
+        <g class="cf-flick c" transform="${at(.4)}"><path class="cf-core" d="${FLAME}"/></g></g>` : "";
+    const sparks = heat >= 4 ? [[15, 12, 0], [25, 9, .7], [19, 6, 1.4]].map(([x, y, d]) =>
+      `<circle class="cf-spark" cx="${x}" cy="${y}" r=".9" style="animation-delay:${d}s"/>`).join("") : "";
+    const embers = heat <= 2 ? [[14, 32.4], [19, 33.6], [24, 32.2], [27.5, 33.4], [17, 31.2]].slice(0, heat === 0 ? 0 : 5).map(([x, y], i) =>
+      `<circle class="cf-ember" cx="${x}" cy="${y}" r="${i % 2 ? .9 : 1.2}" style="animation-delay:${i * .4}s"/>`).join("") : "";
+    const smoke = heat <= 1 ? `<path class="cf-smoke" d="M20 30C17 25 23 21 20 16C17.5 12 22 9 20.5 4"/>` : "";
+    return `<span class="campfire heat-${heat}" title="Campfire: ${stage}"><svg viewBox="0 0 40 40" role="img" aria-label="Campfire: ${stage}">
+        <ellipse class="cf-glow" cx="20" cy="34" rx="17" ry="4.5" style="opacity:${(.08 * heat).toFixed(2)}"/>
+        <g class="cf-logs${heat === 0 ? " cold" : ""}"><rect x="7" y="31" width="26" height="4.4" rx="2.2" transform="rotate(13 20 33)"/>
+          <rect x="7" y="31" width="26" height="4.4" rx="2.2" transform="rotate(-13 20 33)"/></g>
+        ${embers}${flames}${sparks}${smoke}</svg></span>`;
+  }
+
   function renderLastCard(w) {
     const el = $("last-card");
     if (!w) {
@@ -254,7 +278,7 @@
     const detail = [w.distance_m != null ? fmtKm(w.distance_m) : null, fmtDuration(w.duration_s),
       w.active_energy_kcal != null ? `${Math.round(w.active_energy_kcal)} kcal` : null].filter(Boolean).join(" · ");
     el.innerHTML = `<div class="eyebrow">Last workout</div>
-      <div class="big">${when}</div>
+      <div class="big"><span>${when}</span>${campfire(n)}</div>
       <div class="last-activity">${badge(w.activity.category)}<span>${esc(w.activity.label)}</span></div>
       <div class="last-meta">${esc(detail)} · ${esc(date)}, ${fmtClock(w.start, w.utc_offset_minutes)}</div>
       <div class="nudge">${esc(msg)}</div>`;
@@ -287,7 +311,7 @@
           <span>${w.longest && w.current < w.longest ? `${w.longest - w.current} to beat it` : w.current ? "On your best" : ""}</span></div>
       </div>
       <div class="nudge tone-${tone}">${esc(msg)}</div></div>
-      <div class="climb">${climbHtml(w)}</div>`;
+      <div class="climb" role="button" tabindex="0" title="Open Carl's trail map" aria-label="Open Carl's trail map">${climbHtml(w)}</div>`;
   }
 
   // ---- the climb: Carl's mountains -------------------------------------------------
@@ -322,18 +346,20 @@
   // counts once it has a workout, so until then it is `pending`.
   function climbState() {
     const wk = state.weekly;
-    let index = 0, step = 0, fell = null;
+    let index = 0, step = 0, fell = null, summits = 0, falls = 0, best = null;
     wk.forEach((week, i) => {
       if (week.workouts > 0) {
         if (step === CLIMB_WEEKS) { index += 1; step = 1; } else step += 1;
+        if (step === CLIMB_WEEKS) summits += 1;
         fell = null;
+        if (!best || index * CLIMB_WEEKS + step > best.index * CLIMB_WEEKS + best.step) best = { index, step };
       } else if (i < wk.length - 1) {
-        if (step > 0) { fell = { from: step }; step = 0; }
-        else if (index > 0) { index -= 1; fell = { from: CLIMB_WEEKS, down: true }; }
+        if (step > 0) { fell = { from: step }; step = 0; falls += 1; }
+        else if (index > 0) { index -= 1; fell = { from: CLIMB_WEEKS, down: true }; falls += 1; }
         else fell = null;
       }
     });
-    return { index, step, fell, pending: !wk.length || wk[wk.length - 1].workouts === 0 };
+    return { index, step, fell, summits, falls, best, pending: !wk.length || wk[wk.length - 1].workouts === 0 };
   }
 
   // Minimalist alpine climber. Local coordinates: feet at (0,0), facing right, up is negative y.
@@ -462,14 +488,83 @@
       ${label ? `<text class="cl-label" x="${x.toFixed(1)}" y="${(y + 8).toFixed(1)}" text-anchor="middle">${label}</text>` : ""}`;
   }
 
-  // Caption above the drawing: mountain name, progress and the year's six peaks.
+  // Route geometry on one mountain drawing (100x200). Week k's spot is evenly along base → ledge →
+  // summit, pushed sideways by a fixed amount so the line wanders like a real route (purely for
+  // looks). The route is a smooth curve (Catmull-Rom) through those spots, sampled ROUTE_SUB times
+  // per week so the done and ahead parts are pieces of the same curve.
+  function routeGeom(scene) {
+    const G = scene.ground, base = [24, G - 2], ledge = [76, 118], summit = scene.summit;
+    const pt = (k) => {
+      const [a, b, t] = k <= CLIMB_LEDGE ? [base, ledge, k / CLIMB_LEDGE] : [ledge, summit, (k - CLIMB_LEDGE) / (CLIMB_WEEKS - CLIMB_LEDGE)];
+      const dx = b[0] - a[0], dy = b[1] - a[1], len = Math.hypot(dx, dy), off = ROUTE_WANDER[k];
+      return [a[0] + dx * t - (dy / len) * off, a[1] + dy * t + (dx / len) * off];
+    };
+    const curve = [pt(0)];
+    for (let i = 0; i < CLIMB_WEEKS; i++) {
+      const p0 = pt(Math.max(0, i - 1)), p1 = pt(i), p2 = pt(i + 1), p3 = pt(Math.min(CLIMB_WEEKS, i + 2));
+      for (let j = 1; j <= ROUTE_SUB; j++) {
+        const u = j / ROUTE_SUB, u2 = u * u, u3 = u2 * u;
+        curve.push([0, 1].map((c) => .5 * (2 * p1[c] + (p2[c] - p0[c]) * u + (2 * p0[c] - 5 * p1[c] + 4 * p2[c] - p3[c]) * u2 + (3 * p1[c] - p0[c] - 3 * p2[c] + p3[c]) * u3)));
+      }
+    }
+    const line = (a, b) => curve.slice(a * ROUTE_SUB, b * ROUTE_SUB + 1).map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`).join("");
+    const mid = (k) => [curve[k * ROUTE_SUB + ROUTE_SUB / 2 - 1], curve[k * ROUTE_SUB + ROUTE_SUB / 2 + 1]];
+    return { G, base, ledge, summit, pt, line, mid };
+  }
+
+  // Souvenirs: Carl brings one keepsake home from each summit. Drawn in a 12x12 box.
+  const SOUVENIRS = {
+    pine: ["Pinecone", `<ellipse cx="6" cy="6.6" rx="3.3" ry="4.6" fill="#b9814b"/><path d="M3.1 5h5.8M2.9 7.4h6.2M3.5 9.7h5M6 2.2v9" stroke="#6b4423" stroke-width=".7" fill="none"/><path d="M6 2V.6" stroke="#4ade80" stroke-width="1" stroke-linecap="round"/>`],
+    mesa: ["Desert bloom", `${[0, 72, 144, 216, 288].map((a) => `<circle cx="${(6 + 2.7 * Math.sin(a * Math.PI / 180)).toFixed(2)}" cy="${(6 - 2.7 * Math.cos(a * Math.PI / 180)).toFixed(2)}" r="2" fill="#f472b6"/>`).join("")}<circle cx="6" cy="6" r="1.4" fill="#fde047"/>`],
+    ember: ["Obsidian shard", `<path d="M6 .8L10.4 4.4L8.8 11H3.2L1.6 4.4Z" fill="#7c3aed"/><path d="M6 .8L6.9 6.1L8.8 11M1.6 4.4L6.9 6.1L10.4 4.4" stroke="#ddd6fe" stroke-width=".55" fill="none" stroke-linejoin="round"/>`],
+    frost: ["Ice crystal", `<path d="M6 .8v10.4M1.5 3.4l9 5.2M1.5 8.6l9-5.2M4.6 1.8L6 3.2l1.4-1.4M4.6 10.2L6 8.8l1.4 1.4" stroke="#bae6fd" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`],
+    canopy: ["Jungle leaf", `<path d="M1.8 10.2C1.6 4.6 5.6 1.4 10.6 1.6C10.8 6.8 7.4 10.6 1.8 10.2Z" fill="#4ade80"/><path d="M1.8 10.2L8.4 3.6M4.4 7.6l-.4-2.2M6.2 5.8l1.9.3" stroke="#166534" stroke-width=".6" fill="none" stroke-linecap="round"/>`],
+    stars: ["Fallen star", `<path d="M6 .8L7.5 4.3L11.2 4.6L8.4 7.1L9.3 10.8L6 8.8L2.7 10.8L3.6 7.1L.8 4.6L4.5 4.3Z" fill="#fde047" stroke="#fef9c3" stroke-width=".4" stroke-linejoin="round"/>`],
+  };
+  const souvenir = (key, cls = "", size = "") => `<svg class="souv ${cls}" viewBox="0 0 12 12"${size}><title>${SOUVENIRS[key][0]} from ${MOUNTAINS.find((m) => m.key === key).name}</title>${SOUVENIRS[key][1]}</svg>`;
+
+  // Caption above the drawing: mountain name, progress and the year's six souvenirs.
   function climbCaption(info, sub, doneInYear) {
-    const peaks = MOUNTAINS.map((m, i) => `<i class="cc-peak${i < doneInYear ? " done" : i === doneInYear ? " now" : ""}" title="${m.name}"></i>`).join("");
+    const peaks = MOUNTAINS.map((m, i) => souvenir(m.key, i < doneInYear ? "done" : i === doneInYear ? "now" : "todo")).join("");
     return `<div class="climb-caption">
       <div class="cc-name">${esc(info.name)}${info.tier > 1 ? ` <span class="cc-tier">Tier ${ROMAN[info.tier - 1] || info.tier}</span>` : ""}</div>
       <div class="cc-sub">${esc(sub)}</div>
-      <div class="cc-peaks" aria-hidden="true">${peaks}</div>
+      <div class="cc-peaks${info.tier > 1 ? " gold" : ""}">${peaks}</div>
     </div>`;
+  }
+
+  // Wildlife cameos: each mountain has its own visitor, who turns up on about 3 weeks in 5. The
+  // week number decides, so a given week always shows the same scene.
+  const CAMEOS = {
+    pine: ["An eagle circles Pine Ridge", `<g transform="translate(66 34) scale(1.3)"><g class="cm-glide"><path class="cm-eagle" d="M-8 0Q-4 -4.4 0 -.4Q4 -4.4 8 0Q4 -2 0 1Q-4 -2 -8 0Z"/><circle class="cm-eagle-head" cx="0" cy="-.6" r="1"/></g></g>`],
+    mesa: ["A lizard suns itself on the mesa", `<g transform="translate(80 183) scale(1.2)"><path class="cm-lizard" d="M-6 -1.2Q-8.4 -.8 -9.6 -2.6M-6 -1.2Q-2 -2.8 2.4 -1.6Q4.6 -1.6 5.6 -2.6Q4.4 -.2 2 -.2Q-2 .4 -6 -1.2Z"/><path class="cm-lizard-leg" d="M-3.4 -1.4L-4.6 .4M-3.2 -1.4L-2 -3.4M1 -1L2.2 .6M1.2 -1.4L2.2 -3.4"/><circle cx="4.4" cy="-2" r=".35" fill="#111"/></g>`],
+    ember: ["Bats flutter out of Ember Peak", `${[[26, 46, 1.7], [38, 34, 1.4], [16, 30, 1.15]].map(([x, y, k], i) => `<g transform="translate(${x} ${y}) scale(${k})"><g class="cm-flap" style="animation-delay:${i * .25}s"><path class="cm-bat" d="M-4.4 0Q-3 -2.2 -1.6 -.6Q-.8 -1.8 0 -1.2Q.8 -1.8 1.6 -.6Q3 -2.2 4.4 0Q3 -.2 2.2 1Q1 0 0 1.2Q-1 0 -2.2 1Q-3 -.2 -4.4 0Z"/></g></g>`).join("")}`],
+    frost: ["A yeti peeks over Frost Spire", `<g transform="translate(88 168)"><path class="cm-yeti" d="M-5 6V-1.6Q-5 -6.4 0 -6.4Q5 -6.4 5 -1.6V6Z"/><path class="cm-yeti-face" d="M-3 -3.2Q0 -4.6 3 -3.2V.4Q0 2 -3 .4Z"/><circle cx="-1.2" cy="-2" r=".55" fill="#0f172a"/><circle cx="1.2" cy="-2" r=".55" fill="#0f172a"/><path d="M-1 .1Q0 .7 1 .1" stroke="#0f172a" stroke-width=".4" fill="none"/><path class="cm-yeti" d="M-5 1.4Q-8.4 -.4 -8 -4.2" stroke-width="2.2"/></g>`],
+    canopy: ["A toucan watches from the vines", `<g transform="translate(83 146) scale(1.6)"><path class="cm-perch" d="M-5 4.2H6"/><ellipse class="cm-toucan" cx="0" cy="0" rx="2.6" ry="4"/><path class="cm-toucan-chest" d="M.4 -3.4Q2.6 -2 2 .6Q1 -1 .4 -3.4Z"/><path class="cm-beak" d="M1.4 -3.2Q5.6 -3.6 6.8 -1.6Q4.6 -2 1.6 -1.8Z"/><circle cx="1" cy="-2.8" r=".45" fill="#e2e8f0"/><path class="cm-toucan" d="M-1.6 3.2L-3.4 6.4" stroke-width="1.4"/></g>`],
+    stars: ["A shooting star crosses the sky", `<g class="cm-shoot"><path class="cm-trail" d="M8 16L30 27"/><circle class="cm-star" cx="30" cy="27" r="1.3"/></g>`],
+  };
+  function cameo(key, week) {
+    if ((Math.imul(week + 7, 2654435761) >>> 0) % 5 >= 3) return "";
+    const [title, art] = CAMEOS[key];
+    return `<g class="cameo"><title>${title}</title>${art}</g>`;
+  }
+
+  // Time of day for the climb's sky, from the viewer's clock.
+  function skyPhase(d = new Date()) {
+    const h = d.getHours();
+    return h >= 21 || h < 5 ? "night" : h < 7 ? "dawn" : h >= 18 ? "dusk" : "day";
+  }
+  const NIGHT_STARS = [[10, 14], [22, 40], [34, 12], [48, 30], [60, 10], [72, 46], [90, 20], [16, 70], [94, 64], [40, 52], [6, 98]]
+    .map(([x, y], i) => `<circle class="th-star" cx="${x}" cy="${y}" r="${i % 3 ? .55 : .85}" style="animation-delay:${(i * .37).toFixed(2)}s"/>`).join("");
+  function skyLayers(phase, key, id) {
+    if (phase === "day") return { back: "", front: "" };
+    if (phase === "night") {
+      const moon = key === "stars" ? "" : `<circle class="th-moon" cx="80" cy="26" r="5.4"/><circle class="th-moon-cut" cx="82.8" cy="23.6" r="4.6"/>`;
+      return { back: `<rect class="sky-night" width="100" height="200" rx="8"/>${key === "stars" ? "" : NIGHT_STARS}${moon}`,
+               front: `<rect class="scene-night" width="100" height="200" rx="8"/>` };
+    }
+    return { back: `<defs><linearGradient id="g-${phase}-${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="${phase}-top"/><stop offset=".75" class="${phase}-low"/></linearGradient></defs>
+        <rect width="100" height="200" rx="8" fill="url(#g-${phase}-${id})"/>`, front: "" };
   }
 
   function climbHtml(w) {
@@ -477,27 +572,9 @@
     const info = mountainInfo(index), next = mountainInfo(index + 1);
     const id = ++climbId;
     const scene = mountainScene(info, id);
-    const W = 100, H = 200, G = scene.ground;
-    const base = [24, G - 2], ledge = [76, 118], summit = scene.summit;
-    // Week k's spot on the route: evenly along base → ledge → summit, pushed sideways by a fixed
-    // amount so the line wanders like a real route up the face (purely for looks).
-    const pt = (k) => {
-      const [a, b, t] = k <= CLIMB_LEDGE ? [base, ledge, k / CLIMB_LEDGE] : [ledge, summit, (k - CLIMB_LEDGE) / (CLIMB_WEEKS - CLIMB_LEDGE)];
-      const dx = b[0] - a[0], dy = b[1] - a[1], len = Math.hypot(dx, dy), off = ROUTE_WANDER[k];
-      return [a[0] + dx * t - (dy / len) * off, a[1] + dy * t + (dx / len) * off];
-    };
-    // The route is a smooth curve (Catmull-Rom) through the week spots, sampled ROUTE_SUB times per
-    // week so the done and ahead parts are pieces of the same curve.
-    const curve = [pt(0)];
-    for (let i = 0; i < CLIMB_WEEKS; i++) {
-      const p0 = pt(Math.max(0, i - 1)), p1 = pt(i), p2 = pt(i + 1), p3 = pt(Math.min(CLIMB_WEEKS, i + 2));
-      for (let j = 1; j <= ROUTE_SUB; j++) {
-        const s = j / ROUTE_SUB, s2 = s * s, s3 = s2 * s;
-        curve.push([0, 1].map((c) => .5 * (2 * p1[c] + (p2[c] - p0[c]) * s + (2 * p0[c] - 5 * p1[c] + 4 * p2[c] - p3[c]) * s2 + (3 * p1[c] - p0[c] - 3 * p2[c] + p3[c]) * s3)));
-      }
-    }
-    const line = (a, b) => curve.slice(a * ROUTE_SUB, b * ROUTE_SUB + 1).map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`).join("");
-    const mid = (k) => [curve[k * ROUTE_SUB + ROUTE_SUB / 2 - 1], curve[k * ROUTE_SUB + ROUTE_SUB / 2 + 1]];
+    const W = 100, H = 200;
+    const { G, ledge, summit, pt, line, mid } = routeGeom(scene);
+    const phase = skyPhase(), night = phase === "night", sky = skyLayers(phase, info.key, id);
     const atSummit = step === CLIMB_WEEKS;
     const reached = step, fellFrom = fell ? fell.from : 0;
 
@@ -540,9 +617,19 @@
       extra = `<path class="cl-fall" d="M${fx.toFixed(1)},${fy.toFixed(1)} Q${(fx + (fx > 50 ? 16 : -16)).toFixed(1)},${((fy + G) / 2).toFixed(1)} 52,${G - 3}"/>`;
       figure = climber("fallen", 52, G, false, cs);
       sub = `${fell.down ? "Fell down" : "Fell on"} ${info.name} · back to ${camp}`;
+    } else if (night) {
+      // asleep in the base-camp tent
+      figure = `<g class="cl-zzz">${[[19, G - 13, 3.2], [22.5, G - 17.5, 4], [26.5, G - 23, 4.8]]
+        .map(([x, y, f], i) => `<text x="${x}" y="${y}" style="font-size:${f}px;animation-delay:${i * .6}s">z</text>`).join("")}</g>`;
+      sub = "Carl's asleep at base camp · Help him reach the top!";
     } else {
       figure = climber("stand", 52, G, false, cs);
       sub = "Help Carl reach the top!";
+    }
+    // a headlamp glow while he climbs at night
+    if (night && step > 0 && !atSummit) {
+      const [x, y] = pt(step), hy = pending ? y + 3 : y - 9;
+      figure = `<circle class="cl-lamp" cx="${x.toFixed(1)}" cy="${hy.toFixed(1)}" r="9"/>` + figure;
     }
 
     const label = step > 0
@@ -550,16 +637,68 @@
       : fell ? `Carl fell ${fell.down ? "down" : "on"} ${info.name} and is back at ${camp}` : `Carl at ${camp}, ready to climb ${info.name}`;
     const doneInYear = (index + (atSummit ? 1 : 0)) % MOUNTAINS.length;
     return climbCaption(info, sub, atSummit && doneInYear === 0 ? MOUNTAINS.length : doneInYear) + `<div class="climb-art">
-      <svg class="th-${info.key}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMax meet" role="img" aria-label="${label}">
+      <svg class="th-${info.key}${night ? " night" : ""}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMax meet" role="img" aria-label="${label}">
         <defs><linearGradient id="g-sky-${id}" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" style="stop-color:var(--sky1)"/><stop offset="1" style="stop-color:var(--sky2)"/>
         </linearGradient></defs>
-        <rect x="0" y="0" width="${W}" height="${H}" rx="8" fill="url(#g-sky-${id})"/>
+        <rect x="0" y="0" width="${W}" height="${H}" rx="8" fill="url(#g-sky-${id})"/>${sky.back}
         <path class="th-back" d="${scene.back}"/>
-        <path class="th-mtn" d="${scene.path}"/>${scene.detail}${scene.deco}
-        ${ground}${tent(11, G, camp, 1.4)}${route}${arrows}${dots}${ledgeRock}${flag}${extra}${figure}
+        <path class="th-mtn" d="${scene.path}"/>${scene.detail}${scene.deco}${cameo(info.key, state.weekly.length)}
+        ${ground}${sky.front}${tent(11, G, camp, 1.4)}${route}${arrows}${dots}${ledgeRock}${flag}${extra}${figure}
       </svg></div>`;
   }
+
+  // Carl's trail map: this tier's six mountains as one range, with the route climbed so far, a camp
+  // on every summit reached, his best-ever point, and the souvenirs collected.
+  function trailHtml() {
+    const st = climbState();
+    const tierStart = Math.floor(st.index / MOUNTAINS.length) * MOUNTAINS.length, tier = tierStart / MOUNTAINS.length + 1;
+    const pos = st.index * CLIMB_WEEKS + st.step;
+    const bestAbove = st.best && st.best.index * CLIMB_WEEKS + st.best.step > pos ? st.best : null;
+    const panels = MOUNTAINS.map((m, i) => {
+      const idx = tierStart + i, info = mountainInfo(idx), id = ++climbId, scene = mountainScene(info, id);
+      const { G, summit, pt, line } = routeGeom(scene);
+      const done = idx < st.index ? CLIMB_WEEKS : idx === st.index ? st.step : 0;
+      const summited = done === CLIMB_WEEKS;
+      const route = (done ? `<path class="cl-route done" d="${line(0, done)}"/>` : "") + (done < CLIMB_WEEKS ? `<path class="cl-route ahead" d="${line(done, CLIMB_WEEKS)}"/>` : "");
+      const flag = `<g class="cl-summit${summited ? " won" : ""}" transform="translate(${summit[0]},${summit[1]})"><path d="M0 0V-10"/><path class="flag" d="M0 -10L6 -8L0 -6Z"/></g>`;
+      const camp = summited ? tent(scene.tentAt[0], scene.tentAt[1], "", 1.2) : "";
+      let carl = "";
+      if (idx === st.index) {
+        const [x, y] = st.step ? pt(st.step) : [52, G];
+        carl = `<circle class="trail-you" cx="${x.toFixed(1)}" cy="${(y - 6).toFixed(1)}" r="11"/>`
+          + climber(st.step === CLIMB_WEEKS ? "cheer" : st.step ? "climb" : "stand", x, y, st.step > CLIMB_LEDGE, 1.5);
+      }
+      const best = bestAbove && bestAbove.index === idx
+        ? (() => { const [x, y] = pt(bestAbove.step); return `<g class="trail-best" transform="translate(${x.toFixed(1)},${y.toFixed(1)})"><path d="M0 0V-9"/><path class="flag" d="M0 -9L5.5 -7.2L0 -5.4Z"/></g>`; })()
+        : "";
+      return `<svg class="th-${m.key}" x="${i * 100}" y="0" width="100" height="200" viewBox="0 0 100 200">
+          <defs><linearGradient id="g-sky-${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--sky1)"/><stop offset="1" style="stop-color:var(--sky2)"/></linearGradient></defs>
+          <rect width="100" height="200" fill="url(#g-sky-${id})"/><path class="th-mtn" d="${scene.path}"/>${scene.detail}${scene.deco}
+          <path class="cl-ground" d="M0,${G}H100"/>${i === 0 ? tent(11, G, "", 1.4) : ""}${route}${flag}${camp}${best}${carl}
+        </svg>
+        <text class="trail-name${idx === st.index ? " now" : ""}" x="${i * 100 + 50}" y="214" text-anchor="middle">${esc(m.name)}</text>`;
+    }).join("");
+    const doneInTier = st.index - tierStart + (st.step === CLIMB_WEEKS ? 1 : 0);
+    const shelf = MOUNTAINS.map((m, i) => `<div class="shelf-item${i < doneInTier ? " got" : ""}">
+        ${souvenir(m.key, i < doneInTier ? "done" : "todo")}
+        <div><b>${SOUVENIRS[m.key][0]}</b><span>${i < doneInTier ? `from ${esc(m.name)}` : "not found yet"}</span></div></div>`).join("");
+    const bestText = st.best ? `${mountainInfo(st.best.index).name}${st.best.index >= MOUNTAINS.length ? ` (Tier ${ROMAN[Math.floor(st.best.index / MOUNTAINS.length)]})` : ""}, ${st.best.step === CLIMB_WEEKS ? "summit" : `week ${st.best.step}`}` : "not started";
+    const stats = [["Summits reached", st.summits], ["Falls", st.falls], ["Highest point", bestText], ["Weeks on the trail", state.weekly.length]];
+    return `<div class="trail-head"><h3 id="trail-title">Carl's trail</h3>
+        <span class="trail-sub">Tier ${ROMAN[tier - 1] || tier} · ${doneInTier} of ${MOUNTAINS.length} summits this range${bestAbove ? " · the small flag marks your best" : ""}</span></div>
+      <div class="trail-map"><svg viewBox="0 0 600 222" role="img" aria-label="Carl's trail across the six mountains">${panels}</svg></div>
+      <div class="trail-stats">${stats.map(([k, v]) => `<div><span>${k}</span><b>${esc(String(v))}</b></div>`).join("")}</div>
+      <div class="eyebrow trail-shelf-title">Souvenirs${tier > 1 ? " · gold set" : ""}</div>
+      <div class="trail-shelf${tier > 1 ? " gold" : ""}">${shelf}</div>`;
+  }
+
+  function openTrail() {
+    $("trail-body").innerHTML = trailHtml();
+    $("trail").hidden = false;
+    $("trail").querySelector(".trail-close").focus();
+  }
+  function closeTrail() { $("trail").hidden = true; }
 
   function renderWeekCard(w) {
     const r = 34, c = 2 * Math.PI * r;
@@ -1114,6 +1253,10 @@
   $("last-card").addEventListener("click", () => { const id = Number($("last-card").dataset.id); if (id) showDetail(id); });
   $("last-card").addEventListener("keydown", (e) => { if (e.key === "Enter") $("last-card").click(); });
 
+  $("streak-card").addEventListener("click", (e) => { if (e.target.closest(".climb")) openTrail(); });
+  $("streak-card").addEventListener("keydown", (e) => { if ((e.key === "Enter" || e.key === " ") && e.target.closest(".climb")) { e.preventDefault(); openTrail(); } });
+  $("trail").addEventListener("click", (e) => { if (e.target.closest("[data-close]")) closeTrail(); });
+
   $("week-card").addEventListener("click", (e) => {
     const btn = e.target.closest("[data-goal]");
     if (!btn) return;
@@ -1142,7 +1285,8 @@
 
   document.addEventListener("keydown", (e) => {
     if (e.target.closest("input, textarea")) return;
-    if (e.key === "Escape" && !$("detail").hidden) closeDetail();
+    if (e.key === "Escape" && !$("trail").hidden) closeTrail();
+    else if (e.key === "Escape" && !$("detail").hidden) closeDetail();
     else if (e.key === "ArrowLeft" && $("detail").hidden) $("prev").click();
     else if (e.key === "ArrowRight" && $("detail").hidden) $("next").click();
   });

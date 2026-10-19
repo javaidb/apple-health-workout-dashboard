@@ -46,8 +46,12 @@ weekly streak becomes Carl, a little climber working his way up a new mountain e
   row with any workout) with your personal best, and a GitHub-style heatmap of the last 12 months.
 - **Carl's climb.** The weekly streak card shows Carl climbing six themed mountains a year, one every
   8 weeks: Pine Ridge, Red Rock Mesa, Ember Peak, Frost Spire, Canopy Crag and Summit of Stars. He pitches a
-  new camp on each summit, and after a full year the cycle repeats as a higher tier. See
-  [climb rules](#carls-climb).
+  new camp on each summit, and after a full year the cycle repeats as a higher tier. Each summit
+  brings home a souvenir, wildlife drops by on some weeks, and the sky follows your clock (Carl sleeps in
+  his tent or climbs by headlamp at night). Click the climb for the trail map: the whole range, your best
+  point, summits, falls and the souvenir shelf. See [climb rules](#carls-climb).
+- **A campfire for your last workout.** It blazes on a training day and burns down a step each day after,
+  to embers and then a wisp of smoke, until the next workout relights it.
 - **Recent form.** The last 12 weeks as batteries (one cell per workout of the goal), box plots of your last
   6 sessions' duration and calories, and a smoothed workouts-per-week trend since you started.
 - **Daily activity too.** Steps (with a 10k goal and 7-day bars), walking distance, active energy, flights
