@@ -753,11 +753,11 @@ code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; font-
 .cl-rock .cl-rock-top { fill: none; stroke: color-mix(in srgb, var(--text) 35%, transparent); stroke-width: .9; stroke-linecap: round; stroke-linejoin: round; }
 .cl-rock .cl-rock-crack { fill: none; stroke: color-mix(in srgb, var(--text) 18%, transparent); stroke-width: .5; stroke-linecap: round; }
 .cl-rock.done .cl-rock-top { stroke: color-mix(in srgb, var(--accent) 80%, transparent); }
-.climber.hang { animation: cl-sway 2.4s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 0; }
+.climber.hang { animation: cl-sway 3.6s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 0; }
 .cl-alert { fill: var(--warn); font-size: 9px; font-weight: 800; animation: cl-blink 1.6s ease-in-out infinite; }
 .cl-best path { stroke: var(--warn); stroke-width: 1; fill: none; }
 .cl-best .flag { fill: var(--warn); stroke: none; }
-@keyframes cl-sway { 0%, 100% { rotate: -4deg; } 50% { rotate: 4deg; } }
+@keyframes cl-sway { 0%, 100% { rotate: -1.2deg; } 50% { rotate: 1.2deg; } }
 @keyframes cl-blink { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
 @media (prefers-reduced-motion: reduce) { .climber.hang, .cl-alert { animation: none; } }
 @media (max-width: 720px) { .climb { min-height: 140px; } }
