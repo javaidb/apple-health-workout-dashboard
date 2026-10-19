@@ -834,31 +834,43 @@
       </svg>`;
   }
 
-  // The rope: from the camp's stake in the This week card, up over the card edges, to the anchor at
-  // the start of the route on the mountain. Drawn on a layer above the cards; only when the
-  // mountain is above the camp (the stacked one-screen layout).
-  function drawRopes() {
+  // The rope: Carl runs it from the camp's stake to the card's right edge, clips it to bolts up the
+  // card's outline (right edge, the rounded corner, the top edge), then across the gap to the anchor
+  // at the start of the route. It hugs the border so it never covers the card's content. Drawn on a
+  // layer above the cards, and only when the mountain is above the camp (the stacked layout).
+  let ropeKey = "";
+  function drawRopes(onlyIfMoved = false) {
     const layer = $("ropes");
-    // collapse first so the layer's own old size never props the page open
-    layer.setAttribute("width", 0); layer.setAttribute("height", 0); layer.innerHTML = "";
     const from = document.querySelector(".week-camp:not([hidden]) svg"), to = document.querySelector(".climb-art svg");
     const at = (svg) => {
       const [x, y] = svg.dataset.anchor.split(",").map(Number), m = svg.getScreenCTM();
       return m ? [x * m.a + y * m.c + m.e + scrollX, x * m.b + y * m.d + m.f + scrollY] : null;
     };
     const a = from && at(from), b = to && at(to);
+    const box = $("week-card").getBoundingClientRect();
+    const key = [a, b, [box.left, box.top, box.right]].map((p) => (p ? p.map(Math.round).join(",") : "-")).join("|");
+    if (onlyIfMoved && key === ropeKey) return;
+    ropeKey = key;
+    // collapse first so the layer's own old size never props the page open
+    layer.setAttribute("width", 0); layer.setAttribute("height", 0); layer.innerHTML = "";
     if (!a || !b || b[1] > a[1] - 24) return;
+    const L = box.left + scrollX, R = box.right + scrollX, T = box.top + scrollY;
+    const rad = parseFloat(getComputedStyle($("week-card")).borderTopRightRadius) || 16, k = rad * (1 - Math.SQRT1_2);
+    const topX = Math.min(R - rad - 18, Math.max(L + 24, b[0]));
+    // anchors along the outline, and how each span bows (x, y): outward from the card, or a little
+    // sag where gravity would pull it
+    const pts = [a, [R, a[1]], [R, T + (a[1] - T) * .5], [R - k, T + k], [topX, T], b];
+    const bows = [[0, 3], [5, 0], [3, -2], [0, 2], [10, 0]];
+    const d = pts.slice(1).map(([x, y], i) => {
+      const [px, py] = pts[i], [bx, by] = bows[i];
+      return `${i ? "" : `M${px.toFixed(1)},${py.toFixed(1)}`}Q${((px + x) / 2 + bx).toFixed(1)},${((py + y) / 2 + by).toFixed(1)} ${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join("");
     const de = document.documentElement;
     layer.setAttribute("width", de.scrollWidth); layer.setAttribute("height", de.scrollHeight);
     layer.setAttribute("viewBox", `0 0 ${de.scrollWidth} ${de.scrollHeight}`);
-    const strand = (dx, sag) => {
-      const [ax, ay] = [a[0] + dx, a[1]], [bx, by] = [b[0] + dx * .4, b[1]];
-      const len = by - ay;
-      return `M${ax.toFixed(1)},${ay.toFixed(1)} C${(ax + sag).toFixed(1)},${(ay + len * .35).toFixed(1)} ${(bx + sag * .6).toFixed(1)},${(by - len * .3).toFixed(1)} ${bx.toFixed(1)},${by.toFixed(1)}`;
-    };
-    const main = strand(0, 22), second = strand(3, 30);
-    layer.innerHTML = `<path class="rope2" d="${second}"/><path class="rope" d="${main}"/><path class="rope-tex" d="${main}"/>
-      <circle class="rope-knot" cx="${a[0].toFixed(1)}" cy="${a[1].toFixed(1)}" r="2.6"/><circle class="rope-knot" cx="${b[0].toFixed(1)}" cy="${b[1].toFixed(1)}" r="2.2"/>`;
+    layer.innerHTML = `<path class="rope" d="${d}"/><path class="rope-tex" d="${d}"/>`
+      + pts.slice(1, -1).map(([x, y]) => `<g class="rope-bolt" transform="translate(${x.toFixed(1)},${y.toFixed(1)})"><circle r="3.4"/><circle class="ring" r="1.5"/></g>`).join("")
+      + `<circle class="rope-knot" cx="${b[0].toFixed(1)}" cy="${b[1].toFixed(1)}" r="2.2"/>`;
   }
 
   function renderWeekCard(w) {
@@ -1483,6 +1495,8 @@
 
   new ResizeObserver(scheduleFit).observe(document.querySelector(".page"));
   document.fonts?.ready.then(scheduleFit);
+  // catch any late layout shift that moves the rope's ends without resizing the page
+  setInterval(() => { if (!document.hidden) drawRopes(true); }, 1500);
   window.addEventListener("load", scheduleFit);
 
   let resizeTimer;
