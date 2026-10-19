@@ -944,12 +944,12 @@
     // a rope from the top railing up across the gap to the bottom edge of the mountain drawing, where
     // a winding road (drawn in the climb itself) carries on to the start of the route
     const foot = map(to, ...(to.dataset.foot || to.dataset.anchor).split(",").map(Number));
-    // a smaller grappling hook lodged on the drawing's bottom edge, its brown rope down to the rail
-    const eye = [foot[0] - 1, foot[1] + 4.2];
+    // a second grappling hook lodged on the drawing's bottom edge, its brown rope down to the rail
+    const eye = [foot[0] - 2, foot[1] + 8.6];
     const post = [topX + 11, T - 8.4];                   // tied off on the top railing's end post
     const ropePath = `M${f(post[0])},${f(post[1])}Q${f((post[0] + eye[0]) / 2 + 6)},${f((post[1] + eye[1]) / 2 + 2)} ${f(eye[0])},${f(eye[1])}`;
     const rope = `<path class="trail-hookrope" d="${ropePath}"/><path class="trail-hookrope-tex" d="${ropePath}"/>
-      <g class="trail-hook" transform="translate(${f(eye[0])},${f(eye[1])}) rotate(104) scale(.6)">
+      <g class="trail-hook" transform="translate(${f(eye[0])},${f(eye[1])}) rotate(104)">
         <path class="shank" d="M0,0L-11.5,.4"/>
         <path class="prong" d="M-11.5,.4C-15.6,.6 -16.6,4.8 -12.4,6.4M-11.5,.4C-15.2,-.2 -16.4,-3.8 -13,-5.4M-11.5,.4C-14.2,-.4 -15.6,-.6 -16.2,-2.6"/>
         <circle class="eye" r="1.7"/></g>
