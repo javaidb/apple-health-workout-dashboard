@@ -299,6 +299,8 @@
   // previous mountain too. Summits are only lost that way, one mountain per missed week.
   const CLIMB_WEEKS = 8;     // weeks per mountain
   const CLIMB_LEDGE = 4;     // the ledge halfway up
+  const ROUTE_WANDER = [0, 6, -4, 5, 0, -5, 4, -3, 0];   // sideways offset of each week's spot
+  const ROUTE_SUB = 8;       // curve samples per week
   let climbId = 0;           // unique ids for each drawing's gradients
   const MOUNTAINS = [
     { key: "pine", name: "Pine Ridge", top: 70, width: 46, seed: 1 },
@@ -477,16 +479,32 @@
     const scene = mountainScene(info, id);
     const W = 100, H = 200, G = scene.ground;
     const base = [24, G - 2], ledge = [76, 118], summit = scene.summit;
-    const lerp = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
-    const pt = (k) => (k <= CLIMB_LEDGE ? lerp(base, ledge, k / CLIMB_LEDGE) : lerp(ledge, summit, (k - CLIMB_LEDGE) / (CLIMB_WEEKS - CLIMB_LEDGE)));
-    const line = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => pt(a + i)).map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`).join("");
+    // Week k's spot on the route: evenly along base → ledge → summit, pushed sideways by a fixed
+    // amount so the line wanders like a real route up the face (purely for looks).
+    const pt = (k) => {
+      const [a, b, t] = k <= CLIMB_LEDGE ? [base, ledge, k / CLIMB_LEDGE] : [ledge, summit, (k - CLIMB_LEDGE) / (CLIMB_WEEKS - CLIMB_LEDGE)];
+      const dx = b[0] - a[0], dy = b[1] - a[1], len = Math.hypot(dx, dy), off = ROUTE_WANDER[k];
+      return [a[0] + dx * t - (dy / len) * off, a[1] + dy * t + (dx / len) * off];
+    };
+    // The route is a smooth curve (Catmull-Rom) through the week spots, sampled ROUTE_SUB times per
+    // week so the done and ahead parts are pieces of the same curve.
+    const curve = [pt(0)];
+    for (let i = 0; i < CLIMB_WEEKS; i++) {
+      const p0 = pt(Math.max(0, i - 1)), p1 = pt(i), p2 = pt(i + 1), p3 = pt(Math.min(CLIMB_WEEKS, i + 2));
+      for (let j = 1; j <= ROUTE_SUB; j++) {
+        const s = j / ROUTE_SUB, s2 = s * s, s3 = s2 * s;
+        curve.push([0, 1].map((c) => .5 * (2 * p1[c] + (p2[c] - p0[c]) * s + (2 * p0[c] - 5 * p1[c] + 4 * p2[c] - p3[c]) * s2 + (3 * p1[c] - p0[c] - 3 * p2[c] + p3[c]) * s3)));
+      }
+    }
+    const line = (a, b) => curve.slice(a * ROUTE_SUB, b * ROUTE_SUB + 1).map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`).join("");
+    const mid = (k) => [curve[k * ROUTE_SUB + ROUTE_SUB / 2 - 1], curve[k * ROUTE_SUB + ROUTE_SUB / 2 + 1]];
     const atSummit = step === CLIMB_WEEKS;
     const reached = step, fellFrom = fell ? fell.from : 0;
 
     const route = (reached > 0 ? `<path class="cl-route done" d="${line(0, reached)}"/>` : fellFrom ? `<path class="cl-route old" d="${line(0, fellFrom)}"/>` : "")
       + (reached < CLIMB_WEEKS ? `<path class="cl-route ahead" d="${line(reached, CLIMB_WEEKS)}"/>` : "");
     const arrows = Array.from({ length: CLIMB_WEEKS }, (_, k) => k).filter((k) => k !== reached - 1 && k !== reached)
-      .map((k) => routeArrow(pt(k), pt(k + 1), k < reached ? "done" : k < fellFrom ? "old" : "ahead")).join("");
+      .map((k) => routeArrow(...mid(k), k < reached ? "done" : k < fellFrom ? "old" : "ahead")).join("");
     const dots = Array.from({ length: CLIMB_WEEKS - 1 }, (_, i) => i + 1).filter((k) => k !== CLIMB_LEDGE)
       .map((k) => { const [x, y] = pt(k); return `<circle class="cl-step${k <= reached ? " done" : k <= fellFrom ? " old" : ""}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1.3"/>`; }).join("");
     const ledgeRock = rockLedge(ledge[0], ledge[1] + 1.2, Math.max(reached, fellFrom) >= CLIMB_LEDGE)
