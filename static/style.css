@@ -362,11 +362,12 @@ svg { display: block; }
 .sitter .s-far, .sitter .s-back { opacity: .6; }
 .sitter .s-face { fill: var(--text); }
 .sitter .s-band { stroke: #ef4444; stroke-width: 1.2; stroke-linecap: round; }
-.sitter .s-tails { fill: none; stroke: #ef4444; stroke-width: .7; stroke-linecap: round; animation: s-flutter 1.6s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 100% 0; }
-.sitter .s-shins { transform-box: view-box; transform-origin: 10.2px 12px; animation: s-swing 2.8s ease-in-out infinite alternate; }
-@keyframes s-swing { from { transform: rotate(-9deg); } to { transform: rotate(10deg); } }
-@keyframes s-flutter { from { transform: rotate(-8deg); } to { transform: rotate(10deg); } }
-@media (prefers-reduced-motion: reduce) { .sitter .s-shins, .sitter .s-tails { animation: none; } }
+.sitter .s-tail { fill: none; stroke: #ef4444; stroke-width: .8; stroke-linecap: round; }
+.sitter .s-tail.t1 { animation: s-tail1 .9s ease-in-out infinite alternate; }
+.sitter .s-tail.t2 { animation: s-tail2 1.1s ease-in-out infinite alternate; opacity: .85; }
+@keyframes s-tail1 { from { d: path("M-2.6 -8C-4.2 -9.4 -6.2 -7 -9 -8.6"); } to { d: path("M-2.6 -8C-4.2 -7 -6.4 -9.8 -9.2 -7.8"); } }
+@keyframes s-tail2 { from { d: path("M-2.6 -7.8C-4 -6.6 -5.6 -8.2 -7.8 -6.4"); } to { d: path("M-2.6 -7.8C-4 -8.2 -5.8 -6 -8 -7.2"); } }
+@media (prefers-reduced-motion: reduce) { .sitter .s-tail { animation: none; } }
 .week-total.met { border-style: solid; border-color: color-mix(in srgb, var(--good) 40%, transparent); background: color-mix(in srgb, var(--good) 7%, transparent); }
 .week-total strong { color: var(--text); font-size: 14px; font-variant-numeric: tabular-nums; }
 .week-total .bar { height: 5px; background: var(--surface-3); border-radius: 99px; overflow: hidden; }
