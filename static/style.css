@@ -355,6 +355,18 @@ svg { display: block; }
   border-radius: 12px; padding: 10px; background: transparent; border: 1px dashed var(--border-strong);
   display: flex; flex-direction: column; justify-content: center; gap: 6px; font-size: 12px; color: var(--muted);
 }
+.week-total { position: relative; }
+.sitter { position: absolute; right: 6px; top: -26px; width: 32px; height: 42px; overflow: visible; pointer-events: auto; z-index: 2; }
+.sitter .s-body { fill: none; stroke: var(--text); stroke-width: 2.1; stroke-linecap: round; }
+.sitter .s-limb { fill: none; stroke: var(--text); stroke-width: 1.25; stroke-linecap: round; stroke-linejoin: round; }
+.sitter .s-far, .sitter .s-back { opacity: .6; }
+.sitter .s-face { fill: var(--text); }
+.sitter .s-band { stroke: #ef4444; stroke-width: 1.2; stroke-linecap: round; }
+.sitter .s-tails { fill: none; stroke: #ef4444; stroke-width: .7; stroke-linecap: round; animation: s-flutter 1.6s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 100% 0; }
+.sitter .s-shins { transform-box: view-box; transform-origin: 10.2px 12px; animation: s-swing 2.8s ease-in-out infinite alternate; }
+@keyframes s-swing { from { transform: rotate(-9deg); } to { transform: rotate(10deg); } }
+@keyframes s-flutter { from { transform: rotate(-8deg); } to { transform: rotate(10deg); } }
+@media (prefers-reduced-motion: reduce) { .sitter .s-shins, .sitter .s-tails { animation: none; } }
 .week-total.met { border-style: solid; border-color: color-mix(in srgb, var(--good) 40%, transparent); background: color-mix(in srgb, var(--good) 7%, transparent); }
 .week-total strong { color: var(--text); font-size: 14px; font-variant-numeric: tabular-nums; }
 .week-total .bar { height: 5px; background: var(--surface-3); border-radius: 99px; overflow: hidden; }
