@@ -725,14 +725,9 @@
       extra = `<path class="cl-fall" d="M${fx.toFixed(1)},${fy.toFixed(1)} Q${(fx + (fx > 50 ? 16 : -16)).toFixed(1)},${((fy + G) / 2).toFixed(1)} 52,${G - 3}"/>`;
       figure = climber("fallen", 52, G, false, cs);
       sub = `${fell.down ? "Fell down" : "Fell on"} ${info.name} · back to ${camp}`;
-    } else if (night) {
-      // asleep in the base-camp tent
-      figure = `<g class="cl-zzz">${[[19, G - 13, 3.2], [22.5, G - 17.5, 4], [26.5, G - 23, 4.8]]
-        .map(([x, y, f], i) => `<text x="${x}" y="${y}" style="font-size:${f}px;animation-delay:${i * .6}s">z</text>`).join("")}</g>`;
-      sub = "Carl's asleep at base camp · Help him reach the top!";
     } else {
-      figure = climber("stand", 52, G, false, cs);
-      sub = "Help Carl reach the top!";
+      // not started: Carl waits at camp, which lives in the This week card below
+      sub = night ? `Carl's asleep at ${camp} · Help him reach the top!` : "Help Carl reach the top!";
     }
     // a headlamp glow while he climbs at night
     if (night && step > 0 && !atSummit) {
@@ -745,14 +740,14 @@
       : fell ? `Carl fell ${fell.down ? "down" : "on"} ${info.name} and is back at ${camp}` : `Carl at ${camp}, ready to climb ${info.name}`;
     const doneInYear = (index + (atSummit ? 1 : 0)) % MOUNTAINS.length;
     return climbCaption(info, sub, atSummit && doneInYear === 0 ? MOUNTAINS.length : doneInYear, medals, Math.floor(index / MOUNTAINS.length) * MOUNTAINS.length) + `<div class="climb-art">
-      <svg class="th-${info.key}${night ? " night" : ""}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMax meet" role="img" aria-label="${label}">
+      <svg class="th-${info.key}${night ? " night" : ""}" data-anchor="${pt(0)[0].toFixed(1)},${pt(0)[1].toFixed(1)}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMax meet" role="img" aria-label="${label}">
         <defs><linearGradient id="g-sky-${id}" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" style="stop-color:var(--sky1)"/><stop offset="1" style="stop-color:var(--sky2)"/>
         </linearGradient></defs>
         <rect x="0" y="0" width="${W}" height="${H}" rx="8" fill="url(#g-sky-${id})"/>${sky.back}
         ${scene.sky}<path class="th-back" d="${scene.back}"/>
         <path class="th-mtn" d="${scene.path}"/>${scene.detail}${scene.deco}${cameo(info.key, state.weekly.length)}
-        ${ground}${sky.front}${tent(11, G, camp, 1.4)}${campUpgrades(goalWeeks, G)}${route}${arrows}${dots}${ledgeRock}${flag}${extra}${figure}
+        ${ground}${sky.front}<g class="cl-anchor"><circle cx="${pt(0)[0].toFixed(1)}" cy="${pt(0)[1].toFixed(1)}" r="1.5"/><circle class="eye" cx="${pt(0)[0].toFixed(1)}" cy="${pt(0)[1].toFixed(1)}" r=".6"/></g>${route}${arrows}${dots}${ledgeRock}${flag}${extra}${figure}
       </svg></div>`;
   }
 
@@ -816,6 +811,56 @@
   }
   function closeTrail() { $("trail").hidden = true; }
 
+  // Carl's camp at the foot of the current mountain, drawn in the This week card. A rope runs from
+  // its stake up across the cards to the start of the route (see drawRopes).
+  function campHtml() {
+    const { index, step, fell, goalWeeks } = climbState();
+    const G = 186, night = skyPhase() === "night", waiting = step === 0 && !fell;
+    const name = campName(index);
+    let carl = "";
+    if (waiting && night) {
+      carl = `<g class="cl-zzz">${[[19, G - 13, 3.2], [22.5, G - 17.5, 4], [26.5, G - 23, 4.8]]
+        .map(([x, y, f], i) => `<text x="${x}" y="${y}" style="font-size:${f}px;animation-delay:${i * .6}s">z</text>`).join("")}</g>`;
+    } else if (waiting) {
+      carl = climber("stand", 45.5, G, false, 1.35);
+    }
+    const label = waiting ? `${name}: Carl is waiting to start the climb` : `${name}: Carl's camp at the foot of the mountain`;
+    return `<svg class="camp-scene${night ? " night" : ""}" viewBox="-2 160 54 32" data-anchor="39,183.4" role="img" aria-label="${esc(label)}">
+        <path class="cl-ground" d="M-2 ${G}H52"/>
+        ${tent(11, G, "", 1.4)}${campUpgrades(goalWeeks, G)}
+        <g class="cl-stake"><path d="M39 ${G + .4}V182.6"/><path class="coil" d="M36.2 ${G}a2.8 1.3 0 1 0 5.6 0a2.8 1.3 0 1 0 -5.6 0M36.8 ${G - .8}a2.2 1 0 1 0 4.4 0"/></g>
+        ${carl}
+        <text class="camp-name" x="11" y="191.2" text-anchor="middle">${esc(name)}</text>
+      </svg>`;
+  }
+
+  // The rope: from the camp's stake in the This week card, up over the card edges, to the anchor at
+  // the start of the route on the mountain. Drawn on a layer above the cards; only when the
+  // mountain is above the camp (the stacked one-screen layout).
+  function drawRopes() {
+    const layer = $("ropes");
+    // collapse first so the layer's own old size never props the page open
+    layer.setAttribute("width", 0); layer.setAttribute("height", 0); layer.innerHTML = "";
+    const from = document.querySelector(".week-camp:not([hidden]) svg"), to = document.querySelector(".climb-art svg");
+    const at = (svg) => {
+      const [x, y] = svg.dataset.anchor.split(",").map(Number), m = svg.getScreenCTM();
+      return m ? [x * m.a + y * m.c + m.e + scrollX, x * m.b + y * m.d + m.f + scrollY] : null;
+    };
+    const a = from && at(from), b = to && at(to);
+    if (!a || !b || b[1] > a[1] - 24) return;
+    const de = document.documentElement;
+    layer.setAttribute("width", de.scrollWidth); layer.setAttribute("height", de.scrollHeight);
+    layer.setAttribute("viewBox", `0 0 ${de.scrollWidth} ${de.scrollHeight}`);
+    const strand = (dx, sag) => {
+      const [ax, ay] = [a[0] + dx, a[1]], [bx, by] = [b[0] + dx * .4, b[1]];
+      const len = by - ay;
+      return `M${ax.toFixed(1)},${ay.toFixed(1)} C${(ax + sag).toFixed(1)},${(ay + len * .35).toFixed(1)} ${(bx + sag * .6).toFixed(1)},${(by - len * .3).toFixed(1)} ${bx.toFixed(1)},${by.toFixed(1)}`;
+    };
+    const main = strand(0, 22), second = strand(3, 30);
+    layer.innerHTML = `<path class="rope2" d="${second}"/><path class="rope" d="${main}"/><path class="rope-tex" d="${main}"/>
+      <circle class="rope-knot" cx="${a[0].toFixed(1)}" cy="${a[1].toFixed(1)}" r="2.6"/><circle class="rope-knot" cx="${b[0].toFixed(1)}" cy="${b[1].toFixed(1)}" r="2.2"/>`;
+  }
+
   function renderWeekCard(w) {
     const r = 34, c = 2 * Math.PI * r;
     const pct = Math.min(1, w.this_week_workouts / w.goal);
@@ -852,6 +897,7 @@
           <div class="big week-time">${weekSecs ? fmtDuration(weekSecs) : "0m"}</div>
           <div class="sub" data-opt="1">trained this week · ${plural(w.this_week_days, "active day")}</div>
         </div>
+        <div class="week-camp" data-opt="3">${campHtml()}</div>
       </div>
       <div class="week-dots">${dots}</div>`;
   }
@@ -1163,10 +1209,13 @@
 
   // Fit every card after the layout has settled (renders and size changes can come in any order).
   // (setTimeout rather than requestAnimationFrame so it also runs in background tabs.)
-  let fitTimer = 0;
+  let fitTimer = 0, ropeTimer = 0;
   function scheduleFit() {
     clearTimeout(fitTimer);
-    fitTimer = setTimeout(() => document.querySelectorAll(".card").forEach(fitCard), 40);
+    fitTimer = setTimeout(() => { document.querySelectorAll(".card").forEach(fitCard); drawRopes(); }, 40);
+    // late layout shifts (fonts, the calendar redrawing) can move the rope's ends, so check again
+    clearTimeout(ropeTimer);
+    ropeTimer = setTimeout(drawRopes, 600);
   }
 
   // Slim line: trailing moving average of workouts per week since the first workout.
@@ -1433,6 +1482,8 @@
   }).observe($("calendar"));
 
   new ResizeObserver(scheduleFit).observe(document.querySelector(".page"));
+  document.fonts?.ready.then(scheduleFit);
+  window.addEventListener("load", scheduleFit);
 
   let resizeTimer;
   window.addEventListener("resize", () => {

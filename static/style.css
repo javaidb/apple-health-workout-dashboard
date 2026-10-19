@@ -931,7 +931,7 @@ svg.th-frost .th-shade { fill: rgba(30, 80, 130, .25); }
 .scene-night { fill: #030616; opacity: .32; pointer-events: none; }
 .dusk-top { stop-color: #7c3aed; stop-opacity: .22; } .dusk-low { stop-color: #fb923c; stop-opacity: .2; }
 .dawn-top { stop-color: #60a5fa; stop-opacity: .12; } .dawn-low { stop-color: #f9a8d4; stop-opacity: .22; }
-.climb svg.night .cl-tent-door { fill: #ffd27a; filter: drop-shadow(0 0 2.5px #ffb84d); }
+svg.night .cl-tent-door { fill: #ffd27a; filter: drop-shadow(0 0 2.5px #ffb84d); }
 .cl-lamp { fill: #ffd27a; opacity: .18; filter: blur(2.5px); }
 .cl-zzz text { fill: var(--muted); font-weight: 700; font-style: italic; animation: cl-zzz 3s ease-in-out infinite; }
 @keyframes cl-zzz { 0% { opacity: 0; transform: translateY(2px); } 40% { opacity: 1; } 100% { opacity: 0; transform: translateY(-3px); } }
@@ -990,7 +990,7 @@ svg.th-frost .th-shade { fill: rgba(30, 80, 130, .25); }
 .cl-lantern .arm { fill: none; stroke: color-mix(in srgb, var(--text) 60%, transparent); stroke-width: .4; }
 .cl-lantern .body { fill: #ffd27a; }
 .cl-lantern .halo { fill: #ffd27a; opacity: .14; filter: blur(1px); }
-.climb svg.night .cl-lantern .halo { opacity: .35; }
+svg.night .cl-lantern .halo { opacity: .35; }
 .cl-lights .wire { fill: none; stroke: color-mix(in srgb, var(--text) 45%, transparent); stroke-width: .3; }
 .cl-lights .bulb { animation: th-twinkle 2s ease-in-out infinite; }
 .cl-lights .bulb.a { fill: #f472b6; } .cl-lights .bulb.b { fill: #fde047; animation-delay: .6s; } .cl-lights .bulb.c { fill: #4ade80; animation-delay: 1.2s; }
@@ -999,10 +999,25 @@ svg.th-frost .th-shade { fill: rgba(30, 80, 130, .25); }
 .cl-campfire .flame path { fill: #f97316; }
 .cl-campfire .flame .core { fill: #fde68a; }
 .cl-campfire .flame { transform-box: fill-box; transform-origin: 50% 100%; animation: cf-flick .8s ease-in-out infinite alternate; }
-.climb svg.night .cl-campfire .flame { filter: drop-shadow(0 0 2.4px #f97316); }
+svg.night .cl-campfire .flame { filter: drop-shadow(0 0 2.4px #f97316); }
 .shelf-item.m-gold { border-color: color-mix(in srgb, #fbbf24 55%, var(--border)); }
 .shelf-item.m-silver { border-color: color-mix(in srgb, #cbd5e1 45%, var(--border)); }
 .shelf-item.m-bronze { border-color: color-mix(in srgb, #d08a4e 45%, var(--border)); }
 .trail-camp { margin-top: 6px; color: var(--muted); font-size: 13px; }
 @media (prefers-reduced-motion: reduce) { .cl-camp-flag .pennant, .cl-lights .bulb, .cl-campfire .flame { animation: none; } }
 .climb svg.night :is(.th-sun, .th-sun-glow, .th-haze) { display: none; }
+
+/* ---- camp in the This week card, and the rope up to the mountain ---- */
+.week-top > div:nth-child(2) { min-width: 0; }
+.week-camp { flex: none; margin-left: auto; align-self: stretch; display: flex; align-items: flex-end; }
+.week-camp svg { height: 100%; max-height: 92px; aspect-ratio: 54 / 32; display: block; overflow: visible; }
+.camp-name { fill: var(--faint); font-size: 3.4px; font-weight: 650; }
+.cl-stake path:first-child { stroke: color-mix(in srgb, var(--text) 60%, transparent); stroke-width: .7; stroke-linecap: round; }
+.cl-stake .coil { fill: none; stroke: var(--accent); stroke-width: .6; }
+.cl-anchor circle { fill: color-mix(in srgb, var(--text) 75%, var(--surface)); stroke: color-mix(in srgb, var(--text) 40%, transparent); stroke-width: .4; }
+.cl-anchor .eye { fill: var(--surface); stroke: none; }
+.rope-layer { position: absolute; left: 0; top: 0; pointer-events: none; z-index: 15; overflow: visible; }
+.rope-layer .rope { fill: none; stroke: var(--accent); stroke-width: 2.2; stroke-linecap: round; filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, .45)); }
+.rope-layer .rope-tex { fill: none; stroke: rgba(255, 255, 255, .35); stroke-width: 1; stroke-dasharray: 2.5 3.5; stroke-linecap: round; }
+.rope-layer .rope2 { fill: none; stroke: color-mix(in srgb, #38bdf8 70%, transparent); stroke-width: 1.4; stroke-linecap: round; opacity: .8; }
+.rope-layer .rope-knot { fill: var(--accent); stroke: rgba(0, 0, 0, .35); stroke-width: .8; }

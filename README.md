@@ -49,7 +49,8 @@ weekly streak becomes Carl, a little climber working his way up a new mountain e
   new camp on each summit, and after a full year the cycle repeats as a higher tier. Each summit
   brings home a souvenir, wildlife drops by on some weeks, and the sky follows your clock (Carl sleeps in
   his tent or climbs by headlamp at night). Click the climb for the trail map: the whole range, your best
-  point, summits, falls and the souvenir shelf. See [climb rules](#carls-climb).
+  point, summits, falls and the souvenir shelf. Carl's camp sits in the This week card, tied to the foot of
+  the mountain by a rope that runs across the cards. See [climb rules](#carls-climb).
 - **A campfire for your last workout.** It blazes on a training day and burns down a step each day after,
   to embers and then a wisp of smoke, until the next workout relights it.
 - **Recent form.** The last 12 weeks as batteries (one cell per workout of the goal), box plots of your last
