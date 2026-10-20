@@ -1452,8 +1452,12 @@
   // change rows, and at each workout day sets down his bucket and wipes the glass with his rag;
   // the day sparkles when he's done, and he moves on to the next. The plan is redone whenever the
   // calendar or layout changes; with reduced motion he just stands cleaning the latest workout day.
-  const WASHER = { walk: 24, climb: 15, clean: 6 };   // px/s walking, px/s climbing, seconds per day
-  const washer = { x: null, y: null, mode: "walk", plan: [], target: null, until: 0, facing: 1, last: 0, sparkle: null, key: "" };
+  // An unhurried pace: a stroll (with steps matched to the speed so his feet don't slide), easing in
+  // and out of each stretch, a short pause before and after each climb or turn, and climbing hand
+  // over hand in pulls: reach and pull up, then settle, once per CLIMB_BEAT.
+  const WASHER = { walk: 11, climb: 7, clean: 6, pause: .9, beat: 1.1 };   // px/s, px/s, s, s, s
+  const washer = { x: null, y: null, mode: "walk", plan: [], target: null, until: 0, facing: 1, last: 0, sparkle: null, key: "",
+    pauseUntil: 0, legFrom: null };
   const washerFigure = `<g class="ww-body">
       <g class="ww-legs"><path class="ww-limb leg-a" d="M0 -4.6L-1.4 0"/><path class="ww-limb leg-b" d="M0 -4.6L1.4 0"/></g>
       <path class="ww-torso" d="M0 -4.6V-9.4"/>
@@ -1489,7 +1493,7 @@
         [washer.x, washer.y] = spot(start);
       }
       washer.y = ledges.reduce((a, b) => (Math.abs(b - washer.y) < Math.abs(a - washer.y) ? b : a), ledges[0]);
-      washer.plan = []; washer.target = null; washer.mode = "walk";
+      washer.plan = []; washer.target = null; washer.mode = "walk"; washer.legFrom = null; washer.rested = false;
     }
     const g = layer.querySelector(".washer");
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -1519,15 +1523,40 @@
           if (t) washer.sparkle = { x: t.r.right + sx - 12, y: t.r.top + sy + 14, until: now + 2.4 };
           washer.done = washer.target; washer.target = null;
         }
+      } else if (now < washer.pauseUntil) {
+        washer.mode = "pause";
       } else if (washer.plan.length) {
-        const [px, py, how] = washer.plan[0], speed = how === "climb" ? WASHER.climb : WASHER.walk;
-        const dx = px - washer.x, dy = py - washer.y, dist = Math.hypot(dx, dy), step = speed * dt;
-        washer.mode = how;
-        if (Math.abs(dx) > .5) washer.facing = dx > 0 ? 1 : -1;
-        if (dist <= step) {
-          washer.x = px; washer.y = py; washer.plan.shift();
-          if (!washer.plan.length) { washer.mode = "clean"; washer.until = now + WASHER.clean; }
-        } else { washer.x += (dx / dist) * step; washer.y += (dy / dist) * step; }
+        const [px, py, how] = washer.plan[0];
+        const dx = px - washer.x, dy = py - washer.y, dist = Math.hypot(dx, dy);
+        if (!washer.legFrom) {
+          // starting a stretch: before a climb or a turn round, stop and take a breath first
+          const turning = how === "walk" && Math.abs(dx) > .5 && (dx > 0 ? 1 : -1) !== washer.facing;
+          if ((how === "climb" || turning) && !washer.rested) {
+            washer.rested = true; washer.pauseUntil = now + WASHER.pause; washer.mode = "pause";
+          } else {
+            washer.rested = false; washer.legFrom = [washer.x, washer.y];
+            if (how === "walk" && Math.abs(dx) > .5) washer.facing = dx > 0 ? 1 : -1;
+          }
+        }
+        if (washer.legFrom) {
+          washer.mode = how;
+          let speed;
+          if (how === "climb") {
+            // hand over hand: pull for 60% of each beat, hold for the rest
+            const phase = (now % WASHER.beat) / WASHER.beat;
+            speed = phase < .6 ? WASHER.climb / .6 * Math.sin(Math.PI * phase / .6) * (Math.PI / 2) : 0;
+          } else {
+            // ease in over the first 10px and out over the last 12px
+            const gone = Math.hypot(washer.x - washer.legFrom[0], washer.y - washer.legFrom[1]);
+            speed = WASHER.walk * Math.max(.25, Math.min(1, (gone + 2) / 10, (dist + 2) / 12));
+          }
+          const step = speed * dt;
+          if (dist <= Math.max(step, .05)) {
+            washer.x = px; washer.y = py; washer.plan.shift(); washer.legFrom = null;
+            if (how === "climb") washer.pauseUntil = now + WASHER.pause * .7;   // catch his breath at the top
+            if (!washer.plan.length) { washer.mode = "clean"; washer.until = Math.max(now, washer.pauseUntil) + WASHER.clean; }
+          } else { washer.x += (dx / dist) * step; washer.y += (dy / dist) * step; }
+        }
       }
       // sparkles on the day he just finished
       const sp = layer.querySelector(".ww-sparkle");
@@ -1536,7 +1565,7 @@
           `<path transform="translate(${(washer.sparkle.x + dx).toFixed(1)},${(washer.sparkle.y + dy).toFixed(1)}) scale(${k})" d="M0 -3.2L.8 -.8L3.2 0L.8 .8L0 3.2L-.8 .8L-3.2 0L-.8 -.8Z"/>`).join("");
       } else if (sp.innerHTML) { sp.innerHTML = ""; washer.sparkle = null; }
     }
-    g.setAttribute("class", `washer ${washer.mode}`);
+    g.setAttribute("class", `washer ${washer.mode === "pause" ? "idle" : washer.mode}`);
     g.setAttribute("transform", `translate(${washer.x.toFixed(1)},${washer.y.toFixed(1)}) scale(1.2)`);
     g.querySelector(".ww-flip").setAttribute("transform", `scale(${washer.mode === "clean" || washer.mode === "climb" ? 1 : washer.facing},1)`);
   }
