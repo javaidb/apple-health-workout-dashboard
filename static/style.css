@@ -912,20 +912,33 @@ svg.th-frost .th-shade { fill: rgba(30, 80, 130, .25); }
 
 /* ---- campfire on the last-workout card ---- */
 .last-card .big { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.campfire { flex: none; width: 1.3em; height: 1.3em; margin: -.18em -.06em -.12em 0; }
+.campfire { flex: none; width: 1.95em; height: 1.95em; margin: -.78em -.1em -.15em 0; }   /* bigger, reaching up into the space beside the eyebrow */
 .campfire svg { width: 100%; height: 100%; overflow: visible; display: block; }
-/* the billboard's neon campfire: glowing glass tubes, dark when unlit */
-.nf-tube { fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
-.nf-layer.off .nf-tube, .nf-log.off { stroke: color-mix(in srgb, var(--text) 12%, transparent); }
-.nf-layer.orange.on .nf-tube { stroke: #fdba74; filter: drop-shadow(0 0 1px #f97316) drop-shadow(0 0 3.5px #f97316); }
-.nf-layer.yellow.on .nf-tube { stroke: #fef08a; filter: drop-shadow(0 0 1px #facc15) drop-shadow(0 0 3.5px #eab308); }
-.nf-layer.blue.on .nf-tube { stroke: #bae6fd; filter: drop-shadow(0 0 1px #38bdf8) drop-shadow(0 0 3.5px #0ea5e9); }
-.nf-log.on { stroke: #fda4af; filter: drop-shadow(0 0 1px #f43f5e) drop-shadow(0 0 3px #e11d48); }
-/* two tube shapes per flame, swapped like an animated sign, each layer at its own pace */
-.nf-layer.on .nf-tube.a { animation: nf-frame-a .9s steps(1) infinite; }
-.nf-layer.on .nf-tube.b { animation: nf-frame-b .9s steps(1) infinite; }
-.nf-layer.yellow.on .nf-tube { animation-duration: .7s; }
-.nf-layer.blue.on .nf-tube { animation-duration: .55s; }
+/* the billboard's neon campfire: open glass tubes with bulb electrodes, wired into a raceway */
+.nf-glass, .nf-gas, .nf-core { fill: none; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.nf-glass { stroke: color-mix(in srgb, var(--text) 13%, transparent); stroke-width: 3.4; }
+.nf-gas { stroke: color-mix(in srgb, var(--text) 9%, transparent); stroke-width: 1.5; }
+.nf-core { stroke: transparent; stroke-width: .5; }
+.nf-layer.on .nf-core { stroke: rgba(255, 255, 255, .75); }
+.nf-layer.orange.on .nf-gas { stroke: #fdba74; filter: drop-shadow(0 0 1.2px #f97316) drop-shadow(0 0 4px #f97316); }
+.nf-layer.yellow.on .nf-gas { stroke: #fef08a; filter: drop-shadow(0 0 1.2px #facc15) drop-shadow(0 0 4px #eab308); }
+.nf-layer.blue.on .nf-gas { stroke: #bae6fd; filter: drop-shadow(0 0 1.2px #38bdf8) drop-shadow(0 0 4px #0ea5e9); }
+.nf-layer.log.on .nf-gas { stroke: #fda4af; filter: drop-shadow(0 0 1.2px #f43f5e) drop-shadow(0 0 3.5px #e11d48); }
+/* the electrodes glow faintly in the tube's colour when lit */
+.nf-bulb { fill: color-mix(in srgb, var(--text) 16%, transparent); stroke: color-mix(in srgb, var(--text) 30%, transparent); stroke-width: .25; }
+.nf-layer.orange.on .nf-bulb { fill: rgba(253, 186, 116, .55); } .nf-layer.yellow.on .nf-bulb { fill: rgba(254, 240, 138, .55); }
+.nf-layer.blue.on .nf-bulb { fill: rgba(186, 230, 253, .55); } .nf-layer.log.on .nf-bulb { fill: rgba(253, 164, 175, .55); }
+.nf-cap { fill: #6b7280; }
+.nf-wire { fill: none; stroke: #1f2937; stroke-width: .5; vector-effect: non-scaling-stroke; }
+.nf-raceway { fill: #1f2937; stroke: #374151; stroke-width: .3; }
+.nf-raceway-seam { stroke: #374151; stroke-width: .2; }
+.nf-screw { fill: #9ca3af; }
+/* two runs per flame, lit alternately like an animated sign, each layer at its own pace; the
+   unlit run's glass stays visible */
+.nf-layer.on .nf-run.a :is(.nf-gas, .nf-core) { animation: nf-frame-a .9s steps(1) infinite; }
+.nf-layer.on .nf-run.b :is(.nf-gas, .nf-core) { animation: nf-frame-b .9s steps(1) infinite; }
+.nf-layer.yellow.on .nf-run :is(.nf-gas, .nf-core) { animation-duration: .7s; }
+.nf-layer.blue.on .nf-run :is(.nf-gas, .nf-core) { animation-duration: .55s; }
 @keyframes nf-frame-a { 0% { opacity: 1; } 50% { opacity: 0; } }
 @keyframes nf-frame-b { 0% { opacity: 0; } 50% { opacity: 1; } }
 /* a dying layer stutters like a failing tube */
@@ -933,7 +946,6 @@ svg.th-frost .th-shade { fill: rgba(30, 80, 130, .25); }
 @keyframes nf-fail { 0%, 40%, 44%, 70%, 100% { opacity: 1; } 41% { opacity: .15; } 42% { opacity: .9; } 43% { opacity: .2; } 72% { opacity: .35; } 74% { opacity: 1; } }
 .nf-spark { fill: #fef08a; filter: drop-shadow(0 0 2px #facc15); animation: nf-spark 1.6s steps(1) infinite; }
 @keyframes nf-spark { 0% { opacity: 1; } 50% { opacity: 0; } }
-.nf-clip { fill: color-mix(in srgb, var(--text) 30%, transparent); }
 /* still used by the camp's little fire and by steam elsewhere */
 @keyframes cf-flick { 0% { transform: scale(1, 1) skewX(0deg); } 50% { transform: scale(.95, 1.06) skewX(-3deg); } 100% { transform: scale(1.03, .96) skewX(3deg); } }
 @keyframes cf-smoke { 0% { opacity: 0; transform: translateY(3px); } 40% { opacity: .9; } 100% { opacity: 0; transform: translateY(-4px); } }
@@ -1002,7 +1014,7 @@ svg.night .cl-tent-door { fill: #ffd27a; filter: drop-shadow(0 0 2.5px #ffb84d);
 @media (max-width: 520px) { .trail-shelf { grid-template-columns: repeat(2, 1fr); } }
 
 @media (prefers-reduced-motion: reduce) {
-  .nf-tube, .nf-layer, .nf-spark, .cm-glide, .cm-flap, .cm-shoot, .cl-zzz text, .souv.now { animation: none; }
+  .nf-gas, .nf-core, .nf-layer, .nf-spark, .cm-glide, .cm-flap, .cm-shoot, .cl-zzz text, .souv.now { animation: none; }
 }
 
 /* ---- goal weeks: gold steps, medals, base camp upgrades ---- */

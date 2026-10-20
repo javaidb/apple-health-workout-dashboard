@@ -280,14 +280,22 @@
   }
 
   // The billboard's campfire is a neon sign: three nested flame tubes (a small blue core, a medium
-  // yellow flame and a large orange one) over two crossed red log tubes. Each flame flips between
-  // two tube shapes, its tip leaning one way then the other, at its own pace, like an animated neon
+  // yellow flame and a large orange one) over two crossed red log tubes. Like real neon, each tube
+  // is an open run of glass, visible even when unlit, ending in two bulb-shaped electrodes whose
+  // wires drop into the raceway (the transformer housing) along the bottom. Each flame has two
+  // tubes, tip leaning one way and the other, lit alternately at its own pace like an animated
   // sign. Recent workouts light it from the inside out: orange stays lit for a day after training,
   // yellow for three days, blue for four; then the glass goes dark until the next workout.
   const FIRE_STAGES = ["Blazing: you trained today", "Burning well", "Burning low", "Flickering out",
     "Just the blue core left", "Gone out: a workout relights it"];
-  const FLAME_A = "M20 3C25 11 30.5 15.5 29.5 23.5C28.8 29.2 24.8 32 20 32C15.2 32 11.2 29.2 10.5 23.5C9.9 18 14 14.5 15.6 8.5C17.6 12.6 19 13.6 20 3Z";
-  const FLAME_B = "M21.8 4C26.6 11.6 30.6 16.4 29.6 24C28.9 29.3 24.8 32 20 32C15.2 32 11.1 29.3 10.5 24C9.8 18.6 13.4 14.4 14.2 9.8C17 13.4 19.8 12.6 21.8 4Z";
+  // open flame runs, from the bottom-right electrode up over the tip and down to the bottom-left one
+  const FLAME_A = "M23.2 31.8C26.4 31.2 29 28 29.5 23.5C30.5 15.5 25 11 20 3C19 13.6 17.6 12.6 15.6 8.5C14 14.5 9.9 18 10.5 23.5C11 28 13.6 31.2 16.8 31.8";
+  const FLAME_B = "M23.2 31.8C26.4 31.2 29 28.4 29.6 24C30.6 16.4 26.6 11.6 21.8 4C19.8 12.6 17 13.4 14.2 9.8C13.4 14.4 9.8 18.6 10.5 24C11 28.4 13.6 31.2 16.8 31.8";
+  // a glass tube: its glass body, the glowing gas inside and, when lit, a white-hot core
+  const neonTube = (d, cls) => `<g class="nf-run ${cls}"><path class="nf-glass" d="${d}"/><path class="nf-gas" d="${d}"/><path class="nf-core" d="${d}"/></g>`;
+  // a bulb-shaped electrode at a tube end, with its wire down to the raceway (in the layer's units)
+  const electrode = (x, y, wireTo) => `<path class="nf-wire" d="M${x},${y + 1.4}V${wireTo}"/>
+    <rect class="nf-cap" x="${x - .75}" y="${y + .6}" width="1.5" height="1.4" rx=".3"/><circle class="nf-bulb" cx="${x}" cy="${y}" r="1.15"/>`;
   function campfire(daysAgo) {
     const stage = FIRE_STAGES[Math.min(daysAgo, 5)];
     const layers = [
@@ -299,15 +307,19 @@
     const tubes = layers.map(([c, k, lit, flicker, mirror]) => {
       const t = `translate(20 32) scale(${mirror ? -k : k},${k}) translate(-20 -32)`;
       const state = lit ? `on${flicker ? " flicker" : ""}` : "off";
-      return `<g class="nf-layer ${c} ${state}" transform="${t}"><path class="nf-tube a" d="${FLAME_A}"/>${lit ? `<path class="nf-tube b" d="${FLAME_B}"/>` : ""}</g>`;
+      const wireTo = 32 + 4.6 / k;   // the raceway's top, in this layer's units
+      return `<g class="nf-layer ${c} ${state}" transform="${t}">${neonTube(FLAME_A, "a")}${neonTube(FLAME_B, "b")}
+        ${electrode(16.8, 31.8, wireTo)}${electrode(23.2, 31.8, wireTo)}</g>`;
     }).join("");
     const anyLit = daysAgo <= 4;
-    const sparks = daysAgo === 0 ? [[13.4, 9.6, 0], [27.2, 7.4, .6], [24, 2.6, 1.2]].map(([x, y, d]) =>
+    const sparks = daysAgo === 0 ? [[12.4, 8.6, 0], [28.4, 6.4, .6], [24.6, 1.4, 1.2]].map(([x, y, d]) =>
       `<circle class="nf-spark" cx="${x}" cy="${y}" r=".75" style="animation-delay:${d}s"/>`).join("") : "";
+    const logs = `<g class="nf-layer log ${anyLit ? "on" : "off"}">${neonTube("M9.6 34.4L30.4 29.8", "solid")}${neonTube("M9.6 29.8L30.4 34.4", "solid")}
+        ${electrode(8.6, 34.6, 36.6)}${electrode(31.4, 34.6, 36.6)}${electrode(8.6, 29.6, 36.6)}${electrode(31.4, 29.6, 36.6)}</g>`;
     return `<span class="campfire neon-fire" title="Neon campfire: ${stage}"><svg viewBox="0 0 40 40" role="img" aria-label="Neon campfire: ${stage}">
-        <path class="nf-tube nf-log ${anyLit ? "on" : "off"}" d="M8.6 34.6L31.4 29.6M8.6 29.6L31.4 34.6"/>
-        ${tubes}${sparks}
-        ${[[8.6, 34.6], [31.4, 34.6], [20, 3.4]].map(([x, y]) => `<circle class="nf-clip" cx="${x}" cy="${y}" r=".7"/>`).join("")}</svg></span>`;
+        ${tubes}${logs}${sparks}
+        <rect class="nf-raceway" x="7" y="36.6" width="26" height="2.6" rx=".8"/><path class="nf-raceway-seam" d="M7.6 37.9H32.4"/>
+        ${[[12, 37.9], [28, 37.9]].map(([x, y]) => `<circle class="nf-screw" cx="${x}" cy="${y}" r=".45"/>`).join("")}</svg></span>`;
   }
 
   // The Last workout card as a billboard: a riveted steel frame just outside the card with corner
