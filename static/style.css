@@ -1319,6 +1319,19 @@ svg.night :is(.th-crown-sun, .th-crown-sun-glow, .th-crown-rays) { display: none
 .washer.climb .ww-cl.c1 { animation: ww-foot .8s ease-in-out infinite; animation-delay: -.4s; }
 .washer.climb .ww-cl.c2 { animation: ww-foot .8s ease-in-out infinite; scale: -1 1; }
 @keyframes ww-foot { 0%, 100% { d: path("M0 -4.6L-1 -2.6L-1.2 -.2"); } 50% { d: path("M0 -4.6L-1.4 -3.6L-1.2 -1.8"); } }
+.ww-ladder { opacity: 0; transition: opacity .6s ease; }
+.ww-ladder.shown { opacity: 1; }
+.washer { transition: opacity .7s ease; }
+.washer.away { opacity: 0; }
+/* perched on the billboard's ledge for the night */
+.washer.perch .ww-body { display: none; }
+.washer:not(.perch) .ww-pose-perch { display: none; }
+.ww-dangle { transform-box: view-box; animation: ww-dangle 2.8s ease-in-out infinite alternate; }
+.ww-dangle.d1 { transform-origin: -.8px 0; } .ww-dangle.d2 { transform-origin: .8px 0; animation-delay: -1.4s; }
+@keyframes ww-dangle { from { rotate: -12deg; } to { rotate: 10deg; } }
+.ww-gaze { transform-box: view-box; transform-origin: 0 -5px; rotate: -8deg; }
+.ww-mug { fill: #e5e7eb; }
+.ww-steam { fill: none; stroke: rgba(229, 231, 235, .5); stroke-width: .35; stroke-linecap: round; animation: cf-smoke 3s ease-in-out infinite; }
 .ww-rails { fill: none; stroke: #a8a29e; stroke-width: 1; stroke-linecap: round; }
 .ww-rungs { fill: none; stroke: #a8a29e; stroke-width: .8; }
 /* cleaning: bucket set down, the rag going round in circles on the glass */

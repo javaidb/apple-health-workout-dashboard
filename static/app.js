@@ -1474,7 +1474,14 @@
         <path class="ww-belt-pail" d="M1 -5H3.4L3 -2.8H1.4Z"/>
         <path class="ww-limb ww-ca a1" d="M0 -8.8L-1.8 -10.4L-2 -12.6"/><path class="ww-limb ww-ca a2" d="M0 -8.8L-1.8 -10.4L-2 -12.6"/>
       </g>
-      <circle class="ww-head" cx="0" cy="-11.4" r="1.9"/><path class="ww-cap" d="M-2 -12.2A2.1 2.1 0 0 1 2 -12.2ZM1.8 -12.2H3.6"/></g>`;
+      <circle class="ww-head" cx="0" cy="-11.4" r="1.9"/><path class="ww-cap" d="M-2 -12.2A2.1 2.1 0 0 1 2 -12.2ZM1.8 -12.2H3.6"/></g>
+    <g class="ww-pose-perch">
+      <path class="ww-limb ww-dangle d1" d="M-.8 0L-1.1 2.4L-1 4.6"/><path class="ww-limb ww-dangle d2" d="M.8 0L1.1 2.4L1 4.6"/>
+      <path class="ww-torso" d="M0 0V-4.8"/>
+      <path class="ww-limb" d="M-.2 -4L-2.6 -2L-3.4 0"/><path class="ww-limb" d="M.2 -4L2 -3L1.6 -4.4"/>
+      <rect class="ww-mug" x=".7" y="-6.2" width="1.9" height="1.9" rx=".4"/><path class="ww-steam" d="M1.3 -6.8q-.6 -.9 .2 -1.8M2.1 -6.8q-.6 -.9 .2 -1.8"/>
+      <path class="ww-pail" d="M3.4 0H6.4L6 -2.6H3.8Z"/>
+      <g class="ww-gaze"><circle class="ww-head" cx="0" cy="-6.9" r="1.9"/><path class="ww-cap" d="M-2 -7.7A2.1 2.1 0 0 1 2 -7.7ZM1.8 -7.7H3.6"/></g></g>`;
 
   function drawWasher() {
     const layer = $("washer");
@@ -1508,6 +1515,25 @@
     }
     const g = layer.querySelector(".washer");
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // At night, when the electrician has gone home, he knocks off too and sits on the billboard's
+    // ledge with a hot drink; he fades out of one spot and into the other at the change of shift.
+    const now0 = performance.now() / 1000, bb = $("last-card")?.getBoundingClientRect();
+    const where = skyPhase() === "night" && bb && bb.width ? "perch" : "calendar";
+    if (washer.where && where !== washer.where) {
+      if (!washer.fadeUntil) washer.fadeUntil = now0 + .7;
+      if (now0 < washer.fadeUntil) { g.classList.add("away"); return; }
+      washer.fadeUntil = 0; washer.ladder = null;
+    }
+    washer.where = where;
+    g.classList.remove("away");
+    if (where === "perch") {
+      g.setAttribute("class", "washer perch");
+      g.setAttribute("transform", `translate(${(bb.right + sx - 30).toFixed(1)},${(bb.bottom + sy + 3).toFixed(1)}) scale(1.2)`);
+      g.querySelector(".ww-flip").setAttribute("transform", "scale(1,1)");
+      layer.querySelector(".ww-ladder").classList.remove("shown");
+      washer.last = 0;
+      return;
+    }
     if (!targets.length) {
       washer.mode = "idle";
     } else if (reduce) {
@@ -1581,11 +1607,14 @@
     // the ladder, while he's using it
     const lad = layer.querySelector(".ww-ladder"), L = washer.ladder;
     const ladKey = L ? `${L.x.toFixed(1)},${L.y0.toFixed(1)},${L.y1.toFixed(1)}` : "";
-    if (lad.dataset.key !== ladKey) {
+    // the ladder fades in as he props it up and out as he steps off (its drawing stays put while
+    // it fades out, and a new one is only drawn once the old one has gone)
+    if (L && lad.dataset.key !== ladKey && !lad.classList.contains("shown")) {
       lad.dataset.key = ladKey;
-      const rungs = L ? Array.from({ length: Math.floor((L.y1 - L.y0 + 6) / 4) }, (_, i) => `M${(L.x - 2.6).toFixed(1)},${(L.y1 - 2 - i * 4).toFixed(1)}H${(L.x + 2.6).toFixed(1)}`).join("") : "";
-      lad.innerHTML = L ? `<path class="ww-rails" d="M${(L.x - 2.6).toFixed(1)},${(L.y0 - 6).toFixed(1)}V${L.y1.toFixed(1)}M${(L.x + 2.6).toFixed(1)},${(L.y0 - 6).toFixed(1)}V${L.y1.toFixed(1)}"/><path class="ww-rungs" d="${rungs}"/>` : "";
-    }
+      const rungs = Array.from({ length: Math.floor((L.y1 - L.y0 + 6) / 4) }, (_, i) => `M${(L.x - 2.6).toFixed(1)},${(L.y1 - 2 - i * 4).toFixed(1)}H${(L.x + 2.6).toFixed(1)}`).join("");
+      lad.innerHTML = `<path class="ww-rails" d="M${(L.x - 2.6).toFixed(1)},${(L.y0 - 6).toFixed(1)}V${L.y1.toFixed(1)}M${(L.x + 2.6).toFixed(1)},${(L.y0 - 6).toFixed(1)}V${L.y1.toFixed(1)}"/><path class="ww-rungs" d="${rungs}"/>`;
+    } else if (L && lad.dataset.key === ladKey) lad.classList.add("shown");
+    else if (!L || lad.dataset.key !== ladKey) lad.classList.remove("shown");
     g.setAttribute("transform", `translate(${washer.x.toFixed(1)},${washer.y.toFixed(1)}) scale(1.2)`);
     g.querySelector(".ww-flip").setAttribute("transform", `scale(${washer.mode === "clean" || washer.mode === "climb" ? 1 : washer.facing},1)`);
   }
