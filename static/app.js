@@ -121,6 +121,10 @@
     renderHeatmap();
     renderSide();  // month-over-month deltas use yearDays
     renderForm();
+    checkNewWorkout();
+    // the calendar buddy reacts to this week, so refresh him once the overview is in
+    const buddy = document.querySelector(".sitter");
+    if (buddy) buddy.outerHTML = sitterHtml();
     loadActivity().catch(() => renderActivity());
     $("empty").hidden = overview.totals.workouts > 0;
   }
@@ -174,6 +178,45 @@
   }
 
   const refreshAll = () => Promise.all([loadOverview(), loadMonth(), loadStatus()]).catch((e) => toast(e.message));
+
+  // ---- celebrating a new workout ------------------------------------------
+  // This browser remembers the latest workout it has celebrated. When a newer one shows up (a sync
+  // or an import), it celebrates once: confetti from the last-workout card, the campfire flares and
+  // Carl hops. First visits just remember where things are, and old workouts (backfills, imports of
+  // history) don't count.
+  const SEEN_KEY = "celebratedWorkout";
+  function checkNewWorkout() {
+    const last = state.overview?.last_workout;
+    if (!last) return;
+    let seen = null;
+    try { seen = JSON.parse(localStorage.getItem(SEEN_KEY)); } catch { /* storage unavailable */ }
+    const remember = () => { try { localStorage.setItem(SEEN_KEY, JSON.stringify({ id: last.id, start: last.start })); } catch { /* ignore */ } };
+    if (!seen) { remember(); return; }
+    if (seen.id === last.id || last.start <= seen.start) return;
+    remember();
+    if (last.days_ago > 2) return;
+    celebrate(state.recent.filter((w) => w.start > seen.start).length || 1);
+  }
+
+  function celebrate(n) {
+    toast(n > 1 ? `${n} new workouts logged. Carl climbs on!` : "New workout logged. Carl climbs on!");
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const r = $("last-card").getBoundingClientRect();
+    const burst = document.createElement("div");
+    burst.className = "confetti-burst";
+    burst.style.left = `${(r.left + r.width * .72).toFixed(0)}px`;
+    burst.style.top = `${(r.top + r.height * .32).toFixed(0)}px`;
+    const colors = ["#f97316", "#fbbf24", "#34d399", "#22d3ee", "#f472b6", "#a78bfa"];
+    burst.innerHTML = Array.from({ length: 46 }, (_, i) => {
+      const a = Math.random() * Math.PI * 2, d = 50 + Math.random() * 110;
+      return `<i style="--dx:${(Math.cos(a) * d).toFixed(0)}px;--dy:${(Math.sin(a) * d * .7 - 50).toFixed(0)}px;--r:${(Math.random() * 720 - 360).toFixed(0)}deg;background:${colors[i % colors.length]};animation-delay:${(Math.random() * .15).toFixed(2)}s"></i>`;
+    }).join("");
+    document.body.appendChild(burst);
+    const fire = document.querySelector("#last-card .campfire"), carl = document.querySelector(".climb-art svg .climber");
+    fire?.classList.add("flare");
+    carl?.classList.add("cl-hop");
+    setTimeout(() => { burst.remove(); fire?.classList.remove("flare"); carl?.classList.remove("cl-hop"); }, 2800);
+  }
 
   // ---- hero ---------------------------------------------------------------
   function renderHero() {
@@ -776,6 +819,12 @@
         figure = rope + hold + climber("hang", x, y + HANG, facingLeft, cs);
         extra = `<text class="cl-alert" x="${(x + (facingLeft ? 10 : -10)).toFixed(1)}" y="${(y + 9).toFixed(1)}" text-anchor="middle">!</text>`;
         sub = `Hang on, ${plural(N - step, "wk")} to the summit`;  // this week counts as one of them
+      } else if ((state.overview?.last_workout?.days_ago ?? 0) >= 5) {
+        // this week already counts, but it's been a while: he sits down on his hold and yawns
+        const seat = step === LEDGE ? "" : `<path class="cl-hold" d="M${(x - 3.6).toFixed(1)},${(y + 2).toFixed(1)}L${(x - 2.4).toFixed(1)},${(y - .2).toFixed(1)}L${(x + 2).toFixed(1)},${(y - .6).toFixed(1)}L${(x + 3.6).toFixed(1)},${(y + 1.2).toFixed(1)}L${(x + 1.2).toFixed(1)},${(y + 2.8).toFixed(1)}Z"/>`;
+        figure = rope + seat + climber("rest", x, y, facingLeft, cs)
+          + `<text class="cl-yawn" x="${(x + (facingLeft ? -9 : 9)).toFixed(1)}" y="${(y - 9).toFixed(1)}" text-anchor="middle">yawn</text>`;
+        sub = `${plural(N - step, "wk")} to the summit · Carl's getting comfy`;
       } else {
         figure = rope + climber(step === LEDGE ? "rest" : "climb", x, y, facingLeft, cs);
         sub = `${plural(N - step, "wk")} to the summit`;
@@ -1051,24 +1100,36 @@
         // the spark to the wall clock, so a rebuilt cradle carries on from where he was instead of
         // starting over: the 240 s alternating ride repeats every 480 s, the spark every 9 s.
         const now = Date.now() / 1000, ride = (now % 480).toFixed(2), spark = (now % 9).toFixed(2);
-        elec = `<path class="elec-rail" d="M${f(from - 8)},${f(T + .4)}H${f(to + CW + 8)}"/>
-          <g class="elec-ride" style="--travel:${f(travel)}px;animation-delay:-${ride}s;--spark-delay:-${spark}s" transform="translate(${f(from)},${f(T)})">
-            <circle class="elec-wheel" cx="6" cy="-1.6" r="1.9"/><circle class="elec-wheel" cx="38" cy="-1.6" r="1.9"/>
-            <path class="elec-trolley" d="M3 -1.6H41"/>
-            <path class="elec-cable" d="M6 0L3 17M38 0L41 17"/>
-            <g class="elec-man" transform="translate(27,25) scale(1.2)">
+        // fully charged: he parks mid-rail for a coffee; at night he's gone home and left a work lamp
+        const shift = skyPhase() === "night" ? "night" : charge >= .999 ? "coffee" : "work";
+        const park = shift === "night" ? `animation:none;translate:0 0;` : shift === "coffee" ? `animation:none;translate:${f(travel / 2)}px 0;` : `animation-delay:-${ride}s;`;
+        const arm = shift === "coffee"
+          ? `<path class="e-limb" d="M.2 -10.4L2.8 -9.2L2.4 -12.2"/><rect class="e-mug" x="1.4" y="-13.8" width="2.4" height="2.4" rx=".5"/>
+             <path class="e-steam" d="M2.2 -14.6q-.7 -1 .2 -2.2M3.2 -14.6q-.7 -1 .2 -2.2"/>`
+          : `<g class="elec-arm"><path class="e-limb" d="M.2 -10.4L2.6 -14.4L3.6 -18"/><path class="e-bulb" d="M3.6 -18.2c-1.4 -.8 -1.2 -3.4 0 -3.8c1.2 .4 1.4 3 0 3.8Z"/>
+                <circle class="e-flash" cx="4" cy="-20.2" r="2.6"/>
+                <path class="e-spark" d="M5.4 -21l2 -1.4M5.8 -19l2.4 .3M4.6 -22.6l.7 -2.2M2.4 -22.2l-1.2 -1.8M6 -20l2.6 -.6"/></g>`;
+        const man = shift === "night"
+          ? `<path class="elec-lampwire" d="M24 0V10"/><circle class="elec-lamp-glow" cx="24" cy="12" r="8"/><path class="elec-lamp" d="M22.3 10h3.4l-.7 3.4h-2Z"/>`
+          : `<g class="elec-man" transform="translate(27,25) scale(1.2)">
               <path class="e-body" d="M0 -3.6V-11.4"/>
               <rect class="e-vest" x="-1.9" y="-11" width="3.8" height="5.6" rx="1"/>
               <path class="e-limb" d="M-.2 -10.4L-3 -7.4L-4.6 -6"/>
-              <g class="elec-arm"><path class="e-limb" d="M.2 -10.4L2.6 -14.4L3.6 -18"/><path class="e-bulb" d="M3.6 -18.2c-1.4 -.8 -1.2 -3.4 0 -3.8c1.2 .4 1.4 3 0 3.8Z"/>
-                <circle class="e-flash" cx="4" cy="-20.2" r="2.6"/>
-                <path class="e-spark" d="M5.4 -21l2 -1.4M5.8 -19l2.4 .3M4.6 -22.6l.7 -2.2M2.4 -22.2l-1.2 -1.8M6 -20l2.6 -.6"/></g>
+              ${arm}
               <circle class="e-face" cx=".3" cy="-13.6" r="1.9"/>
-              <path class="e-hat" d="M-2.3 -14.1A2.4 2.4 0 0 1 2.9 -14.1Z"/><path class="e-brim" d="M-2.6 -14H3.6"/></g>
+              <path class="e-hat" d="M-2.3 -14.1A2.4 2.4 0 0 1 2.9 -14.1Z"/><path class="e-brim" d="M-2.6 -14H3.6"/></g>`;
+        const note = { work: "The electrician keeps the lights running. Charge them with workouts.",
+          coffee: "Lights fully charged: the electrician is on a coffee break.", night: "The electrician has gone home for the night." }[shift];
+        elec = `<path class="elec-rail" d="M${f(from - 8)},${f(T + .4)}H${f(to + CW + 8)}"/>
+          <g class="elec-ride" style="--travel:${f(travel)}px;${park}--spark-delay:-${spark}s" transform="translate(${f(from)},${f(T)})">
+            <circle class="elec-wheel" cx="6" cy="-1.6" r="1.9"/><circle class="elec-wheel" cx="38" cy="-1.6" r="1.9"/>
+            <path class="elec-trolley" d="M3 -1.6H41"/>
+            <path class="elec-cable" d="M6 0L3 17M38 0L41 17"/>
+            ${man}
             <rect class="elec-panel" x="0" y="19.5" width="${CW}" height="6.5" rx="1"/>
             <path class="elec-railing" d="M0 17H${CW}M0 17V26M11 17V19.5M22 17V19.5M33 17V19.5M${CW} 17V26"/>
             <rect class="elec-toolbox" x="5" y="15.4" width="7" height="4.1" rx=".6"/><path class="elec-toolbox-lid" d="M7 15.4v-1.2h3v1.2"/>
-            <title>The electrician keeps the lights running. Charge them with workouts.</title>
+            <title>${note}</title>
           </g>`;
       }
     }
@@ -1190,21 +1251,38 @@
 
   // ---- calendar -----------------------------------------------------------
   // Carl's climbing buddy, in a headband instead of a helmet, standing on top of the first week
-  // summary and leaning on a little rail at the box's top-right corner, forearms on the top bar,
-  // looking out past it while the wind streams his long headband tails behind him. Feet on the
+  // summary and leaning on a little rail at the box's top-right corner while the wind streams his
+  // long headband tails. His mood follows this week: looking out past the rail, waving a flag once
+  // the weekly goal is hit, or dozing on the rail while the week has no workouts yet. Feet on the
   // box's top edge at y 0; the rail post is at x 3.6.
   function sitterHtml() {
-    return `<svg class="sitter" viewBox="-8 -13 15 14" aria-hidden="true">
-        <path class="s-rail" d="M3.6 .2V-8M3.6 -8H6.6M3.6 -4H6.6M6.6 .2V-8"/>
-        <path class="s-limb s-far" d="M-.4 -4.6L.2 -2.2L.6 0"/>
-        <path class="s-limb" d="M-.4 -4.6L-1.2 -2.2L-1.4 0"/>
-        <path class="s-body" d="M-.4 -4.6L1.4 -8.6"/>
-        <path class="s-limb s-far" d="M1.2 -8.2L2.6 -7.2L4.6 -8.2"/>
-        <path class="s-limb" d="M1.4 -8.4L3 -7.4L5.2 -8.4"/>
-        <circle class="s-face" cx="2.3" cy="-10.6" r="1.9"/>
-        <path class="s-band" d="M.4 -11.1L4.1 -11.7"/>
-        <path class="s-tail t1" d="M.4 -11.1C-2 -12.4 -4 -10 -7.6 -11.8"/><path class="s-tail t2" d="M.4 -10.9C-1.8 -9.6 -4.2 -11.4 -7.2 -9.6"/>
-        <title>Carl's climbing buddy, taking in the view</title></svg>`;
+    const g = state.overview?.week_streak;
+    const mood = !g ? "look" : g.this_week_met ? "cheer" : g.this_week_workouts === 0 ? "doze" : "look";
+    const rail = `<path class="s-rail" d="M3.6 .2V-8M3.6 -8H6.6M3.6 -4H6.6M6.6 .2V-8"/>`;
+    const legs = `<path class="s-limb s-far" d="M-.4 -4.6L.2 -2.2L.6 0"/><path class="s-limb" d="M-.4 -4.6L-1.2 -2.2L-1.4 0"/>`;
+    const tails = `<path class="s-tail t1" d="M.4 -11.1C-2 -12.4 -4 -10 -7.6 -11.8"/><path class="s-tail t2" d="M.4 -10.9C-1.8 -9.6 -4.2 -11.4 -7.2 -9.6"/>`;
+    let body;
+    if (mood === "doze") {
+      // slumped on the rail, head on his folded arms
+      body = `<path class="s-body" d="M-.4 -4.6L1.8 -7.6"/>
+        <path class="s-limb s-far" d="M1.6 -7.4L3.4 -8.4L5.4 -8.4"/><path class="s-limb" d="M1.8 -7.6L3.8 -8.6L5.8 -8.6"/>
+        <circle class="s-face" cx="3.6" cy="-10.1" r="1.9"/><path class="s-band" d="M1.8 -10.8L5.4 -11.6"/>
+        <path class="s-tail t1" d="M1.8 -10.8C0 -11 -1.6 -9.6 -3.4 -10.2"/>
+        <g class="s-zzz"><text x="5.4" y="-13.6">z</text><text x="7.2" y="-16">z</text></g>`;
+    } else if (mood === "cheer") {
+      // goal hit: one arm on the rail, the other waving a little flag
+      body = `<path class="s-body" d="M-.4 -4.6L1 -8.8"/>
+        <path class="s-limb s-far" d="M1 -8.4L2.6 -7.4L4.6 -8.2"/>
+        <path class="s-limb" d="M1 -8.6L.4 -11.2L1.2 -13.6"/>
+        <g class="s-flag"><path class="s-stick" d="M1.2 -13L1.6 -18.4"/><path class="s-pennant" d="M1.6 -18.4L5.4 -17.2L1.5 -16.2Z"/></g>
+        <circle class="s-face" cx="1.8" cy="-10.8" r="1.9"/><path class="s-band" d="M-.1 -11.4L3.6 -11.9"/>${tails}`;
+    } else {
+      body = `<path class="s-body" d="M-.4 -4.6L1.4 -8.6"/>
+        <path class="s-limb s-far" d="M1.2 -8.2L2.6 -7.2L4.6 -8.2"/><path class="s-limb" d="M1.4 -8.4L3 -7.4L5.2 -8.4"/>
+        <circle class="s-face" cx="2.3" cy="-10.6" r="1.9"/><path class="s-band" d="M.4 -11.1L4.1 -11.7"/>${tails}`;
+    }
+    const title = { look: "taking in the view", cheer: "cheering: weekly goal hit!", doze: "dozing until this week's first workout" }[mood];
+    return `<svg class="sitter ${mood}" viewBox="-8 -19 15 20" aria-hidden="true">${rail}${legs}${body}<title>Carl's climbing buddy, ${title}</title></svg>`;
   }
 
   function renderCalendar() {

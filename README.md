@@ -52,6 +52,12 @@ weekly streak becomes Carl, a little climber working his way up a new mountain e
   his tent or climbs by headlamp at night). Click the climb for the trail map: the whole range, your best
   point, summits, falls and the souvenir shelf. Carl's camp sits in the This week card, tied to the foot of
   the mountain by a rope that runs across the cards. See [climb rules](#carls-climb).
+- **A small celebration for each new workout.** When a newly synced workout reaches the dashboard,
+  confetti bursts from the last-workout card, the campfire flares and Carl hops (once per workout, per
+  browser; old or backfilled workouts don't count).
+- **A cast that reacts.** Carl's buddy on the calendar waves a flag when the weekly goal is hit and dozes
+  on his rail in a week with no workouts yet; Carl sits down for a yawn after 5+ days without training;
+  the electrician fixing the calendar's lights takes a coffee break at full power and goes home at night.
 - **A campfire for your last workout.** It blazes on a training day and burns down a step each day after,
   to embers and then a wisp of smoke, until the next workout relights it.
 - **Recent form.** The last 12 weeks as batteries (one cell per workout of the goal), box plots of your last
