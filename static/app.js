@@ -1357,7 +1357,10 @@
           <title>Week of ${b.dataset.start}: ${plural(n, "workout")}${gold ? " (goal hit)" : ""}</title>
           <path class="pole" d="M0,0L7.4,-4.4"/><path class="cloth" d="M2.4,-1.4L7.4,-4.4L7,1.2L4.6,-.6L2.6,2.2Z"/></g>`;
     }).join("");
-    const climberAt = `<g class="rappeller" transform="translate(${f(ropeX)},${f(y)}) scale(1.2)">
+    // on the last day of the month he has reached the bottom and gone down to the market
+    const gone = atMonthEnd(now) && row >= 0;
+    if (gone) y = rects[rects.length - 1].bottom + sy - 8;
+    const climberAt = gone ? "" : `<g class="rappeller" transform="translate(${f(ropeX)},${f(y)}) scale(1.2)">
         <title>Abseiling down ${esc($("month-title").textContent)}: a flag for every week with a workout, gold for goal weeks</title>
         <g class="rp-bob">
           <path class="rp-limb" d="M0 0L-5 -1.8L-9.6 -1M0 0L-4.6 1.4L-9.4 2.8"/>
@@ -1366,7 +1369,7 @@
           <path class="rp-limb" d="M1 -5L.2 -8.4M.8 -4.4L1.6 -1.4L.2 2.6"/>
           <circle class="rp-face" cx="1.6" cy="-7.8" r="1.9"/><path class="rp-helmet" d="M-.6 -8A2.3 2.3 0 0 1 3.8 -8Z"/>
           <path class="rp-harness" d="M-.8 -.4H1"/></g></g>`;
-    const ropeEnd = y + 16;
+    const ropeEnd = gone ? y : y + 16;
     const rope = `<path class="rp-rope" d="M${f(ropeX)},${f(ropeTop)}V${f(ropeEnd)}q.2 3 -2 3.4q-2.4 .3 -2 -2.2"/>
       <circle class="rp-knot" cx="${f(ropeX)}" cy="${f(ropeTop)}" r="1.4"/>`;
     const de = document.documentElement, W = fixed ? innerWidth : de.scrollWidth, H = fixed ? innerHeight : de.scrollHeight;
@@ -1459,6 +1462,7 @@
   function metricOn(name, date) { return state.metrics[name]?.byDate.get(date); }
 
   function renderActivity() {
+    $("market").innerHTML = marketHtml();
     const el = $("activity-card");
     const hasAny = Object.values(state.metrics).some((m) => m.byDate.size);
     if (!hasAny) {
@@ -1510,6 +1514,44 @@
       </div>
       ${weightRow()}`;
     scheduleFit();
+  }
+
+  // The last day of the month: the rappeller has reached the bottom of the calendar and gone down
+  // to the underground market.
+  const atMonthEnd = (d = new Date()) => d.getDate() === new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+
+  // An underground market below the Daily activity card, which sits on the ground above it: in a
+  // lantern-lit cavern reached by a ladder shaft, a few stalls trade with a couple of shoppers. At
+  // the end of the month the calendar's rappeller is down here too, browsing.
+  function marketHtml() {
+    const stall = (x, stripe, goods) => `<g transform="translate(${x},0)">
+        <path class="mk-post" d="M-13 41V27M13 41V27"/>
+        <path class="mk-awning" d="M-15 27L-12 21H12L15 27Z" fill="${stripe}"/>
+        <path class="mk-stripes" d="M-7 21L-8.6 27M-1 21L-1 27M5 21L6.4 27"/>
+        <path class="mk-scallop" d="M-15 27q2.5 2.4 5 0q2.5 2.4 5 0q2.5 2.4 5 0q2.5 2.4 5 0q2.5 2.4 5 0q2.5 2.4 5 0Z" fill="${stripe}"/>
+        <rect class="mk-counter" x="-14" y="35" width="28" height="6" rx="1"/>
+        ${goods.map(([dx, c]) => `<circle cx="${dx}" cy="33.6" r="1.5" fill="${c}"/>`).join("")}</g>`;
+    const person = (x, flip, color) => `<g class="mk-person" transform="translate(${x},41.6) scale(${flip ? -1 : 1},1)">
+        <path class="mk-body" d="M0 -3.6V-8.4"/><path class="mk-limb" d="M0 -3.6L-1.4 0M0 -3.6L1.4 0M0 -7.6L1.8 -5.4M0 -7.6L-1.6 -5.6"/>
+        <circle cx=".2" cy="-10" r="1.6" fill="${color}"/></g>`;
+    const visitor = atMonthEnd() ? `<g class="mk-visitor" transform="translate(196,41.6)"><title>The calendar's rappeller made it to the bottom of the month: shopping at the underground market</title>
+        <rect class="mk-pack" x="-3.2" y="-8.6" width="2.4" height="4.2" rx=".8"/>
+        <path class="mk-body" d="M0 -3.6V-8.4"/><path class="mk-limb" d="M0 -3.6L-1.4 0M0 -3.6L1.4 0M0 -7.6L2.6 -6.6L3.6 -7.6M0 -7.6L-1.4 -5.4"/>
+        <circle cx=".2" cy="-10" r="1.6" class="mk-face"/><path class="mk-helmet" d="M-1.8 -10.2A2 2 0 0 1 2.2 -10.2Z"/></g>` : "";
+    const lanterns = [44, 92, 128, 176, 214, 262, 296].map((x, i) => `<circle class="mk-lantern" cx="${x}" cy="${17.5 + (i % 2) * 1.6}" r="1.3" style="animation-delay:${(i * .5).toFixed(1)}s"/>`).join("");
+    const specks = Array.from({ length: 26 }, (_, i) => `<circle cx="${(i * 47.3) % 320}" cy="${3 + ((i * 7.7) % 9)}" r="${i % 3 ? .5 : .8}"/>`).join("");
+    return `<svg class="market" viewBox="0 0 320 44" preserveAspectRatio="xMidYMid meet" role="img" aria-label="The underground market">
+        <title>The underground market</title>
+        <rect class="mk-soil" width="320" height="44"/><path class="mk-grass" d="M0 .6H320"/><g class="mk-speck">${specks}</g>
+        <path class="mk-cave" d="M4 43V22Q4 13.6 16 13.4H296Q308 13.6 308 22V43Z"/>
+        <path class="mk-glow" d="M4 43V22Q4 13.6 16 13.4H296Q308 13.6 308 22V43Z"/>
+        <path class="mk-shaft" d="M9 0V14"/><path class="mk-ladder" d="M7 0V40M11 0V40M7 4H11M7 9H11M7 14H11M7 19H11M7 24H11M7 29H11M7 34H11M7 39H11"/>
+        <path class="mk-wire" d="M30 16.4Q90 21 150 17.4T300 17"/>${lanterns}
+        ${stall(76, "#ef4444", [[-8, "#f97316"], [-3, "#facc15"], [3, "#f97316"], [8, "#84cc16"]])}
+        ${stall(150, "#14b8a6", [[-8, "#a855f7"], [-2, "#ef4444"], [4, "#a855f7"], [9, "#ef4444"]])}
+        ${stall(240, "#eab308", [[-8, "#fde68a"], [-2, "#fb923c"], [4, "#fde68a"], [9, "#fb923c"]])}
+        ${person(108, false, "#e5e7eb")}${person(270, true, "#e5e7eb")}${visitor}
+      </svg>`;
   }
 
   function weightRow() {

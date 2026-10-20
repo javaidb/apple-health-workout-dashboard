@@ -1190,3 +1190,24 @@ svg.night :is(.th-crown-sun, .th-crown-sun-glow, .th-crown-rays) { display: none
 .rp-flag .cloth { fill: var(--accent); opacity: .9; }
 .rp-flag.gold .cloth { fill: #fbbf24; filter: drop-shadow(0 0 2px rgba(251, 191, 36, .6)); }
 @media (prefers-reduced-motion: reduce) { .rp-bob { animation: none; } }
+
+/* ---- the underground market under the step bars ---- */
+/* its own block under the Daily activity card: the card sits on the ground, the market is below it */
+.market-pit { flex: none; border-radius: 14px; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .35); }
+.market { display: block; width: 100%; height: auto; aspect-ratio: 320 / 44; }
+.mk-soil { fill: #24180f; }
+.mk-grass { stroke: #4d7c0f; stroke-width: 1.2; }
+.mk-speck circle { fill: #4a3424; }
+.mk-cave { fill: #0d0805; }
+.mk-glow { fill: #f59e0b; opacity: .06; }
+.mk-shaft { stroke: #0d0805; stroke-width: 6; }
+.mk-ladder { fill: none; stroke: #8a5a32; stroke-width: .8; stroke-linecap: round; }
+.mk-wire { fill: none; stroke: #57534e; stroke-width: .5; }
+.mk-lantern { fill: #fcd34d; filter: drop-shadow(0 0 2px #f59e0b); animation: th-twinkle 3s ease-in-out infinite; }
+.mk-post { stroke: #8a5a32; stroke-width: 1.2; }
+.mk-stripes { stroke: rgba(255, 255, 255, .55); stroke-width: 1.6; }
+.mk-counter { fill: #6b4423; }
+.mk-person .mk-body, .mk-visitor .mk-body { stroke: #d6d3d1; stroke-width: 1.6; stroke-linecap: round; }
+.mk-person .mk-limb, .mk-visitor .mk-limb { fill: none; stroke: #d6d3d1; stroke-width: .9; stroke-linecap: round; stroke-linejoin: round; }
+.mk-visitor .mk-face { fill: #e5e7eb; } .mk-visitor .mk-helmet { fill: #38bdf8; } .mk-visitor .mk-pack { fill: #f97316; }
+@media (prefers-reduced-motion: reduce) { .mk-lantern { animation: none; } }
