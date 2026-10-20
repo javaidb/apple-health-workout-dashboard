@@ -1626,7 +1626,7 @@
   // people waiting there step aboard, and it pulls away to the left, past the calendar and into a
   // tunnel in the side of the This week card. A while later the next passengers wander out to wait.
   // Seen side-on and flat, like the market. Only on the one-screen layout, with the market showing.
-  const TRAIN = { period: 90, arrive: 3, dwell: 7, depart: 5, waitersFrom: 44, len: 150, h: 13 };
+  const TRAIN = { period: 90, arrive: 3, dwell: 7, depart: 2.6, waitersFrom: 44, len: 150, h: 13 };
   const trainFigure = (shirt, bag) => `<g class="tr-flip"><path class="tr-limb tr-leg l1" d="M0 -4.6L.2 -2.3L-.1 0"/><path class="tr-limb tr-leg l2" d="M0 -4.6L.2 -2.3L-.1 0"/>
       <path class="tr-torso" d="M0 -4.6V-9.4" style="stroke:${shirt}"/><path class="tr-limb" d="M0 -8.6L-1 -6.4L-.8 -4.4"/>
       ${bag ? `<path class="tr-limb" d="M0 -8.6L1.4 -6.6L2 -4.8"/><rect class="tr-case" x="1.6" y="-4.8" width="3" height="4.2" rx=".6"/>` : ""}
@@ -1684,7 +1684,7 @@
     // accelerating all the way into the tunnel
     if (t < T.arrive) { const p = t / T.arrive; x = startX + (stopX - startX) * (1 - (1 - p) ** 2); }
     else if (t < tDep) { x = stopX; open = t > T.arrive + 1 && t < tDep - 1.2; }
-    else if (t < tDep + T.depart) { const p = (t - tDep) / T.depart; x = stopX + (endX - stopX) * p ** 2.6; }
+    else if (t < tDep + T.depart) { const p = (t - tDep) / T.depart; x = stopX + (endX - stopX) * p ** 2.2; }
     else x = null;
     const tr = layer.querySelector(".tr-train");
     tr.style.display = x == null ? "none" : "";
