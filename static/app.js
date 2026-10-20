@@ -279,28 +279,35 @@
       </div>`).join("");
   }
 
-  // Campfire on the last-workout card: blazing on a training day, then dying down a step each day
-  // after, to embers and finally a wisp of smoke. The next workout relights it.
+  // The billboard's campfire is a neon sign: three nested flame tubes (a small blue core, a medium
+  // yellow flame and a large orange one) over two crossed red log tubes. Each flame flips between
+  // two tube shapes, its tip leaning one way then the other, at its own pace, like an animated neon
+  // sign. Recent workouts light it from the inside out: orange stays lit for a day after training,
+  // yellow for three days, blue for four; then the glass goes dark until the next workout.
   const FIRE_STAGES = ["Blazing: you trained today", "Burning well", "Burning low", "Flickering out",
-    "Just embers left", "Gone out: a workout relights it"];
-  const FLAME = "M20 3C25 11 30.5 15.5 29.5 23.5C28.8 29.2 24.8 32 20 32C15.2 32 11.2 29.2 10.5 23.5C9.9 18 14 14.5 15.6 8.5C17.6 12.6 19 13.6 20 3Z";
+    "Just the blue core left", "Gone out: a workout relights it"];
+  const FLAME_A = "M20 3C25 11 30.5 15.5 29.5 23.5C28.8 29.2 24.8 32 20 32C15.2 32 11.2 29.2 10.5 23.5C9.9 18 14 14.5 15.6 8.5C17.6 12.6 19 13.6 20 3Z";
+  const FLAME_B = "M21.8 4C26.6 11.6 30.6 16.4 29.6 24C28.9 29.3 24.8 32 20 32C15.2 32 11.1 29.3 10.5 24C9.8 18.6 13.4 14.4 14.2 9.8C17 13.4 19.8 12.6 21.8 4Z";
   function campfire(daysAgo) {
-    const heat = Math.max(0, 5 - daysAgo), f = .3 + .14 * heat, stage = FIRE_STAGES[Math.min(daysAgo, 5)];
-    const at = (k) => `translate(20 32) scale(${k}) translate(-20 -32)`;
-    const flames = heat >= 2 ? `<g transform="${at(f)}">
-        <g class="cf-flick a"><path class="cf-outer" d="${FLAME}"/></g>
-        <g class="cf-flick b" transform="${at(.68)}"><path class="cf-mid" d="${FLAME}"/></g>
-        <g class="cf-flick c" transform="${at(.4)}"><path class="cf-core" d="${FLAME}"/></g></g>` : "";
-    const sparks = heat >= 4 ? [[15, 12, 0], [25, 9, .7], [19, 6, 1.4]].map(([x, y, d]) =>
-      `<circle class="cf-spark" cx="${x}" cy="${y}" r=".9" style="animation-delay:${d}s"/>`).join("") : "";
-    const embers = heat <= 2 ? [[14, 32.4], [19, 33.6], [24, 32.2], [27.5, 33.4], [17, 31.2]].slice(0, heat === 0 ? 0 : 5).map(([x, y], i) =>
-      `<circle class="cf-ember" cx="${x}" cy="${y}" r="${i % 2 ? .9 : 1.2}" style="animation-delay:${i * .4}s"/>`).join("") : "";
-    const smoke = heat <= 1 ? `<path class="cf-smoke" d="M20 30C17 25 23 21 20 16C17.5 12 22 9 20.5 4"/>` : "";
-    return `<span class="campfire heat-${heat}" title="Campfire: ${stage}"><svg viewBox="0 0 40 40" role="img" aria-label="Campfire: ${stage}">
-        <ellipse class="cf-glow" cx="20" cy="34" rx="17" ry="4.5" style="opacity:${(.08 * heat).toFixed(2)}"/>
-        <g class="cf-logs${heat === 0 ? " cold" : ""}"><rect x="7" y="31" width="26" height="4.4" rx="2.2" transform="rotate(13 20 33)"/>
-          <rect x="7" y="31" width="26" height="4.4" rx="2.2" transform="rotate(-13 20 33)"/></g>
-        ${embers}${flames}${sparks}${smoke}</svg></span>`;
+    const stage = FIRE_STAGES[Math.min(daysAgo, 5)];
+    const layers = [
+      // [colour, size, lit, flickering, mirrored]
+      ["orange", 1, daysAgo <= 1, false, false],
+      ["yellow", .64, daysAgo <= 3, daysAgo === 3, true],
+      ["blue", .34, daysAgo <= 4, daysAgo === 4, false],
+    ];
+    const tubes = layers.map(([c, k, lit, flicker, mirror]) => {
+      const t = `translate(20 32) scale(${mirror ? -k : k},${k}) translate(-20 -32)`;
+      const state = lit ? `on${flicker ? " flicker" : ""}` : "off";
+      return `<g class="nf-layer ${c} ${state}" transform="${t}"><path class="nf-tube a" d="${FLAME_A}"/>${lit ? `<path class="nf-tube b" d="${FLAME_B}"/>` : ""}</g>`;
+    }).join("");
+    const anyLit = daysAgo <= 4;
+    const sparks = daysAgo === 0 ? [[13.4, 9.6, 0], [27.2, 7.4, .6], [24, 2.6, 1.2]].map(([x, y, d]) =>
+      `<circle class="nf-spark" cx="${x}" cy="${y}" r=".75" style="animation-delay:${d}s"/>`).join("") : "";
+    return `<span class="campfire neon-fire" title="Neon campfire: ${stage}"><svg viewBox="0 0 40 40" role="img" aria-label="Neon campfire: ${stage}">
+        <path class="nf-tube nf-log ${anyLit ? "on" : "off"}" d="M8.6 34.6L31.4 29.6M8.6 29.6L31.4 34.6"/>
+        ${tubes}${sparks}
+        ${[[8.6, 34.6], [31.4, 34.6], [20, 3.4]].map(([x, y]) => `<circle class="nf-clip" cx="${x}" cy="${y}" r=".7"/>`).join("")}</svg></span>`;
   }
 
   // The Last workout card as a billboard: a riveted steel frame just outside the card with corner
