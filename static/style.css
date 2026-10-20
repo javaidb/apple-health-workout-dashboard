@@ -1122,8 +1122,8 @@ svg.night :is(.th-crown-sun, .th-crown-sun-glow, .th-crown-rays) { display: none
 .elec-man .e-hat { fill: #facc15; } .elec-man .e-brim { stroke: #eab308; stroke-width: .8; stroke-linecap: round; }
 .elec-man .e-bulb { fill: #fde68a; }
 /* every now and then a spark goes off on the bulb he's fixing */
-.elec-man .e-spark { fill: none; stroke: #fde047; stroke-width: .6; stroke-linecap: round; opacity: 0; animation: e-spark 9s linear infinite; }
-.elec-man .e-flash { fill: #fef08a; opacity: 0; filter: blur(1px); animation: e-spark 9s linear infinite; }
+.elec-man .e-spark { fill: none; stroke: #fde047; stroke-width: .6; stroke-linecap: round; opacity: 0; animation: e-spark 9s linear infinite; animation-delay: var(--spark-delay, 0s); }
+.elec-man .e-flash { fill: #fef08a; opacity: 0; filter: blur(1px); animation: e-spark 9s linear infinite; animation-delay: var(--spark-delay, 0s); }
 @keyframes e-spark { 0%, 90%, 100% { opacity: 0; } 91% { opacity: 1; } 92% { opacity: .15; } 93% { opacity: .95; } 95.5% { opacity: 0; } }
 .elec-arm { transform-box: fill-box; transform-origin: 0% 100%; animation: e-work 2.6s ease-in-out infinite alternate; }
 @keyframes e-work { to { transform: rotate(-4deg); } }

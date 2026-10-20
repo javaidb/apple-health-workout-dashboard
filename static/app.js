@@ -1047,8 +1047,12 @@
       const CW = 44, from = nav.right + 28 + sx, to = today.left - 28 - CW + sx;
       if (to > from) {
         const travel = to - from;
+        // The lights layer is rebuilt now and then (data refreshes, layout changes). Tie the ride and
+        // the spark to the wall clock, so a rebuilt cradle carries on from where he was instead of
+        // starting over: the 240 s alternating ride repeats every 480 s, the spark every 9 s.
+        const now = Date.now() / 1000, ride = (now % 480).toFixed(2), spark = (now % 9).toFixed(2);
         elec = `<path class="elec-rail" d="M${f(from - 8)},${f(T + .4)}H${f(to + CW + 8)}"/>
-          <g class="elec-ride" style="--travel:${f(travel)}px" transform="translate(${f(from)},${f(T)})">
+          <g class="elec-ride" style="--travel:${f(travel)}px;animation-delay:-${ride}s;--spark-delay:-${spark}s" transform="translate(${f(from)},${f(T)})">
             <circle class="elec-wheel" cx="6" cy="-1.6" r="1.9"/><circle class="elec-wheel" cx="38" cy="-1.6" r="1.9"/>
             <path class="elec-trolley" d="M3 -1.6H41"/>
             <path class="elec-cable" d="M6 0L3 17M38 0L41 17"/>
