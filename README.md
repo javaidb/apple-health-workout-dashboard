@@ -56,8 +56,8 @@ weekly streak becomes Carl, a little climber working his way up a new mountain e
   to embers and then a wisp of smoke, until the next workout relights it.
 - **Recent form.** The last 12 weeks as batteries (one cell per workout of the goal), box plots of your last
   6 sessions' duration and calories, and a smoothed workouts-per-week trend since you started.
-  The batteries are wired to string lights along the top of the calendar: the fuller they are, the
-  brighter the lights glow.
+  The batteries are wired through a transformer (showing the power) to string lights along the top of
+  the calendar. The bulbs are in series: the fuller the batteries, the more of them light up.
 - **Daily activity too.** Steps (with a 10k goal and 7-day bars), walking distance, active energy, flights
   and a 30-day weight trend from a second Health Metrics automation; each calendar day shows its steps.
 - **One-screen dashboard.** Everything fits on one screen without scrolling, from 1080p down to small laptop

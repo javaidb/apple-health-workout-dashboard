@@ -986,8 +986,8 @@
 
   // String lights powered by the Recent form batteries: a wire runs along the tops of the 12
   // batteries (touching each terminal), out of the card, across the gap and along the calendar's
-  // top edge, where it hangs in uneven arches between pins with the bulbs dangling. The fuller the
-  // batteries, the brighter the bulbs.
+  // top edge, through a transformer that shows the power, then on to a string hanging in uneven
+  // arches between pins. The bulbs are in series: the fuller the batteries, the more of them light.
   let lightsKey = "";
   function drawLights(onlyIfMoved = false) {
     const layer = $("lights");
@@ -1018,7 +1018,7 @@
     d += `H${f(gx + 3)}Q${f(gx)},${f(wy)} ${f(gx)},${f(wy + 3)}V${f(T - 4)}Q${f(gx)},${f(T - .6)} ${f(R - 2)},${f(T - .6)}H${f(R - rad)}`;
     // pins along the top edge at uneven spacing; the string droops between them in arches of
     // different widths and depths, with the bulbs hanging down from it
-    const startX = R - rad - 6, endX = Lx + rad + 6, rnd = (k) => { const v = Math.sin(k * 91.7 + 3.1) * 4373.13; return v - Math.floor(v); };
+    const startX = R - rad - 48, endX = Lx + rad + 6, rnd = (k) => { const v = Math.sin(k * 91.7 + 3.1) * 4373.13; return v - Math.floor(v); };
     const pins = [startX];
     for (let k = 0; pins[pins.length - 1] - endX > 40; k++) pins.push(Math.max(endX, pins[pins.length - 1] - (70 + rnd(k) * 80)));
     if (pins[pins.length - 1] - endX > 0) pins.push(endX);
@@ -1067,15 +1067,31 @@
           </g>`;
       }
     }
-    const glow = charge, bulb = ([x, y, tilt, color], i) => `<g transform="translate(${f(x)},${f(y)}) rotate(${tilt}) scale(1.3)">
-        <circle class="bulb-halo" cy="-5" r="${f(3 + 5 * glow)}" fill="${color}" style="opacity:${f(.55 * glow)};animation-delay:${(i * .37 % 3).toFixed(2)}s"/>
+    // The bulbs are in series: the power lights that share of them, counting from the transformer
+    // end, at full brightness; the rest stay dark.
+    const lit = charge > 0 ? Math.max(1, Math.round(charge * bulbs.length)) : 0;
+    const bulb = ([x, y, tilt, color], i) => `<g class="bulb${i < lit ? " on" : ""}" transform="translate(${f(x)},${f(y)}) rotate(${tilt}) scale(1.3)">
+        ${i < lit ? `<circle class="bulb-halo" cy="-5" r="7" fill="${color}" style="animation-delay:${(i * .37 % 3).toFixed(2)}s"/>` : ""}
         <rect class="bulb-cap" x="-1.1" y="-2.4" width="2.2" height="2.4" rx=".4"/>
-        <path class="bulb-glass" d="M0,-2.2C-2.4,-3.4 -2.2,-7.6 0,-8.6C2.2,-7.6 2.4,-3.4 0,-2.2Z" fill="${color}" style="opacity:${f(.22 + .78 * glow)}"/></g>`;
+        <path class="bulb-glass" d="M0,-2.2C-2.4,-3.4 -2.2,-7.6 0,-8.6C2.2,-7.6 2.4,-3.4 0,-2.2Z" fill="${color}"/></g>`;
+    // The transformer on the calendar's corner, between the incoming wire and the string: its
+    // display shows how much power the batteries are sending to the lights.
+    const pct = Math.round(charge * 100), level = pct >= 66 ? "hi" : pct >= 33 ? "mid" : "lo";
+    const bx = R - rad - 44, by = T - 15.5;
+    const transformer = `<g class="xfmr ${level}" transform="translate(${f(bx)},${f(by)})">
+        <title>Transformer: ${pct}% power from the batteries, ${lit} of ${bulbs.length} bulbs lit</title>
+        <rect class="xf-body" width="38" height="15" rx="2"/>
+        <path class="xf-fins" d="M30.5 2.5V12.5M33 2.5V12.5M35.5 2.5V12.5"/>
+        <rect class="xf-screen" x="2.5" y="2.2" width="25.5" height="10.6" rx="1.2"/>
+        <path class="xf-bolt" d="M6.6 3.6L4.6 7.6H6.4L5.6 11.4L8.6 6.6H6.8L7.8 3.6Z"/>
+        <text class="xf-pct" x="25.6" y="8.6" text-anchor="end">${pct}%</text>
+        ${Array.from({ length: 5 }, (_, k) => `<rect class="xf-seg${k < Math.ceil(pct / 20) ? " on" : ""}" x="${10.4 + k * 3.3}" y="10" width="2.6" height="1.5" rx=".3"/>`).join("")}
+      </g>`;
     const de = document.documentElement, W = fixed ? innerWidth : de.scrollWidth, H = fixed ? innerHeight : de.scrollHeight;
     layer.setAttribute("width", W); layer.setAttribute("height", H);
     layer.setAttribute("viewBox", `0 0 ${W} ${H}`);
-    layer.innerHTML = `<g class="lights${glow > .66 ? " bright" : ""}"><title>String lights: ${Math.round(charge * 100)}% charged from the last 12 weeks</title>
-      <path class="light-wire" d="${d}"/>${bulbs.map(bulb).join("")}${tacks}</g>${elec}`;
+    layer.innerHTML = `<g class="lights"><title>String lights: ${lit} of ${bulbs.length} lit at ${pct}% power from the last 12 weeks</title>
+      <path class="light-wire" d="${d}"/>${bulbs.map(bulb).join("")}${tacks}</g>${transformer}${elec}`;
   }
 
   function renderWeekCard(w) {
