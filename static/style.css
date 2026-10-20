@@ -1156,3 +1156,18 @@ svg.night :is(.th-crown-sun, .th-crown-sun-glow, .th-crown-rays) { display: none
 .elec-lampwire { stroke: #9ca3af; stroke-width: .6; }
 .elec-lamp { fill: #fde68a; } .elec-lamp-glow { fill: #fde68a; opacity: .22; filter: blur(3px); }
 @media (prefers-reduced-motion: reduce) { .cl-yawn, .sitter .s-zzz text, .sitter .s-flag, .e-steam, .climber.cl-hop, .campfire.flare svg { animation: none; } .cl-yawn { opacity: 1; } }
+
+/* ---- trainers on the power line, and a robin on the lights ---- */
+.shoe-lace { fill: none; stroke: #e5e7eb; stroke-width: .5; stroke-linecap: round; opacity: .85; }
+.cable-shoes { animation: shoes-sway 5s ease-in-out infinite alternate; }
+@keyframes shoes-sway { from { rotate: -6deg; } to { rotate: 6deg; } }
+.robin-back { fill: #57534e; }
+.robin-breast { fill: #f97316; }
+.robin-eye { fill: #0c0a09; }
+.robin-beak { fill: #fbbf24; }
+.robin-leg { stroke: #a8a29e; stroke-width: .5; stroke-linecap: round; }
+.robin-head { transform-box: fill-box; transform-origin: 70% 90%; animation: robin-bob 6s ease-in-out infinite; }
+@keyframes robin-bob { 0%, 70%, 100% { transform: rotate(0); } 74% { transform: rotate(-16deg); } 78% { transform: rotate(4deg); } 82% { transform: rotate(-12deg); } 86% { transform: rotate(0); } }
+.robin-tail { transform-box: fill-box; transform-origin: 0% 50%; animation: robin-flick 6s ease-in-out infinite; animation-delay: 2.4s; }
+@keyframes robin-flick { 0%, 80%, 100% { transform: rotate(0); } 84% { transform: rotate(-20deg); } 88% { transform: rotate(0); } }
+@media (prefers-reduced-motion: reduce) { .cable-shoes, .robin-head, .robin-tail { animation: none; } }

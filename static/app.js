@@ -1087,6 +1087,23 @@
     d += `L${f(startX)},${f(pinY)}` + edge;
     const tacks = pins.map((x) => `<circle class="light-tack" cx="${f(x)}" cy="${f(pinY)}" r="1.5"/>`).join("");
 
+    // a pair of trainers flung over the cable where it bends over the calendar's corner, hanging by
+    // their laces down the gap between the cards
+    const hang = [gx - .4, T - 4];
+    const trainer = (len, tilt) => `<g transform="translate(${f(hang[0])},${f(hang[1])}) rotate(${tilt})">
+        <path class="shoe-lace" d="M0,0V${len}"/>
+        <g transform="translate(0,${len}) rotate(90)"><path class="trail-shoe" d="M-1 0V-2.6Q-1 -4 .5 -4H2.5L3.9 -2.6L7.1 -1.8Q8.1 -1.4 8.1 0Z" transform="translate(-1,-.6) scale(.8)"/></g></g>`;
+    const shoes = `<g class="cable-shoes" style="transform-origin:${f(hang[0])}px ${f(hang[1])}px">${trainer(7, 9)}${trainer(10.5, -7)}
+        <path class="shoe-lace" d="M${f(hang[0] - 1.6)},${f(hang[1] - .4)}q1.6 -2.2 3.2 0"/><title>Someone's old trainers, flung over the power line</title></g>`;
+
+    // a robin perched on one of the pins along the string
+    const perch = pins[Math.min(pins.length - 1, Math.max(1, Math.floor(pins.length * .72)))];
+    const bird = `<g class="robin" transform="translate(${f(perch)},${f(pinY - 1.4)})"><title>A robin, enjoying the lights</title>
+        <path class="robin-leg" d="M-.6 0V-1.6M.8 0V-1.6"/>
+        <g class="robin-tail"><path class="robin-back" d="M2.6 -3.4L6.4 -2.2L5.8 -1.2Z"/></g>
+        <ellipse class="robin-back" cx="0" cy="-3.6" rx="3.2" ry="2.4"/><path class="robin-breast" d="M-2.9 -3.4Q-2.6 -1.4 -.4 -1.3Q-1.4 -2.6 -1.2 -4.6Z"/>
+        <g class="robin-head"><circle class="robin-back" cx="-2.4" cy="-6.2" r="1.7"/><circle class="robin-eye" cx="-2.9" cy="-6.5" r=".35"/><path class="robin-beak" d="M-4 -6.2L-5.3 -5.9L-4 -5.6Z"/></g></g>`;
+
     // The electrician: a window-washer cradle hung from a trolley on a rail along the calendar's top
     // edge, sliding back and forth through the empty middle of the header (between the month nav
     // and the Today button) while he works on the lights.
@@ -1157,7 +1174,7 @@
     layer.setAttribute("width", W); layer.setAttribute("height", H);
     layer.setAttribute("viewBox", `0 0 ${W} ${H}`);
     layer.innerHTML = `<g class="lights"><title>String lights: ${lit} of ${bulbs.length} lit at ${pct}% power from the last 12 weeks</title>
-      <path class="light-wire" d="${d}"/>${bulbs.map(bulb).join("")}${tacks}</g>${transformer}${elec}`;
+      <path class="light-wire" d="${d}"/>${bulbs.map(bulb).join("")}${tacks}${bird}</g>${shoes}${transformer}${elec}`;
   }
 
   function renderWeekCard(w) {
