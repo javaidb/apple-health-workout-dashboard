@@ -58,6 +58,8 @@ weekly streak becomes Carl, a little climber working his way up a new mountain e
 - **A cast that reacts.** Carl's buddy on the calendar waves a flag when the weekly goal is hit and dozes
   on his rail in a week with no workouts yet; Carl sits down for a yawn after 5+ days without training;
   the electrician fixing the calendar's lights takes a coffee break at full power and goes home at night.
+- **A window washer on the calendar.** He walks the ledges under each row of days and climbs between
+  them, stopping at every day you trained to polish it with his rag until it sparkles.
 - **An underground market.** Below Daily activity, under string lights: a bar with a neon sign, a little
   restaurant with a TV, a produce stall and an arcade. The calendar's rappeller, who plants a flag down the
   week column for every week you trained, drops in for a drink on the last day of the month.

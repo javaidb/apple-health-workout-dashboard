@@ -1278,3 +1278,29 @@ svg.night :is(.th-crown-sun, .th-crown-sun-glow, .th-crown-rays) { display: none
 .bb-cone { fill: url(#bb-light); pointer-events: none; filter: blur(6px); }
 .bb-light-near { stop-color: #fef3c7; stop-opacity: .12; } .bb-light-far { stop-color: #fef3c7; stop-opacity: 0; }
 .billboard.night .bb-light-near { stop-opacity: .26; }
+
+/* ---- the window washer on the calendar ---- */
+.washer .ww-torso { fill: none; stroke: var(--text); stroke-width: 2.1; stroke-linecap: round; }
+.washer .ww-limb { fill: none; stroke: var(--text); stroke-width: 1.25; stroke-linecap: round; stroke-linejoin: round; }
+.washer .ww-head { fill: var(--text); }
+.washer .ww-cap { fill: #22c55e; stroke: #22c55e; stroke-width: .5; stroke-linecap: round; }
+.washer .ww-rag { fill: #38bdf8; }
+.washer .ww-pail { fill: #94a3b8; stroke: #64748b; stroke-width: .3; } .washer .ww-handle { fill: none; stroke: #94a3b8; stroke-width: .4; }
+.washer .leg-a, .washer .leg-b { transform-box: view-box; transform-origin: 0 -4.6px; }
+.washer.walk .leg-a { animation: ww-step .5s ease-in-out infinite alternate; }
+.washer.walk .leg-b { animation: ww-step .5s ease-in-out infinite alternate-reverse; }
+@keyframes ww-step { from { transform: rotate(-16deg); } to { transform: rotate(16deg); } }
+/* climbing: arms up, reaching hand over hand; the bucket hangs from his belt */
+.washer.climb .ww-arm-front { transform: rotate(-30deg); transform-box: view-box; transform-origin: 0 -8.6px; animation: ww-reach .6s ease-in-out infinite alternate; }
+.washer.climb .ww-arm-back { transform: rotate(150deg); transform-box: view-box; transform-origin: 0 -8.6px; }
+.washer.climb .leg-a { animation: ww-step .6s ease-in-out infinite alternate; }
+.washer.climb .leg-b { animation: ww-step .6s ease-in-out infinite alternate-reverse; }
+@keyframes ww-reach { to { transform: rotate(-60deg); } }
+/* cleaning: bucket set down, the rag going round in circles on the glass */
+.washer.clean .ww-arm-front { animation: ww-wipe 1.1s linear infinite; }
+@keyframes ww-wipe { 0% { translate: 0 0; } 25% { translate: 1.6px -1.2px; } 50% { translate: 0 -2.4px; } 75% { translate: -1.6px -1.2px; } 100% { translate: 0 0; } }
+.washer.idle .ww-arm-front { transform: rotate(40deg); transform-box: view-box; transform-origin: 0 -8.6px; }
+.ww-sparkle path { fill: #f8fafc; filter: drop-shadow(0 0 2px #bae6fd); animation: ww-twinkle .8s ease-in-out infinite alternate; }
+.ww-sparkle path:nth-child(2) { animation-delay: .3s; } .ww-sparkle path:nth-child(3) { animation-delay: .55s; }
+@keyframes ww-twinkle { from { opacity: .2; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .washer .ww-limb, .washer g, .washer path, .ww-sparkle path { animation: none !important; } }

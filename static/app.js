@@ -1447,6 +1447,101 @@
     layer.innerHTML = flags + rope + climberAt;
   }
 
+  // The window washer: a little worker on the calendar who cleans the days you trained. He stands
+  // on the bottom edge of a row of days and walks along it, climbs the gaps between columns to
+  // change rows, and at each workout day sets down his bucket and wipes the glass with his rag;
+  // the day sparkles when he's done, and he moves on to the next. The plan is redone whenever the
+  // calendar or layout changes; with reduced motion he just stands cleaning the latest workout day.
+  const WASHER = { walk: 24, climb: 15, clean: 6 };   // px/s walking, px/s climbing, seconds per day
+  const washer = { x: null, y: null, mode: "walk", plan: [], target: null, until: 0, facing: 1, last: 0, sparkle: null, key: "" };
+  const washerFigure = `<g class="ww-body">
+      <g class="ww-legs"><path class="ww-limb leg-a" d="M0 -4.6L-1.4 0"/><path class="ww-limb leg-b" d="M0 -4.6L1.4 0"/></g>
+      <path class="ww-torso" d="M0 -4.6V-9.4"/>
+      <g class="ww-arm-back"><path class="ww-limb" d="M0 -8.6L-2.4 -6.4L-2.6 -4.6"/><g class="ww-bucket"><path class="ww-handle" d="M-4.2 -4.6Q-2.6 -6.2 -1 -4.6"/><path class="ww-pail" d="M-4.4 -4.6H-.8L-1.3 -1.6H-3.9Z"/></g></g>
+      <g class="ww-arm-front"><path class="ww-limb" d="M0 -8.6L2.4 -10.6L2.8 -13"/><rect class="ww-rag" x="1.6" y="-15.2" width="2.6" height="2.4" rx=".6"/></g>
+      <circle class="ww-head" cx="0" cy="-11.4" r="1.9"/><path class="ww-cap" d="M-2 -12.2A2.1 2.1 0 0 1 2 -12.2ZM1.8 -12.2H3.6"/></g>`;
+
+  function drawWasher() {
+    const layer = $("washer");
+    const fixed = FIT_QUERY.matches, sx = fixed ? 0 : scrollX, sy = fixed ? 0 : scrollY;
+    layer.style.position = fixed ? "fixed" : "absolute";
+    const days = [...document.querySelectorAll("#calendar .day")];
+    if (!days.length || !days[0].getBoundingClientRect().width) { layer.innerHTML = ""; washer.key = ""; return; }
+    const de = document.documentElement, W = fixed ? innerWidth : de.scrollWidth, H = fixed ? innerHeight : de.scrollHeight;
+    layer.setAttribute("width", W); layer.setAttribute("height", H); layer.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    if (!layer.querySelector(".washer")) {
+      layer.innerHTML = `<g class="ww-sparkle"></g><g class="washer walk"><title>The window washer, keeping your workout days sparkling</title><g class="ww-flip">${washerFigure}</g></g>`;
+    }
+    // the calendar's geometry: rows of days (their bottom edges are the ledges) and the gaps
+    // between columns he climbs in
+    const rects = days.map((d) => d.getBoundingClientRect());
+    const ledges = [...new Set(rects.map((r) => Math.round(r.bottom + sy)))].sort((a, b) => a - b);
+    const firstRow = rects.filter((r) => Math.round(r.bottom + sy) === ledges[0]).sort((a, b) => a.left - b.left);
+    const gaps = firstRow.slice(1).map((r, i) => (firstRow[i].right + r.left) / 2 + sx);
+    const targets = days.map((d, i) => ({ el: d, r: rects[i], date: d.dataset.date })).filter((t) => t.el.classList.contains("active"));
+    const key = `${ledges.join(",")}|${gaps.map(Math.round).join(",")}|${targets.map((t) => t.date).join(",")}`;
+    const spot = (t) => [t.r.left + t.r.width / 2 + sx, t.r.bottom + sy];
+    if (key !== washer.key) {
+      // the calendar changed: start (or restart) at the nearest ledge, and re-plan
+      washer.key = key;
+      if (washer.x == null || washer.x < firstRow[0].left + sx || washer.x > firstRow[firstRow.length - 1].right + sx) {
+        const start = targets[targets.length - 1] || { r: rects[0] };
+        [washer.x, washer.y] = spot(start);
+      }
+      washer.y = ledges.reduce((a, b) => (Math.abs(b - washer.y) < Math.abs(a - washer.y) ? b : a), ledges[0]);
+      washer.plan = []; washer.target = null; washer.mode = "walk";
+    }
+    const g = layer.querySelector(".washer");
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!targets.length) {
+      washer.mode = "idle";
+    } else if (reduce) {
+      [washer.x, washer.y] = spot(targets[targets.length - 1]);
+      washer.mode = "clean";
+    } else {
+      const now = performance.now() / 1000, dt = Math.min(.1, washer.last ? now - washer.last : 0);
+      washer.last = now;
+      if (!washer.target || !targets.some((t) => t.date === washer.target)) {
+        // next workout day, in date order after the one just cleaned
+        const next = targets.find((t) => t.date > (washer.done || "")) || targets[0];
+        washer.target = next.date;
+        const [tx, ty] = spot(next);
+        if (Math.abs(ty - washer.y) < 1) washer.plan = [[tx, ty, "walk"]];
+        else {
+          const gx = gaps.reduce((a, b) => (Math.abs(b - washer.x) < Math.abs(a - washer.x) ? b : a), gaps[0]);
+          washer.plan = [[gx, washer.y, "walk"], [gx, ty, "climb"], [tx, ty, "walk"]];
+        }
+        washer.mode = washer.plan[0][2];
+      }
+      if (washer.mode === "clean") {
+        if (now >= washer.until) {
+          const t = targets.find((t) => t.date === washer.target);
+          if (t) washer.sparkle = { x: t.r.right + sx - 12, y: t.r.top + sy + 14, until: now + 2.4 };
+          washer.done = washer.target; washer.target = null;
+        }
+      } else if (washer.plan.length) {
+        const [px, py, how] = washer.plan[0], speed = how === "climb" ? WASHER.climb : WASHER.walk;
+        const dx = px - washer.x, dy = py - washer.y, dist = Math.hypot(dx, dy), step = speed * dt;
+        washer.mode = how;
+        if (Math.abs(dx) > .5) washer.facing = dx > 0 ? 1 : -1;
+        if (dist <= step) {
+          washer.x = px; washer.y = py; washer.plan.shift();
+          if (!washer.plan.length) { washer.mode = "clean"; washer.until = now + WASHER.clean; }
+        } else { washer.x += (dx / dist) * step; washer.y += (dy / dist) * step; }
+      }
+      // sparkles on the day he just finished
+      const sp = layer.querySelector(".ww-sparkle");
+      if (washer.sparkle && now < washer.sparkle.until) {
+        if (!sp.innerHTML) sp.innerHTML = [[0, 0, 1], [-7, 5, .7], [5, 7, .8]].map(([dx, dy, k]) =>
+          `<path transform="translate(${(washer.sparkle.x + dx).toFixed(1)},${(washer.sparkle.y + dy).toFixed(1)}) scale(${k})" d="M0 -3.2L.8 -.8L3.2 0L.8 .8L0 3.2L-.8 .8L-3.2 0L-.8 -.8Z"/>`).join("");
+      } else if (sp.innerHTML) { sp.innerHTML = ""; washer.sparkle = null; }
+    }
+    g.setAttribute("class", `washer ${washer.mode}`);
+    g.setAttribute("transform", `translate(${washer.x.toFixed(1)},${washer.y.toFixed(1)}) scale(1.2)`);
+    g.querySelector(".ww-flip").setAttribute("transform", `scale(${washer.mode === "clean" || washer.mode === "climb" ? 1 : washer.facing},1)`);
+  }
+  (function washerLoop() { if (!document.hidden) drawWasher(); requestAnimationFrame(washerLoop); })();
+
   function renderCalendar() {
     $("month-title").textContent = state.month.toLocaleDateString(undefined, { month: "long", year: "numeric" });
     const byDate = {};
