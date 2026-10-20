@@ -1317,6 +1317,64 @@
     return `<svg class="sitter ${mood}" viewBox="-28 -19 45 32" aria-hidden="true">${rail}<g transform="translate(-3 0)">${legs}${body}</g><title>Carl's climbing buddy, ${title}</title></svg>`;
   }
 
+  // The rappeller: a climber in a blue helmet abseiling down the calendar's week column on a rope
+  // hung from the end of the buddy's railing. He sits in his harness with his feet on the column's
+  // edge and drops a little each day, following today's row. On every week so far with a workout
+  // he has planted a flag, gold when that week hit the weekly goal. Viewing a past month he's at the
+  // bottom; a future month, still at the top.
+  let rappelKey = "";
+  function drawRappel(onlyIfMoved = false) {
+    const layer = $("rappel");
+    const fixed = FIT_QUERY.matches, sx = fixed ? 0 : scrollX, sy = fixed ? 0 : scrollY;
+    layer.style.position = fixed ? "fixed" : "absolute";
+    const boxes = [...document.querySelectorAll("#calendar .week-total")];
+    const rects = boxes.map((b) => b.getBoundingClientRect());
+    const today = todayIso(), now = new Date();
+    const key = rects.map((r) => [r.right, r.top, r.bottom].map(Math.round).join(",")).join("|")
+      + `|${today}|${now.getHours()}|${state.goal}|` + boxes.map((b) => b.dataset.workouts).join(",");
+    if (onlyIfMoved && key === rappelKey) return;
+    rappelKey = key;
+    layer.setAttribute("width", 0); layer.setAttribute("height", 0); layer.innerHTML = "";
+    if (!boxes.length || !rects[0].width || !document.querySelector(".sitter")) return;
+
+    const f = (n) => n.toFixed(1);
+    // the buddy's railing ends 13px right of the first box, 18.5px below its top (8 and 11.4 units at 1.62px)
+    const ropeX = rects[0].right + 13 + sx, ropeTop = rects[0].top + 18.5 + sy;
+    const first = boxes[0].dataset.start, last = boxes[boxes.length - 1].dataset.end;
+    let y;
+    const row = boxes.findIndex((b) => b.dataset.start <= today && today <= b.dataset.end);
+    if (row >= 0) {
+      const r = rects[row], frac = (((now.getDay() + 6) % 7) + now.getHours() / 24) / 7;
+      y = r.top + sy + frac * r.height;
+    } else y = today < first ? ropeTop + 12 : rects[rects.length - 1].bottom + sy - 8;
+    y = Math.max(ropeTop + 12, y);
+
+    const flags = boxes.map((b, i) => {
+      const n = Number(b.dataset.workouts);
+      if (!n || b.dataset.start > today) return "";
+      const r = rects[i], gold = n >= state.goal;
+      return `<g class="rp-flag${gold ? " gold" : ""}" transform="translate(${f(r.right + sx)},${f(r.top + r.height / 2 + sy)}) scale(1.3)">
+          <title>Week of ${b.dataset.start}: ${plural(n, "workout")}${gold ? " (goal hit)" : ""}</title>
+          <path class="pole" d="M0,0L7.4,-4.4"/><path class="cloth" d="M2.4,-1.4L7.4,-4.4L7,1.2L4.6,-.6L2.6,2.2Z"/></g>`;
+    }).join("");
+    const climberAt = `<g class="rappeller" transform="translate(${f(ropeX)},${f(y)}) scale(1.2)">
+        <title>Abseiling down ${esc($("month-title").textContent)}: a flag for every week with a workout, gold for goal weeks</title>
+        <g class="rp-bob">
+          <path class="rp-limb" d="M0 0L-5 -1.8L-9.6 -1M0 0L-4.6 1.4L-9.4 2.8"/>
+          <rect class="rp-pack" x="1.6" y="-6.6" width="2.6" height="4.4" rx=".9"/>
+          <path class="rp-body" d="M0 0L1.2 -5.6"/>
+          <path class="rp-limb" d="M1 -5L.2 -8.4M.8 -4.4L1.6 -1.4L.2 2.6"/>
+          <circle class="rp-face" cx="1.6" cy="-7.8" r="1.9"/><path class="rp-helmet" d="M-.6 -8A2.3 2.3 0 0 1 3.8 -8Z"/>
+          <path class="rp-harness" d="M-.8 -.4H1"/></g></g>`;
+    const ropeEnd = y + 16;
+    const rope = `<path class="rp-rope" d="M${f(ropeX)},${f(ropeTop)}V${f(ropeEnd)}q.2 3 -2 3.4q-2.4 .3 -2 -2.2"/>
+      <circle class="rp-knot" cx="${f(ropeX)}" cy="${f(ropeTop)}" r="1.4"/>`;
+    const de = document.documentElement, W = fixed ? innerWidth : de.scrollWidth, H = fixed ? innerHeight : de.scrollHeight;
+    layer.setAttribute("width", W); layer.setAttribute("height", H);
+    layer.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    layer.innerHTML = flags + rope + climberAt;
+  }
+
   function renderCalendar() {
     $("month-title").textContent = state.month.toLocaleDateString(undefined, { month: "long", year: "numeric" });
     const byDate = {};
@@ -1362,7 +1420,7 @@
       }
       const met = weekWorkouts >= state.goal;
       const pct = Math.min(100, (weekWorkouts / state.goal) * 100);
-      html += `<div class="week-total${met ? " met" : ""}">${week === 0 ? sitterHtml() : ""}
+      html += `<div class="week-total${met ? " met" : ""}" data-start="${iso(weekStart)}" data-end="${iso(addDays(weekStart, 6))}" data-workouts="${weekWorkouts}">${week === 0 ? sitterHtml() : ""}
         <strong>${activeDays ? fmtDuration(weekTime) : "—"}</strong>
         <div class="bar"><i style="width:${pct}%"></i></div>
         <span class="goal">${met ? `<svg viewBox="0 0 24 24"><use href="#i-check"/></svg>Goal` : `${weekWorkouts}/${state.goal} workouts`}</span></div>`;
@@ -1370,6 +1428,7 @@
     const cal = $("calendar");
     cal.style.setProperty("--rows", rows);
     cal.innerHTML = html;
+    setTimeout(drawRappel, 0);
   }
 
   // How many workout chips fit in a day cell at the current calendar height.
@@ -1578,10 +1637,10 @@
   let fitTimer = 0, ropeTimer = 0;
   function scheduleFit() {
     clearTimeout(fitTimer);
-    fitTimer = setTimeout(() => { document.querySelectorAll(".card").forEach(fitCard); drawRopes(); drawLights(); }, 40);
+    fitTimer = setTimeout(() => { document.querySelectorAll(".card").forEach(fitCard); drawRopes(); drawLights(); drawRappel(); }, 40);
     // late layout shifts (fonts, the calendar redrawing) can move the rope's ends, so check again
     clearTimeout(ropeTimer);
-    ropeTimer = setTimeout(() => { drawRopes(); drawLights(); }, 600);
+    ropeTimer = setTimeout(() => { drawRopes(); drawLights(); drawRappel(); }, 600);
   }
 
   // Slim line: trailing moving average of workouts per week since the first workout.
@@ -1850,7 +1909,7 @@
   new ResizeObserver(scheduleFit).observe(document.querySelector(".page"));
   document.fonts?.ready.then(scheduleFit);
   // catch any late layout shift that moves the rope's ends without resizing the page
-  setInterval(() => { if (!document.hidden) { drawRopes(true); drawLights(true); } }, 1500);
+  setInterval(() => { if (!document.hidden) { drawRopes(true); drawLights(true); drawRappel(true); } }, 1500);
   window.addEventListener("load", scheduleFit);
 
   let resizeTimer;

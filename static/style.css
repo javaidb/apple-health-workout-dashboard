@@ -1174,3 +1174,19 @@ svg.night :is(.th-crown-sun, .th-crown-sun-glow, .th-crown-rays) { display: none
 .robin-tail { transform-box: fill-box; transform-origin: 0% 50%; animation: robin-flick 6s ease-in-out infinite; animation-delay: 2.4s; }
 @keyframes robin-flick { 0%, 80%, 100% { transform: rotate(0); } 84% { transform: rotate(-20deg); } 88% { transform: rotate(0); } }
 @media (prefers-reduced-motion: reduce) { .cable-shoes, .robin-head, .robin-tail { animation: none; } }
+
+/* ---- the rappeller on the calendar's week column ---- */
+.rp-rope { fill: none; stroke: #8b5a2b; stroke-width: 1.4; stroke-linecap: round; }
+.rp-knot { fill: #8b5a2b; stroke: #5b3a1c; stroke-width: .5; }
+.rappeller .rp-body { fill: none; stroke: var(--text); stroke-width: 2.1; stroke-linecap: round; }
+.rappeller .rp-limb { fill: none; stroke: var(--text); stroke-width: 1.25; stroke-linecap: round; stroke-linejoin: round; }
+.rappeller .rp-face { fill: var(--text); }
+.rappeller .rp-helmet { fill: #38bdf8; }
+.rappeller .rp-pack { fill: #f97316; }
+.rappeller .rp-harness { stroke: #facc15; stroke-width: 1; stroke-linecap: round; }
+.rp-bob { animation: rp-bob 3.4s ease-in-out infinite alternate; }
+@keyframes rp-bob { to { translate: 0 .8px; } }
+.rp-flag .pole { stroke: #d6d3d1; stroke-width: .8; stroke-linecap: round; }
+.rp-flag .cloth { fill: var(--accent); opacity: .9; }
+.rp-flag.gold .cloth { fill: #fbbf24; filter: drop-shadow(0 0 2px rgba(251, 191, 36, .6)); }
+@media (prefers-reduced-motion: reduce) { .rp-bob { animation: none; } }
