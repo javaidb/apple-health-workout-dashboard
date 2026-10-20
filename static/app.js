@@ -1762,111 +1762,212 @@
   // to the underground market.
   const atMonthEnd = (d = new Date()) => d.getDate() === new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
 
-  // The underground market, drawn straight onto the page below the Daily activity card (the card's
-  // bottom edge is its ceiling), at 1px per unit so everyone is the rappeller's size (scale 1.2):
-  // a ladder down from the surface, string lights in uneven arches, a bar with a flickering neon
-  // sign, a bartender and a regular, a little restaurant with a TV and a diner, and, with room, a
-  // produce stall and an arcade cabinet. On the last day of the month the rappeller is at the bar
-  // with a drink.
+  // The underground market: a flat, side-on street drawn straight onto the page below the Daily
+  // activity card, whose bottom edge is its ceiling. Everything stands on one ground line:
+  //   shops  a back row of shopfronts of different widths and heights, lamp posts in the gaps
+  //   street carts, café tables, a fruit tent, a vending machine standing in front of them
+  //   people strolling both ways (the further ones a touch smaller and dimmer), a bench with a
+  //          reader, a cat, a plant, a bin, a puddle, and string lights tacked to the card's edge
+  // On the last day of the month the calendar's rappeller sits outside the bar with a beer.
   let marketKey = "";
   function drawMarket(onlyIfMoved = false) {
     const el = $("market");
     if (!el) return;
     const W = Math.round(el.clientWidth), H = Math.round(el.clientHeight), end = atMonthEnd();
-    const key = `${W}x${H}|${end}`;
+    const card = $("activity-card");
+    const ceil = card ? -Math.max(0, Math.round(el.getBoundingClientRect().top - card.getBoundingClientRect().bottom)) : 0;
+    const key = `${W}x${H}|${end}|${ceil}`;
     if (onlyIfMoved && key === marketKey) return;
     marketKey = key;
-    if (W < 160 || H < 36) { el.innerHTML = ""; return; }
-    const f = (n) => n.toFixed(1), fy = H - 1.5;
-    // people, in the rappeller's units (scale 1.2): standing with feet at (0,0), or sitting with the
-    // seat at (0,0) facing left
-    const at = (x, y, flip, inner, cls = "") => `<g class="mk-who ${cls}" transform="translate(${f(x)},${f(y)}) scale(${flip ? -1.2 : 1.2},1.2)">${inner}</g>`;
-    const head = (x, y, extra = "") => `<circle class="mk-face" cx="${x}" cy="${y}" r="1.9"/>${extra}`;
-    const standing = (arms) => `<path class="mk-limb" d="M-1.4 0L0 -4.6L1.4 0"/><path class="mk-body" d="M0 -4.6V-9.4"/>${arms}${head(0, -11.4)}`;
-    const sitting = (arms, extra = "") => `<path class="mk-limb" d="M0 0H-3.2L-3.4 4.4"/><path class="mk-body" d="M0 0L.2 -4.8"/>${arms}${head(.2, -6.9, extra)}`;
+    if (W < 200 || H < 44) { el.innerHTML = ""; return; }
+    const f = (n) => n.toFixed(1);
+    // A flat, side-on view on the page itself: the Daily activity card's bottom edge is the ceiling
+    // (the lights hang from it), and everything stands on one ground line. Depth is only layering:
+    // the shops at the back, things out in the street in front of them, people in front of those.
+    const floor = H - 1.5, shopH = Math.min(34, floor - 16);
 
-    // ---- lights: pins under the card's edge, the string drooping between them, warm bulbs hanging
+    // ---- shops: an organic back row. Buildings of different widths and heights, a lamp post in the
+    // gaps between some, a closed shop with its shutter half down, hanging blade signs.
+    const sil = (x, y, k = .9, arm = "") => `<g transform="translate(${f(x)},${f(y)}) scale(${k})"><path class="mk-silo" d="M0 0V-6"/><circle class="mk-silo-head" cy="-7.6" r="1.6"/>${arm}</g>`;
+    const ROW = [
+      { kind: "bar", w: 62, drop: 0 }, { kind: "alley", w: 7 }, { kind: "ramen", w: 50, drop: 7 },
+      { kind: "eats", w: 66, drop: 3 }, { kind: "shutter", w: 38, drop: 9 }, { kind: "alley", w: 6 },
+      { kind: "arcade", w: 54, drop: 0 }, { kind: "laundry", w: 46, drop: 5 }, { kind: "bakery", w: 50, drop: 8 },
+    ];
+    // keep as much of the row as fits, then stretch it to fill the street
+    const avail = W - 16;
+    let rowItems = [], used = 0;
+    for (const it of ROW) { if (used + it.w > avail * 1.08) break; rowItems.push(it); used += it.w; }
+    if (rowItems[rowItems.length - 1].kind === "alley") { used -= rowItems.pop().w; }
+    const stretch = avail / used;
+    let cx = 14, barDoor = null, eatsSpan = null, shutterSpan = null, arcadeSpan = null, bakerySpan = null, ramenSpan = null;
+    const backRow = rowItems.map((it) => {
+      const w = it.w * stretch, x = cx; cx += w;
+      if (it.kind === "alley") {
+        const lx = x + w / 2, ly = floor - shopH * .8;
+        return `<path class="mk-lamppost" d="M${f(lx)},${f(floor)}V${f(ly)}q0 -2 2 -2"/><circle class="mk-doorlamp" cx="${f(lx + 2.2)}" cy="${f(ly - 1)}" r="1.1"/>`;
+      }
+      const shopBot = floor, top = floor - shopH + it.drop * .7, h = shopBot - top, wx = x + 3.5, ww = w * .52, winTop = top + h * .38, winH = h * .4;
+      const dx = x + w * .64, dw = Math.max(6, w * .22), doorTop = top + h * .36;
+      const facade = (fill, extra = "") => `<path class="mk-facade" d="M${f(x + .6)},${f(shopBot)}V${f(top + 1.2)}H${f(x + w - .6)}V${f(shopBot)}Z" fill="${fill}"/>
+        <path class="mk-cornice" d="M${f(x)},${f(top + .8)}H${f(x + w)}"/>${extra}`;
+      const sign = (text, cls, at = .5, sw = w - 8) => `<rect class="mk-signboard" x="${f(x + w * at - sw / 2)}" y="${f(top + 2.2)}" width="${f(sw)}" height="${f(Math.max(5.6, h * .19))}" rx=".8"/>
+        <text class="mk-sign ${cls}" x="${f(x + w * at)}" y="${f(top + 2.2 + Math.max(5.6, h * .19) - 1.4)}" text-anchor="middle">${text}</text>`;
+      const win = (glow, inside = "") => `<rect class="mk-window" x="${f(wx)}" y="${f(winTop)}" width="${f(ww)}" height="${f(winH)}" style="fill:${glow}"/>${inside}<rect class="mk-frame" x="${f(wx)}" y="${f(winTop)}" width="${f(ww)}" height="${f(winH)}"/>`;
+      const door = (arched) => `<path class="mk-door" d="M${f(dx)},${f(shopBot)}V${f(doorTop + (arched ? dw / 2 : 0))}${arched ? `A${f(dw / 2)} ${f(dw / 2)} 0 0 1 ${f(dx + dw)},${f(doorTop + dw / 2)}` : `H${f(dx + dw)}`}V${f(shopBot)}Z"/>
+        <circle class="mk-knob" cx="${f(dx + dw - 1.3)}" cy="${f(doorTop + (shopBot - doorTop) * .58)}" r=".5"/><circle class="mk-doorlamp" cx="${f(dx + dw / 2)}" cy="${f(doorTop - 1.6)}" r=".9"/>`;
+      const blade = (text, cls, left = false) => { const bx = left ? x - 5.6 : x + w + 1;
+        return `<path class="mk-bracket" d="M${f(left ? x + 1 : x + w - 1)},${f(top + 3)}h${left ? -3.4 : 3.4}"/><rect class="mk-blade" x="${f(bx)}" y="${f(top + 3.6)}" width="4.6" height="${f(text.length * 4.4 + 2)}" rx=".6"/>
+        <text class="mk-sign mk-vert ${cls}" x="${f(bx + 2.3)}" y="${f(top + 5)}" text-anchor="middle">${text.split("").map((c, i) => `<tspan x="${f(bx + 2.3)}" dy="${i ? 4.4 : 3.6}">${c}</tspan>`).join("")}</text>`; };
+      if (it.kind === "bar") {
+        barDoor = dx + dw / 2;
+        const bottles = Array.from({ length: Math.floor((ww - 4) / 4) }, (_, i) => `<rect x="${f(wx + 2.4 + i * 4)}" y="${f(winTop + 1)}" width="1.8" height="3" fill="${["#22c55e", "#f59e0b", "#60a5fa", "#e11d48"][i % 4]}"/>`).join("");
+        return `<g class="mk-shop">${facade("#2a1820", `<path class="mk-bricks" d="${Array.from({ length: 4 }, (_, i) => `M${f(x + 2)},${f(top + h * (.3 + i * .17))}H${f(x + w - 2)}`).join("")}"/>`)}
+          ${sign("BAR", "mk-neon pink", .44, w * .62)}
+          ${win("#be185d", `<path class="mk-shelf" d="M${f(wx + 2)},${f(winTop + 4)}H${f(wx + ww - 2)}"/>${bottles}${sil(wx + ww * .6, winTop + winH, .9, `<g class="mk-shake"><path class="mk-silo-arm" d="M0 -5.4L2 -6.6L2.4 -8.8"/><rect class="mk-shaker" x="1.7" y="-11" width="1.5" height="2.6" rx=".5"/></g>`)}`)}
+          ${door(true)}${blade("★", "mk-neon pink")}</g>`;
+      }
+      if (it.kind === "ramen") {
+        ramenSpan = [x, x + w];
+        return `<g class="mk-shop">${facade("#3a2618", `<path class="mk-planks" d="${Array.from({ length: Math.floor(w / 5) }, (_, i) => `M${f(x + 3 + i * 5)},${f(top + 2)}V${f(shopBot)}`).join("")}"/>`)}
+          ${sign("RAMEN", "mk-neon cyan")}
+          ${win("#0e7490", `<path class="mk-counter-in" d="M${f(wx + 1)},${f(winTop + winH - 3.6)}H${f(wx + ww - 1)}"/>${sil(wx + 5, winTop + winH - 3.6, .8)}${sil(wx + 13, winTop + winH - 3.6, .8)}<ellipse class="mk-bowl" cx="${f(wx + 7)}" cy="${f(winTop + winH - 4.2)}" rx="1.5" ry=".55"/>`)}
+          ${door(false)}<path class="mk-noren" d="${Array.from({ length: 3 }, (_, i) => `M${f(dx + .6 + i * dw / 3)},${f(doorTop)}h${f(dw / 3 - 1)}v${f((shopBot - doorTop) * .3)}h${f(-(dw / 3 - 1))}Z`).join("")}"/>
+          <path class="mk-pipe thin" d="M${f(x + w * .2)},${f(top)}V${f(top - 4)}"/><path class="mk-steam" d="M${f(x + w * .2)},${f(top - 5)}q-1 -2 .4 -4M${f(x + w * .2 + 1.2)},${f(top - 5)}q-1 -2 .4 -4"/></g>`;
+      }
+      if (it.kind === "eats") {
+        eatsSpan = [x, x + w];
+        return `<g class="mk-shop">${facade("#251d14")}${sign("EATS", "mk-neon amber", .5, w * .5)}
+          ${win("#b45309", `<rect class="mk-tv" x="${f(wx + ww - 11)}" y="${f(winTop + 1.4)}" width="9" height="6" rx=".6"/>
+            <g class="mk-tv-picture"><rect class="mk-tv-sky" x="${f(wx + ww - 10.4)}" y="${f(winTop + 2)}" width="7.8" height="4.8"/><path class="mk-tv-mtn" d="M${f(wx + ww - 10.4)},${f(winTop + 6.8)}l2.6 -3.2l1.6 1.4l1.6 -2l2 3.8Z"/></g>
+            ${sil(wx + 6, winTop + winH, .85, `<g class="mk-fork"><path class="mk-silo-arm" d="M0 -5L2 -4.2L2.6 -5.4"/></g>`)}`)}
+          <path class="mk-awn" d="M${f(x + 1)},${f(winTop + 3)}L${f(x + 3)},${f(winTop - .4)}H${f(x + w - 3)}L${f(x + w - 1)},${f(winTop + 3)}Z" fill="#dc2626"/>
+          <path class="mk-awn-stripes" d="${Array.from({ length: Math.floor(w / 7) }, (_, i) => `M${f(x + 6 + i * 7)},${f(winTop - .4)}V${f(winTop + 3)}`).join("")}"/>
+          ${door(false)}</g>`;
+      }
+      if (it.kind === "shutter") {
+        shutterSpan = [x, x + w];
+        return `<g class="mk-shop">${facade("#1f2023")}${sign("CLOSED", "painted dim", .5, w - 8)}
+          <rect class="mk-shutter" x="${f(x + 3)}" y="${f(top + h * .34)}" width="${f(w - 6)}" height="${f(h * .5)}"/>
+          <path class="mk-shutter-slats" d="${Array.from({ length: 6 }, (_, i) => `M${f(x + 3)},${f(top + h * .34 + i * h * .085)}H${f(x + w - 3)}`).join("")}"/>
+          <rect class="mk-shutter-gap" x="${f(x + 3)}" y="${f(top + h * .84)}" width="${f(w - 6)}" height="${f(h * .16)}"/>
+          <path class="mk-tag" d="M${f(x + 6)},${f(top + h * .6)}q3 -3 6 0t6 0"/></g>`;
+      }
+      if (it.kind === "arcade") {
+        arcadeSpan = [x, x + w];
+        return `<g class="mk-shop">${facade("#1d1730")}${sign("ARCADE", "mk-neon violet")}
+          ${win("#6d28d9", [0, 1, 2].map((i) => `<rect class="mk-cab" x="${f(wx + 2 + i * (ww - 4) / 3)}" y="${f(winTop + 2)}" width="${f((ww - 8) / 3)}" height="${f(winH - 2)}" rx=".6"/><rect class="mk-screen" x="${f(wx + 3 + i * (ww - 4) / 3)}" y="${f(winTop + 3.2)}" width="${f((ww - 8) / 3 - 2)}" height="3.2" style="animation-delay:${-i * .6}s"/>`).join(""))}
+          ${door(false)}${blade("24", "mk-neon violet", true)}</g>`;
+      }
+      if (it.kind === "laundry") {
+        return `<g class="mk-shop">${facade("#151c2b")}${sign("LAUNDRY", "painted", .5, w - 6)}
+          ${win("#1d4ed8", [0, 1].map((i) => { const mx = wx + 2 + i * (ww - 4) / 2, cx2 = mx + (ww - 8) / 4, cy2 = winTop + winH - 4;
+            return `<rect class="mk-washer-box" x="${f(mx)}" y="${f(winTop + winH - 8)}" width="${f((ww - 8) / 2)}" height="8" rx=".6"/><g class="mk-drum" style="transform-origin:${f(cx2)}px ${f(cy2)}px"><circle class="mk-porthole" cx="${f(cx2)}" cy="${f(cy2)}" r="2.4"/><path class="mk-suds" d="M${f(cx2 - 1.6)},${f(cy2)}h3.2"/></g>`; }).join(""))}
+          ${door(false)}</g>`;
+      }
+      if (it.kind === "bakery") {
+        bakerySpan = [x, x + w];
+        return `<g class="mk-shop">${facade("#2a1c14")}${sign("BAKERY", "painted", .5, w - 6)}
+          ${win("#c2410c", `<path class="mk-shelf" d="M${f(wx + 2)},${f(winTop + winH - 4)}H${f(wx + ww - 2)}"/>${Array.from({ length: 4 }, (_, i) => `<ellipse class="mk-loaf" cx="${f(wx + 4 + i * (ww - 8) / 3)}" cy="${f(winTop + winH - 5.4)}" rx="1.9" ry="1.1"/>`).join("")}`)}
+          <path class="mk-awn" d="M${f(wx - 1)},${f(winTop + 2.6)}L${f(wx + 1)},${f(winTop - .2)}H${f(wx + ww - 1)}L${f(wx + ww + 1)},${f(winTop + 2.6)}Z" fill="#f59e0b"/>
+          ${door(true)}</g>`;
+      }
+      return "";
+    }).join("");
+    const shops = backRow;
+
+    // ---- the front row: things out in the street, standing on its front half
+    const fy = floor;
+    const frontRow = [];
+    if (ramenSpan && eatsSpan) {   // a noodle cart under an umbrella, between the noodle bar and the diner
+      const x = ramenSpan[0] + (ramenSpan[1] - ramenSpan[0]) * .3;
+      frontRow.push(`<g class="mk-cart"><path class="mk-umbrella" d="M${f(x - 9)},${f(fy - 13)}Q${f(x)},${f(fy - 19)} ${f(x + 9)},${f(fy - 13)}Z"/><path class="mk-pole" d="M${f(x)},${f(fy - 16)}V${f(fy - 6)}"/>
+        <rect class="mk-cartbox" x="${f(x - 8)}" y="${f(fy - 8)}" width="16" height="6" rx="1"/><circle class="mk-wheel" cx="${f(x - 5)}" cy="${f(fy - 1.2)}" r="1.6"/><circle class="mk-wheel" cx="${f(x + 5)}" cy="${f(fy - 1.2)}" r="1.6"/>
+        <path class="mk-steam" d="M${f(x - 3)},${f(fy - 9)}q-1 -2 .4 -4M${f(x - 1.6)},${f(fy - 9)}q-1 -2 .4 -4"/>
+        <g transform="translate(${f(x + 4)},${f(fy - 8)}) scale(1.1)"><path class="mk-body" d="M0 0V-4.8" style="stroke:#f87171"/><circle class="mk-face" cy="-6.6" r="1.8"/><path class="mk-limb" d="M0 -4L-2.6 -2.4"/></g></g>`);
+    }
+    if (eatsSpan) {   // two café tables outside the diner, one taken
+      [eatsSpan[0] + (eatsSpan[1] - eatsSpan[0]) * .45, eatsSpan[0] + (eatsSpan[1] - eatsSpan[0]) * .82].forEach((x, i) => {
+        frontRow.push(`<path class="mk-table" d="M${f(x - 4)},${f(fy - 7)}H${f(x + 4)}M${f(x)},${f(fy - 7)}V${f(fy)}M${f(x - 2)},${f(fy)}H${f(x + 2)}"/>
+          <path class="mk-chair" d="M${f(x + 7)},${f(fy - 11)}V${f(fy)}M${f(x + 7)},${f(fy - 5.4)}H${f(x + 3.6)}V${f(fy)}"/>`
+          + (i === 0 ? `<g transform="translate(${f(x + 5.6)},${f(fy - 5.8)}) scale(-1.1,1.1)"><path class="mk-limb" d="M0 0H-3.2L-3.4 4.4"/><path class="mk-body" d="M0 0L.2 -4.8" style="stroke:#38bdf8"/><circle class="mk-face" cx=".2" cy="-6.8" r="1.8"/><g class="mk-sip"><path class="mk-limb" d="M.1 -4L-2.6 -3.4L-3 -6"/><rect class="mk-glass" x="-4" y="-8.4" width="1.8" height="2.6" rx=".3"/></g></g>`
+            : `<rect class="mk-glass" x="${f(x - 1)}" y="${f(fy - 9.4)}" width="1.6" height="2.4" rx=".3"/>`));
+      });
+    }
+    if (shutterSpan) {   // a striped fruit tent pitched in front of the closed shop
+      const x = (shutterSpan[0] + shutterSpan[1]) / 2;
+      frontRow.push(`<g class="mk-tent"><path class="mk-awn" d="M${f(x - 13)},${f(fy - 11)}L${f(x - 10)},${f(fy - 15)}H${f(x + 10)}L${f(x + 13)},${f(fy - 11)}Z" fill="#14b8a6"/>
+        <path class="mk-awn-stripes" d="${[-6, -2, 2, 6].map((d) => `M${f(x + d)},${f(fy - 15)}V${f(fy - 11)}`).join("")}"/><path class="mk-pole" d="M${f(x - 11)},${f(fy - 11)}V${f(fy)}M${f(x + 11)},${f(fy - 11)}V${f(fy)}"/>
+        ${[-7, 0, 7].map((d) => `<rect class="mk-crate" x="${f(x + d - 3.2)}" y="${f(fy - 4.4)}" width="6.4" height="4.4" rx=".4"/>`).join("")}
+        ${Array.from({ length: 8 }, (_, i) => `<circle cx="${f(x - 9 + i * 2.6)}" cy="${f(fy - 5.2)}" r="1.1" fill="${["#f97316", "#84cc16", "#ef4444", "#facc15"][i % 4]}"/>`).join("")}</g>`);
+    }
+    if (arcadeSpan) {   // a glowing vending machine by the arcade
+      const x = arcadeSpan[1] - 6;
+      frontRow.push(`<rect class="mk-vend" x="${f(x - 4)}" y="${f(fy - 15)}" width="8" height="15" rx=".8"/><rect class="mk-vend-glass" x="${f(x - 3)}" y="${f(fy - 13.6)}" width="6" height="7"/>
+        ${[0, 1, 2].map((r) => `<path class="mk-vend-row" d="M${f(x - 3)},${f(fy - 11.6 + r * 2.2)}h6"/>`).join("")}`);
+    }
+    if (bakerySpan) {   // the bakery's chalkboard
+      const x = bakerySpan[0] + 6;
+      frontRow.push(`<path class="mk-board" d="M${f(x - 3.4)},${f(fy)}L${f(x - 2)},${f(fy - 9)}H${f(x + 2)}L${f(x + 3.4)},${f(fy)}"/><rect class="mk-board-face" x="${f(x - 2.4)}" y="${f(fy - 8.4)}" width="4.8" height="5.6"/><path class="mk-chalk" d="M${f(x - 1.6)},${f(fy - 7)}h3M${f(x - 1.6)},${f(fy - 5.4)}h2"/>`);
+    }
+    const front0 = frontRow.join("");
+
+    // ---- the street: the ground line, a puddle, people strolling both ways
+    const street = `<path class="mk-ground" d="M0,${f(floor + .5)}H${W}"/>
+      <ellipse class="mk-puddle" cx="${f(W * .72)}" cy="${f(floor + .4)}" rx="9" ry=".9"/>`;
+    const gait = (shirt) => `<path class="mk-limb mk-gait l1" d="M0 -4.6L.2 -2.3L-.1 0"/><path class="mk-limb mk-gait l2" d="M0 -4.6L.2 -2.3L-.1 0"/>
+      <path class="mk-body" d="M0 -4.6V-9.4" style="stroke:${shirt}"/><g class="mk-swing"><path class="mk-limb" d="M0 -8.6L-1 -6.4L-.8 -4.4"/></g>
+      <circle class="mk-face" cx="0" cy="-11.4" r="1.9"/>`;
+    const walkers = [
+      // [feet y, scale, direction, px/s, shirt, start offset 0-1, depth class]
+      [floor, .95, 1, 9, "#60a5fa", .15, "far"],
+      [floor, .95, -1, 8, "#f472b6", .6, "far"],
+      [floor, 1.2, 1, 12, "#fbbf24", .45, "near"],
+      [floor, 1.2, -1, 10.5, "#a3e635", .85, "near"],
+    ].map(([y, k, dir, speed, shirt, off, depth]) => {
+      const span = W + 40, dur = span / speed;
+      return [depth, `<g class="mk-walker ${depth}" style="--from:${dir > 0 ? -20 : W + 20}px;--to:${dir > 0 ? W + 20 : -20}px;animation-duration:${dur.toFixed(1)}s;animation-delay:${(-off * dur).toFixed(1)}s">
+          <g transform="translate(0,${f(y)}) scale(${dir * k},${k})">${gait(shirt)}</g></g>`];
+    });
+    const farWalkers = walkers.filter(([d]) => d === "far").map(([, g]) => g).join("");
+    const nearWalkers = walkers.filter(([d]) => d === "near").map(([, g]) => g).join("");
+
+    // ---- front: bench and reader, crates, a cat, a plant, a bin; the rappeller at month end
+    const bx = W * .9;
+    const front = `<path class="mk-bench" d="M${f(bx - 9)},${f(floor - 5)}H${f(bx + 9)}M${f(bx - 7)},${f(floor - 5)}V${f(floor)}M${f(bx + 7)},${f(floor - 5)}V${f(floor)}M${f(bx - 9)},${f(floor - 9.5)}H${f(bx + 9)}"/>
+      <g transform="translate(${f(bx - 2)},${f(floor - 5.4)}) scale(1.2)"><path class="mk-limb" d="M0 0H2.6L2.8 4.4"/><path class="mk-body" d="M0 0L-.3 -4.8" style="stroke:#c084fc"/>
+        <circle class="mk-face" cx="-.2" cy="-6.9" r="1.9"/><path class="mk-limb" d="M-.2 -4L2.2 -3.4M-.2 -3.6L2.4 -2.6"/><rect class="mk-paper" x="2" y="-5.8" width="2.6" height="3.4"/></g>
+
+      <g class="mk-cat" transform="translate(${f(W * .3)},${f(floor)})"><path class="mk-cat-body" d="M-3 0V-2.4Q-3 -3.6 -1.4 -3.6H1.6L2.4 -5L2.8 -3.4Q3.4 -3 3.2 -1.8V0Z"/><g class="mk-cat-tail"><path d="M-2.8 -2.2Q-5.6 -2.6 -5.2 -5.4"/></g></g>
+      <g transform="translate(${f(W * .975)},${f(floor)})"><path class="mk-pot" d="M-2.4 0L-3 -3.6H3L2.4 0Z"/><path class="mk-leaf" d="M0 -3.6Q-3.6 -7 -2 -9.6M0 -3.6Q.4 -8.4 1.8 -10M0 -3.6Q3.4 -6 3.8 -8"/></g>
+      <g transform="translate(${f(W * .2)},${f(floor)})"><path class="mk-bin" d="M-2.4 0V-6H2.4V0Z"/><path class="mk-bin-lid" d="M-2.8 -6H2.8"/></g>
+      ${end && barDoor != null ? `<g class="mk-who visitor" transform="translate(${f(barDoor + 4)},${f(floor - 5.6)}) scale(1.2)"><title>The calendar's rappeller made it to the bottom of the month: a beer outside the bar</title>
+        <path class="mk-stool-front" d="M-1.6 0H1.6M0 0V4.6"/><path class="mk-limb" d="M0 0H-3.2L-3.4 4.4"/><rect class="mk-pack" x=".6" y="-5.2" width="2.4" height="4" rx=".8"/>
+        <path class="mk-body" d="M0 0L.2 -4.8"/><path class="mk-limb" d="M.1 -4L-2.8 -2.8L-4.4 -3.6"/><rect class="mk-glass beer" x="-5.6" y="-5.6" width="2" height="2.8" rx=".3"/>
+        <circle class="mk-face" cx=".2" cy="-6.9" r="1.9"/><path class="mk-helmet" d="M-1.9 -7.1A2.3 2.3 0 0 1 2.3 -7.1Z"/></g>` : ""}`;
+
+    // ---- string lights tacked to the card's bottom edge in uneven arches, and the ladder down from it
     const pins = [];
     for (let x = 20, k = 0; x < W - 8; k++) { pins.push(x); x += 52 + ((k * 37) % 30); }
     pins.push(W - 6);
-    let wire = `M${pins[0]},2.5`, bulbs = "";
+    const cy0 = ceil + 1.2;
+    let wire = `M${pins[0]},${f(cy0)}`, bulbs = "", nb = 0;
     const warm = ["#fde68a", "#fdba74", "#fef3c7", "#fca5a5"];
-    let nb = 0;
     pins.slice(1).forEach((x1, k) => {
-      const x0 = pins[k], sag = 3.5 + ((k * 13) % 4), cy = 2.5 + 2 * sag;
-      wire += `Q${f((x0 + x1) / 2)},${f(cy)} ${x1},2.5`;
-      const n = Math.max(1, Math.round((x1 - x0) / 17));
-      for (let b = 1; b <= n; b++) {
-        const t = b / (n + 1), x = x0 + (x1 - x0) * t, y = (1 - t) ** 2 * 2.5 + 2 * (1 - t) * t * cy + t * t * 2.5;
-        bulbs += `<g class="bulb on" transform="translate(${f(x)},${f(y)}) rotate(${180 + ((nb * 7) % 13) - 6})">
-          <circle class="bulb-halo" cy="-5" r="5" fill="${warm[nb % 4]}" style="animation-delay:${((nb * .41) % 3).toFixed(2)}s"/>
-          <rect class="bulb-cap" x="-1" y="-2" width="2" height="2" rx=".4"/>
-          <path class="bulb-glass" d="M0,-1.9C-2,-2.9 -1.9,-6.4 0,-7.2C1.9,-6.4 2,-2.9 0,-1.9Z" fill="${warm[nb % 4]}"/></g>`;
+      const xa = pins[k], sag = 3 + ((k * 13) % 3) * 1.4, cy = cy0 + 2 * sag;
+      wire += `Q${f((xa + x1) / 2)},${f(cy)} ${x1},${f(cy0)}`;
+      const nbulb = Math.max(1, Math.round((x1 - xa) / 17));
+      for (let b = 1; b <= nbulb; b++) {
+        const t = b / (nbulb + 1), x = xa + (x1 - xa) * t, y = (1 - t) ** 2 * cy0 + 2 * (1 - t) * t * cy + t * t * cy0;
+        bulbs += `<g class="bulb on" transform="translate(${f(x)},${f(y)}) rotate(${180 + ((nb * 7) % 13) - 6}) scale(.75)"><circle class="bulb-halo" cy="-5" r="5" fill="${warm[nb % 4]}" style="animation-delay:${((nb * .41) % 3).toFixed(2)}s"/><rect class="bulb-cap" x="-1" y="-2" width="2" height="2" rx=".4"/><path class="bulb-glass" d="M0,-1.9C-2,-2.9 -1.9,-6.4 0,-7.2C1.9,-6.4 2,-2.9 0,-1.9Z" fill="${warm[nb % 4]}"/></g>`;
         nb += 1;
       }
     });
-    const lights = `<path class="light-wire" d="${wire}"/>${bulbs}${pins.map((x) => `<circle class="light-tack" cx="${x}" cy="2.5" r="1.3"/>`).join("")}`;
+    const lights = `<path class="light-wire" d="${wire}"/>${bulbs}${pins.map((x) => `<circle class="light-tack" cx="${x}" cy="${f(cy0)}" r="1.3"/>`).join("")}`;
+    const ladder = `<path class="mk-ladder" d="M4 ${ceil}V${f(floor)}M9 ${ceil}V${f(floor)}${Array.from({ length: Math.floor((floor - ceil) / 5) }, (_, i) => `M4 ${f(ceil + 3 + i * 5)}H9`).join("")}"/>`;
 
-    // ---- ladder down from the surface
-    const ladder = `<path class="mk-ladder" d="M5 0V${f(fy)}M10 0V${f(fy)}${Array.from({ length: Math.floor(fy / 5) }, (_, i) => `M5 ${f(3 + i * 5)}H10`).join("")}"/>`;
-
-    // ---- the bar
-    const bx = 18, cw = 48;
-    const bottles = (y, x0, n) => Array.from({ length: n }, (_, i) => {
-      const x = x0 + i * 6.4, c = ["#22c55e", "#f59e0b", "#60a5fa", "#e11d48", "#a3e635"][(i + y) % 5];
-      return `<path class="mk-bottle" d="M${f(x)},${f(y)}v-5.4h2.2v5.4ZM${f(x + .7)},${f(y - 5.4)}v-1.6h.8v1.6Z" fill="${c}"/>`;
-    }).join("");
-    const bar = `<g class="mk-bar">
-        <text class="mk-neon pink" x="${bx + cw / 2}" y="${f(fy - 29)}" text-anchor="middle">BAR</text>
-        <path class="mk-shelf" d="M${bx + 2},${f(fy - 21)}H${bx + cw - 2}M${bx + 2},${f(fy - 14.5)}H${bx + cw - 2}"/>
-        ${bottles(Math.round(fy - 21), bx + 5, 6)}${bottles(Math.round(fy - 14.5), bx + 8, 5)}
-        ${at(bx + 14, fy - 4.5, false, standing(`<g class="mk-shake"><path class="mk-limb" d="M0 -8.4L2.4 -9.6L3 -12.6"/><rect class="mk-shaker" x="2.2" y="-15.6" width="1.8" height="3.4" rx=".6"/></g><path class="mk-limb" d="M0 -8.4L-2 -6.4"/>`), "bartender")}
-        <rect class="mk-counter" x="${bx}" y="${f(fy - 9)}" width="${cw}" height="9" rx="1"/><path class="mk-counter-top" d="M${bx - 1},${f(fy - 9)}H${bx + cw + 1}"/>
-        ${[bx + cw + 7, bx + cw + 20].map((x) => `<path class="mk-stool" d="M${x - 3},${f(fy - 9.4)}H${x + 3}M${x},${f(fy - 9.4)}V${f(fy)}M${x - 2.4},${f(fy)}H${x + 2.4}"/>`).join("")}
-        ${at(bx + cw + 7, fy - 10, false, sitting(`<g class="mk-sip"><path class="mk-limb" d="M.1 -4L-2.6 -3.4L-3 -6"/><rect class="mk-glass" x="-4" y="-8.4" width="1.8" height="2.6" rx=".3"/></g>`))}
-        ${end ? at(bx + cw + 20, fy - 10, false, sitting(`<path class="mk-limb" d="M.1 -4L-2.8 -2.8L-4.4 -3.6"/><rect class="mk-glass beer" x="-5.6" y="-5.6" width="2" height="2.8" rx=".3"/>`,
-          `<path class="mk-helmet" d="M-1.9 -7.1A2.3 2.3 0 0 1 2.3 -7.1Z"/>`).replace('<path class="mk-body"', '<rect class="mk-pack" x=".6" y="-5.2" width="2.4" height="4" rx=".8"/><path class="mk-body"'), "visitor")
-          .replace("<g class", `<g class`).replace(`">`, `"><title>The calendar's rappeller made it to the bottom of the month: a drink at the underground bar</title>`) : ""}
-      </g>`;
-
-    // ---- the restaurant
-    const rx = Math.max(bx + cw + 34, Math.round(W * .3));
-    const table = (x) => `<path class="mk-table" d="M${x - 7},${f(fy - 8)}H${x + 7}M${x},${f(fy - 8)}V${f(fy)}M${x - 3},${f(fy)}H${x + 3}"/>`;
-    const chair = (x, flip) => `<path class="mk-chair" d="M${x},${f(fy - 15)}V${f(fy)}M${x},${f(fy - 7)}H${x + (flip ? -5 : 5)}V${f(fy)}"/>`;
-    const diner = rx + 7 + 5;
-    const restaurant = `<g class="mk-diner-place">
-        <text class="mk-neon amber" x="${rx + 6}" y="${f(fy - 29)}">EATS</text>
-        <path class="mk-tv-arm" d="M${rx + 46},${f(fy - 33)}V${f(fy - 30)}"/>
-        <rect class="mk-tv" x="${rx + 37}" y="${f(fy - 30)}" width="18" height="11" rx="1"/>
-        <g class="mk-tv-picture"><rect class="mk-tv-sky" x="${rx + 38.2}" y="${f(fy - 28.8)}" width="15.6" height="8.6"/>
-          <path class="mk-tv-mtn" d="M${rx + 38.2},${f(fy - 20.2)}L${rx + 43},${f(fy - 26)}L${rx + 45.6},${f(fy - 23.4)}L${rx + 48},${f(fy - 26.8)}L${rx + 53.8},${f(fy - 20.2)}Z"/>
-          <circle class="mk-tv-dot" cx="${rx + 46.6}" cy="${f(fy - 24.6)}" r=".6"/></g>
-        ${chair(rx + 7, false)}${table(rx + 18)}${chair(rx + 29, true)}
-        ${table(rx + 46)}${chair(rx + 57, true)}<circle class="mk-candle" cx="${rx + 46}" cy="${f(fy - 9.6)}" r="1.1"/>
-        <ellipse class="mk-plate" cx="${rx + 15}" cy="${f(fy - 8.6)}" rx="2.6" ry=".7"/><path class="mk-steam" d="M${rx + 14.4},${f(fy - 10)}q-.8 -1.6 .2 -3.2M${rx + 16},${f(fy - 10)}q-.8 -1.6 .2 -3.2"/>
-        ${at(diner, fy - 7.4, true, sitting(`<g class="mk-fork"><path class="mk-limb" d="M.1 -4L-2.4 -2.6L-3.2 -3.6"/></g>`))}
-      </g>`;
-
-    // ---- a produce stall, when there's room
-    const sx = Math.max(rx + 84, Math.round(W * .62)), stall = W - sx > 44 ? `<g class="mk-stall">
-        <path class="mk-post" d="M${sx - 12},${f(fy)}V${f(fy - 22)}M${sx + 12},${f(fy)}V${f(fy - 22)}"/>
-        <path class="mk-awning" d="M${sx - 14},${f(fy - 21)}L${sx - 11},${f(fy - 26)}H${sx + 11}L${sx + 14},${f(fy - 21)}Z"/>
-        <path class="mk-stripes" d="M${sx - 6},${f(fy - 26)}L${sx - 7.4},${f(fy - 21)}M${sx},${f(fy - 26)}V${f(fy - 21)}M${sx + 6},${f(fy - 26)}L${sx + 7.4},${f(fy - 21)}"/>
-        <rect class="mk-counter" x="${sx - 13}" y="${f(fy - 8)}" width="26" height="8" rx="1"/>
-        ${[-8, -3.4, 1.2, 5.8, 9.4].map((dx, i) => `<circle cx="${sx + dx}" cy="${f(fy - 9.4)}" r="1.5" fill="${["#f97316", "#84cc16", "#ef4444", "#facc15", "#a855f7"][i]}"/>`).join("")}
-        ${at(sx + 20, fy, true, standing(`<path class="mk-limb" d="M0 -8.4L-1.8 -6M0 -8.4L2.4 -6.4L3.6 -7.4"/><path class="mk-bag" d="M3 -7.6h2.4v3h-2.4Z"/>`), "shopper")}
-      </g>` : "";
-
-    // ---- an arcade cabinet and its player, on the far right when there's room
-    const ax = Math.max(sx + 44, Math.round(W * .86)), arcade = W - ax > 14 ? `<g class="mk-arcade">
-        <path class="mk-cabinet" d="M${ax - 5},${f(fy)}V${f(fy - 18)}L${ax - 3},${f(fy - 24)}H${ax + 6}V${f(fy)}Z"/>
-        <rect class="mk-screen" x="${ax - 2.6}" y="${f(fy - 21.6)}" width="7" height="6" rx=".6"/>
-        <path class="mk-stick" d="M${ax - 4},${f(fy - 13)}h-2.2M${ax - 5.2},${f(fy - 13)}v-2"/>
-        ${at(ax - 12, fy, false, standing(`<g class="mk-play"><path class="mk-limb" d="M0 -8.4L4 -8L5.4 -9.4M0 -8.2L3.6 -7.2L5 -7.8"/></g>`), "player")}
-      </g>` : "";
-
-    el.innerHTML = `<svg class="market" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="The underground market: a bar, a little restaurant with a TV and a produce stall">
-        <path class="mk-floor" d="M0,${f(fy + .6)}H${W}"/>${ladder}${bar}${restaurant}${stall}${arcade}${lights}</svg>`;
+    el.innerHTML = `<svg class="market" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="The underground market: a street of shops under string lights, people strolling by">
+        ${shops}${street}${farWalkers}${front0}${front}${nearWalkers}${ladder}${lights}</svg>`;
   }
 
   function weightRow() {

@@ -1214,54 +1214,122 @@ svg.night :is(.th-crown-sun, .th-crown-sun-glow, .th-crown-rays) { display: none
 .rp-flag.gold .cloth { fill: #fbbf24; filter: drop-shadow(0 0 2px rgba(251, 191, 36, .6)); }
 @media (prefers-reduced-motion: reduce) { .rp-bob { animation: none; } }
 
-/* ---- the underground market, drawn on the page below the Daily activity card ---- */
-.market-pit { flex: none; height: 66px; position: relative; }
+/* ---- the underground market: a side-on street below the Daily activity card ---- */
+.market-pit { flex: none; height: 70px; position: relative; }
 .market { display: block; overflow: visible; }
-.mk-floor { stroke: color-mix(in srgb, var(--text) 14%, transparent); stroke-width: 1; }
-.mk-ladder { fill: none; stroke: #8a5a32; stroke-width: 1; stroke-linecap: round; }
-.mk-who .mk-body { fill: none; stroke: var(--text); stroke-width: 2.1; stroke-linecap: round; }
-.mk-who .mk-limb { fill: none; stroke: var(--text); stroke-width: 1.25; stroke-linecap: round; stroke-linejoin: round; }
-.mk-who .mk-face { fill: var(--text); }
-.mk-who .mk-helmet { fill: #38bdf8; } .mk-who .mk-pack { fill: #f97316; }
-.mk-neon { font: 800 7px var(--font-ui, sans-serif); letter-spacing: .08em; animation: mk-neon 7s linear infinite; }
-.mk-neon.pink { fill: #f9a8d4; filter: drop-shadow(0 0 2px #ec4899) drop-shadow(0 0 4px #ec4899); }
-.mk-neon.amber { fill: #fde68a; filter: drop-shadow(0 0 2px #f59e0b) drop-shadow(0 0 4px #f59e0b); animation-delay: -3s; }
-@keyframes mk-neon { 0%, 46%, 50%, 100% { opacity: 1; } 47% { opacity: .25; } 48% { opacity: .9; } 49% { opacity: .35; } }
-.mk-shelf { stroke: #6b4423; stroke-width: 1.2; stroke-linecap: round; }
-.mk-bottle { opacity: .9; }
-.mk-counter { fill: #5b3a1c; } .mk-counter-top { stroke: #8a5a32; stroke-width: 1.4; stroke-linecap: round; }
-.mk-stool, .mk-table, .mk-chair { fill: none; stroke: #a8a29e; stroke-width: 1; stroke-linecap: round; stroke-linejoin: round; }
-.mk-table { stroke: #8a5a32; stroke-width: 1.4; }
-.mk-shaker { fill: #cbd5e1; }
-.mk-glass { fill: rgba(253, 230, 138, .7); stroke: rgba(255, 255, 255, .5); stroke-width: .3; } .mk-glass.beer { fill: #f59e0b; }
-.mk-shake { transform-box: fill-box; transform-origin: 0% 100%; animation: mk-shake .35s ease-in-out infinite alternate; }
-@keyframes mk-shake { to { transform: rotate(-12deg) translateY(-.6px); } }
+/* back: flats above the shops */
+.mk-pipe { fill: none; stroke: #3f3f46; stroke-width: 1.4; stroke-linecap: round; }
+.mk-flat { fill: #1c1917; stroke: #3f3f46; stroke-width: .4; }
+.mk-flat.warm { fill: #fcd34d; opacity: .75; }
+.mk-flat.cool { fill: #93c5fd; opacity: .55; }
+.mk-flat.flick { animation: mk-flat 23s steps(1) infinite; }
+@keyframes mk-flat { 0%, 100% { opacity: .7; } 40% { opacity: .1; } 70% { opacity: .7; } }
+.mk-curtain { fill: #9f1239; opacity: .7; }
+.mk-balcony { stroke: #57534e; stroke-width: 1.6; }
+.mk-line { fill: none; stroke: #a8a29e; stroke-width: .35; }
+.mk-cloth { opacity: .85; transform-box: fill-box; transform-origin: 50% 0; animation: mk-cloth 3.2s ease-in-out infinite alternate; }
+@keyframes mk-cloth { from { rotate: -5deg; } to { rotate: 6deg; } }
+.mk-railing { fill: none; stroke: #57534e; stroke-width: .5; }
+/* shops */
+.mk-facade { stroke: #0b0f14; stroke-width: .6; }
+.mk-cornice { stroke: rgba(255, 255, 255, .12); stroke-width: 1.2; }
+.mk-bricks, .mk-planks { stroke: rgba(0, 0, 0, .35); stroke-width: .4; }
+.mk-lamppost { fill: none; stroke: #52525b; stroke-width: .9; stroke-linecap: round; }
+.mk-ground { stroke: color-mix(in srgb, var(--text) 22%, transparent); stroke-width: 1; }
+.mk-bracket { stroke: #71717a; stroke-width: .7; }
+.mk-blade { fill: #0b0f14; stroke: #27272a; stroke-width: .4; }
+.mk-vert { font-size: 3.6px; }
+.mk-sign.dim { opacity: .45; }
+.mk-noren { fill: #b91c1c; opacity: .9; }
+.mk-pipe.thin { stroke-width: 1; }
+.mk-shutter { fill: #3f3f46; } .mk-shutter-slats { stroke: #27272a; stroke-width: .5; } .mk-shutter-gap { fill: #0b0f14; }
+.mk-tag { fill: none; stroke: #22d3ee; stroke-width: .7; stroke-linecap: round; opacity: .6; }
+.mk-umbrella { fill: #f59e0b; stroke: #b45309; stroke-width: .4; }
+.mk-pole { stroke: #a8a29e; stroke-width: .7; }
+.mk-cartbox { fill: #7c2d12; stroke: #431407; stroke-width: .4; }
+.mk-wheel { fill: #1f2937; stroke: #9ca3af; stroke-width: .4; }
+.mk-table { fill: none; stroke: #8a5a32; stroke-width: 1.2; stroke-linecap: round; }
+.mk-chair { fill: none; stroke: #a8a29e; stroke-width: .8; stroke-linecap: round; stroke-linejoin: round; }
 .mk-sip { transform-box: fill-box; transform-origin: 100% 100%; animation: mk-sip 8s ease-in-out infinite; }
 @keyframes mk-sip { 0%, 70%, 100% { transform: rotate(0); } 78%, 88% { transform: rotate(28deg); } }
-.mk-fork { transform-box: fill-box; transform-origin: 100% 0%; animation: mk-fork 2.6s ease-in-out infinite; }
-@keyframes mk-fork { 0%, 60%, 100% { transform: rotate(0); } 75% { transform: rotate(-35deg); } }
-.mk-tv { fill: #111827; stroke: #374151; stroke-width: 1; }
-.mk-tv-arm { stroke: #6b7280; stroke-width: 1; }
-.mk-tv-sky { fill: #1e3a8a; }
-.mk-tv-mtn { fill: #2f8f5b; }
-.mk-tv-dot { fill: #f97316; }
+.mk-vend { fill: #1e3a8a; stroke: #3b82f6; stroke-width: .5; }
+.mk-vend-glass { fill: #bfdbfe; opacity: .8; filter: drop-shadow(0 0 2px #60a5fa); } .mk-vend-row { stroke: #1e3a8a; stroke-width: .5; }
+.mk-board { fill: none; stroke: #8a5a32; stroke-width: .8; } .mk-board-face { fill: #1c1917; } .mk-chalk { stroke: #e7e5e4; stroke-width: .4; }
+.mk-signboard { fill: #0b0f14; }
+.mk-sign { font: 800 5.4px var(--font-ui, sans-serif); letter-spacing: .06em; }
+.mk-sign.painted { fill: #e7e5e4; opacity: .85; }
+.mk-neon { animation: mk-neon 7s linear infinite; }
+.mk-neon.pink { fill: #f9a8d4; filter: drop-shadow(0 0 1.5px #ec4899) drop-shadow(0 0 3px #ec4899); }
+.mk-neon.cyan { fill: #a5f3fc; filter: drop-shadow(0 0 1.5px #06b6d4) drop-shadow(0 0 3px #06b6d4); }
+.mk-neon.amber { fill: #fde68a; filter: drop-shadow(0 0 1.5px #f59e0b) drop-shadow(0 0 3px #f59e0b); }
+.mk-neon.violet { fill: #ddd6fe; filter: drop-shadow(0 0 1.5px #8b5cf6) drop-shadow(0 0 3px #8b5cf6); }
+@keyframes mk-neon { 0%, 46%, 50%, 100% { opacity: 1; } 47% { opacity: .25; } 48% { opacity: .9; } 49% { opacity: .35; } }
+.mk-window { opacity: .55; }
+.mk-window-sheen { fill: rgba(255, 255, 255, .04); }
+.mk-frame { fill: none; stroke: #0b0f14; stroke-width: .8; }
+.mk-awn-stripes { stroke: rgba(255, 255, 255, .5); stroke-width: 1.4; }
+.mk-door { fill: #0b0f14; stroke: #27272a; stroke-width: .4; }
+.mk-knob { fill: #d6d3d1; }
+.mk-doorlamp { fill: #fde68a; filter: drop-shadow(0 0 2px #f59e0b); }
+/* life inside the windows (silhouettes) */
+.mk-silo { stroke: #0b0f14; stroke-width: 1.8; stroke-linecap: round; }
+.mk-silo-head { fill: #0b0f14; }
+.mk-silo-arm { fill: none; stroke: #0b0f14; stroke-width: 1; stroke-linecap: round; }
+.mk-shelf { stroke: #3f2a1a; stroke-width: .9; }
+.mk-shaker { fill: #cbd5e1; }
+.mk-shake { transform-box: fill-box; transform-origin: 0% 100%; animation: mk-shake .35s ease-in-out infinite alternate; }
+@keyframes mk-shake { to { transform: rotate(-12deg) translateY(-.5px); } }
+.mk-counter-in, .mk-table-in { stroke: #0b0f14; stroke-width: 1.2; }
+.mk-bowl { fill: #f5f5f4; }
+.mk-steam { fill: none; stroke: rgba(229, 231, 235, .45); stroke-width: .6; stroke-linecap: round; animation: cf-smoke 3s ease-in-out infinite; }
+.mk-lantern-red { fill: #ef4444; filter: drop-shadow(0 0 2px #dc2626); }
+.mk-tv { fill: #0b0f14; }
+.mk-tv-sky { fill: #1e3a8a; } .mk-tv-mtn { fill: #2f8f5b; }
 .mk-tv-picture { animation: mk-tv 4s steps(1) infinite; }
-@keyframes mk-tv { 0%, 100% { opacity: 1; filter: none; } 30% { filter: brightness(1.4); } 55% { filter: hue-rotate(40deg) brightness(1.1); } 80% { opacity: .85; } }
-.mk-candle { fill: #fde68a; filter: drop-shadow(0 0 2px #f59e0b); animation: th-twinkle 2.4s ease-in-out infinite; }
-.mk-plate { fill: #e5e7eb; }
-.mk-steam { fill: none; stroke: color-mix(in srgb, var(--text) 40%, transparent); stroke-width: .6; stroke-linecap: round; animation: cf-smoke 3s ease-in-out infinite; }
-.mk-post { stroke: #8a5a32; stroke-width: 1.2; }
-.mk-awning { fill: #14b8a6; } .mk-stripes { stroke: rgba(255, 255, 255, .55); stroke-width: 1.6; }
-.mk-bag { fill: #fde68a; }
-.mk-cabinet { fill: #312e81; stroke: #6366f1; stroke-width: .6; }
+@keyframes mk-tv { 0%, 100% { filter: none; } 30% { filter: brightness(1.4); } 55% { filter: hue-rotate(40deg) brightness(1.1); } }
+.mk-fork { transform-box: fill-box; transform-origin: 0% 50%; animation: mk-fork 2.6s ease-in-out infinite; }
+@keyframes mk-fork { 0%, 60%, 100% { transform: rotate(0); } 75% { transform: rotate(-35deg); } }
+.mk-crate-in, .mk-crate { fill: #6b4423; stroke: #3f2a1a; stroke-width: .4; }
+.mk-cab { fill: #1e1b4b; }
 .mk-screen { animation: mk-screen 1.8s steps(1) infinite; }
 @keyframes mk-screen { 0% { fill: #22d3ee; } 33% { fill: #f472b6; } 66% { fill: #a3e635; } }
-.mk-stick { stroke: #e5e7eb; stroke-width: .8; stroke-linecap: round; }
-.mk-play { transform-box: fill-box; transform-origin: 0% 50%; animation: mk-play .5s ease-in-out infinite alternate; }
-@keyframes mk-play { to { transform: rotate(-6deg); } }
-@media (prefers-reduced-motion: reduce) { .mk-neon, .mk-shake, .mk-sip, .mk-fork, .mk-tv-picture, .mk-candle, .mk-steam, .mk-screen, .mk-play { animation: none; } }
+.mk-washer-box { fill: #e5e7eb; }
+.mk-porthole { fill: #1e3a8a; stroke: #94a3b8; stroke-width: .4; }
+.mk-suds { stroke: #bfdbfe; stroke-width: .6; }
+.mk-drum { animation: mk-spin 1.4s linear infinite; }
+@keyframes mk-spin { to { rotate: 360deg; } }
+.mk-loaf { fill: #d97706; }
+/* the street */
+.mk-street { fill: color-mix(in srgb, var(--text) 4%, transparent); }
+.mk-tiles { fill: none; stroke: color-mix(in srgb, var(--text) 8%, transparent); stroke-width: .5; }
+.mk-puddle { fill: #ec4899; opacity: .14; filter: blur(.6px); }
+.mk-walker { animation-name: mk-walk; animation-timing-function: linear; animation-iteration-count: infinite; }
+@keyframes mk-walk { from { translate: var(--from) 0; } to { translate: var(--to) 0; } }
+.mk-walker.far { opacity: .6; }
+.mk-walker .mk-gait { animation: ww-gait .62s linear infinite; }
+.mk-walker .mk-gait.l2 { animation-delay: -.31s; }
+.mk-walker .mk-swing { transform-box: view-box; transform-origin: 0 -8.6px; animation: ww-swing .62s ease-in-out infinite alternate; }
+.market .mk-body { fill: none; stroke: var(--text); stroke-width: 2.1; stroke-linecap: round; }
+.market .mk-limb { fill: none; stroke: var(--text); stroke-width: 1.25; stroke-linecap: round; stroke-linejoin: round; }
+.market .mk-face { fill: var(--text); }
+/* front props */
+.mk-bench { fill: none; stroke: #8a5a32; stroke-width: 1.4; stroke-linecap: round; }
+.mk-paper { fill: #e7e5e4; }
+.mk-cat-body { fill: #52525b; stroke: #71717a; stroke-width: .3; }
+.mk-cat-tail path { fill: none; stroke: #52525b; stroke-width: .9; stroke-linecap: round; }
+.mk-cat-tail { transform-box: fill-box; transform-origin: 100% 100%; animation: mk-tail 3s ease-in-out infinite alternate; }
+@keyframes mk-tail { to { rotate: -25deg; } }
+.mk-pot { fill: #9a3412; } .mk-leaf { fill: none; stroke: #4ade80; stroke-width: .9; stroke-linecap: round; }
+.mk-bin { fill: #3f3f46; } .mk-bin-lid { stroke: #71717a; stroke-width: 1; stroke-linecap: round; }
+.mk-who .mk-helmet { fill: #38bdf8; } .mk-who .mk-pack { fill: #f97316; }
+.mk-stool-front { fill: none; stroke: #a8a29e; stroke-width: .8; }
+.mk-glass { fill: rgba(253, 230, 138, .7); } .mk-glass.beer { fill: #f59e0b; }
+.mk-ladder { fill: none; stroke: #8a5a32; stroke-width: 1; stroke-linecap: round; }
+@media (prefers-reduced-motion: reduce) {
+  .mk-flat, .mk-cloth, .mk-neon, .mk-shake, .mk-sip, .mk-steam, .mk-tv-picture, .mk-fork, .mk-screen, .mk-drum, .mk-walker, .mk-walker *, .mk-cat-tail { animation: none !important; }
+}
 /* shorter windows: a smaller market; very short ones have no room for it at all */
-@media (min-width: 1100px) and (min-height: 560px) and (max-height: 860px) { .market-pit { height: 52px; } }
+@media (min-width: 1100px) and (min-height: 560px) and (max-height: 860px) { .market-pit { height: 54px; } }
 @media (min-width: 1100px) and (max-height: 700px) { .market-pit { display: none; } }
 
 /* ---- the Last workout card as a billboard ---- */
