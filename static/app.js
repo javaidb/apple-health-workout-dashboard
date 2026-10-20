@@ -1271,11 +1271,25 @@
   // summary and leaning on a little rail at the box's top-right corner while the wind streams his
   // long headband tails. His mood follows this week: looking out past the rail, waving a flag once
   // the weekly goal is hit, or dozing on the rail while the week has no workouts yet. Feet on the
-  // box's top edge at y 0; the rail post is at x 3.6.
+  // box's top edge at y 0; the box's right edge is at x 7.
   function sitterHtml() {
     const g = state.overview?.week_streak;
     const mood = !g ? "look" : g.this_week_met ? "cheer" : g.this_week_workouts === 0 ? "doze" : "look";
-    const rail = `<path class="s-rail" d="M3.6 .2V-8M3.6 -8H6.6M3.6 -4H6.6M6.6 .2V-8"/>`;
+    // The rail, styled like Carl's red cliff-edge railing: it runs along the box's top edge, follows
+    // the rounded top-right corner and carries on a little way down the right side. Posts stand out
+    // from the outline every ~13px, with bars 8 and 4 units off it. Box corner radius 12px = 7.4 units.
+    const RC = 7.4, C = [7 - RC, RC], x0 = -26, L1 = C[0] - x0, L2 = RC * Math.PI / 2, total = L1 + L2 + 4;
+    const along = (t) => {
+      if (t <= L1) return [[x0 + t, 0], [0, -1]];
+      if (t <= L1 + L2) { const a = -Math.PI / 2 + (t - L1) / RC; return [[C[0] + RC * Math.cos(a), C[1] + RC * Math.sin(a)], [Math.cos(a), Math.sin(a)]]; }
+      return [[7, C[1] + t - L1 - L2], [1, 0]];
+    };
+    const off = (t, d) => { const [[x, y], [nx, ny]] = along(t); return [x + nx * d, y + ny * d]; };
+    const line = (d) => Array.from({ length: Math.ceil(total / .5) + 1 }, (_, i) => off(Math.min(total, i * .5), d))
+      .map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(2)},${y.toFixed(2)}`).join("");
+    const postAt = [...Array.from({ length: Math.floor(total / 8) + 1 }, (_, i) => i * 8), total];
+    const rail = `<g class="s-rail"><path class="posts" d="${postAt.map((t) => { const [a, b] = [off(t, 0), off(t, 8)]; return `M${a[0].toFixed(2)},${a[1].toFixed(2)}L${b[0].toFixed(2)},${b[1].toFixed(2)}`; }).join("")}"/>
+      <path class="bar" d="${line(8)}${line(4)}"/></g>`;
     const legs = `<path class="s-limb s-far" d="M-.4 -4.6L.2 -2.2L.6 0"/><path class="s-limb" d="M-.4 -4.6L-1.2 -2.2L-1.4 0"/>`;
     const tails = `<path class="s-tail t1" d="M.4 -11.1C-2 -12.4 -4 -10 -7.6 -11.8"/><path class="s-tail t2" d="M.4 -10.9C-1.8 -9.6 -4.2 -11.4 -7.2 -9.6"/>`;
     let body;
@@ -1299,7 +1313,8 @@
         <circle class="s-face" cx="2.3" cy="-10.6" r="1.9"/><path class="s-band" d="M.4 -11.1L4.1 -11.7"/>${tails}`;
     }
     const title = { look: "taking in the view", cheer: "cheering: weekly goal hit!", doze: "dozing until this week's first workout" }[mood];
-    return `<svg class="sitter ${mood}" viewBox="-8 -19 15 20" aria-hidden="true">${rail}${legs}${body}<title>Carl's climbing buddy, ${title}</title></svg>`;
+    // he stands just left of the corner, so his arms rest on the rail where it starts to curve
+    return `<svg class="sitter ${mood}" viewBox="-28 -19 45 32" aria-hidden="true">${rail}<g transform="translate(-3 0)">${legs}${body}</g><title>Carl's climbing buddy, ${title}</title></svg>`;
   }
 
   function renderCalendar() {

@@ -356,8 +356,11 @@ svg { display: block; }
   display: flex; flex-direction: column; justify-content: center; gap: 6px; font-size: 12px; color: var(--muted);
 }
 .week-total { position: relative; }
-.sitter { position: absolute; right: 0; top: -30.8px; width: 24.3px; height: 32.4px; overflow: visible; pointer-events: auto; z-index: 2; }  /* 1.62px per unit: as tall as the electrician */
-.sitter .s-rail { fill: none; stroke: #94a3b8; stroke-width: .9; stroke-linecap: round; }
+.sitter { position: absolute; right: -16.2px; top: -30.8px; width: 72.9px; height: 51.8px; overflow: visible; pointer-events: none; z-index: 2; }  /* 1.62px per unit: as tall as the electrician */
+/* the same faint red railing as Carl's on the This week card (strokes scaled from px to 1.62px units) */
+.sitter .s-rail { opacity: .55; }
+.sitter .s-rail .posts { fill: none; stroke: #b91c1c; stroke-width: .68; stroke-linecap: round; }
+.sitter .s-rail .bar { fill: none; stroke: #dc2626; stroke-width: .62; stroke-linecap: round; stroke-linejoin: round; }
 .sitter .s-body { fill: none; stroke: var(--text); stroke-width: 2.1; stroke-linecap: round; }
 .sitter .s-limb { fill: none; stroke: var(--text); stroke-width: 1.25; stroke-linecap: round; stroke-linejoin: round; }
 .sitter .s-far, .sitter .s-back { opacity: .6; }
@@ -1150,7 +1153,7 @@ svg.night :is(.th-crown-sun, .th-crown-sun-glow, .th-crown-rays) { display: none
 .sitter .s-zzz text + text { animation-delay: 1.2s; }
 .sitter .s-stick { stroke: #a8a29e; stroke-width: .5; stroke-linecap: round; }
 .sitter .s-pennant { fill: var(--accent); }
-.sitter .s-flag { transform-box: view-box; transform-origin: 9.2px 6px; animation: s-wave 1.2s ease-in-out infinite alternate; }
+.sitter .s-flag { transform-box: fill-box; transform-origin: 0% 100%; animation: s-wave 1.2s ease-in-out infinite alternate; }
 @keyframes s-wave { from { transform: rotate(-8deg); } to { transform: rotate(10deg); } }
 .e-mug { fill: #e5e7eb; } .e-steam { fill: none; stroke: rgba(229, 231, 235, .5); stroke-width: .4; stroke-linecap: round; animation: cf-smoke 3s ease-in-out infinite; }
 .elec-lampwire { stroke: #9ca3af; stroke-width: .6; }
