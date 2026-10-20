@@ -1620,6 +1620,99 @@
   }
   (function washerLoop() { if (!document.hidden) drawWasher(); requestAnimationFrame(washerLoop); })();
 
+  // The bullet train. Every TRAIN.period seconds (on the wall clock, so it never restarts on a
+  // redraw) a shinkansen comes in from the right along a rail at the bottom of the page, through the
+  // underground market's right-hand tunnel, and stops at the market's platform. Its doors open, the
+  // people waiting there step aboard, and it pulls away to the left, past the calendar and into a
+  // tunnel in the side of the This week card. A while later the next passengers wander out to wait.
+  // Seen side-on and flat, like the market. Only on the one-screen layout, with the market showing.
+  const TRAIN = { period: 90, arrive: 3, dwell: 7, depart: 5, waitersFrom: 44, len: 150, h: 13 };
+  const trainFigure = (shirt, bag) => `<g class="tr-flip"><path class="tr-limb tr-leg l1" d="M0 -4.6L.2 -2.3L-.1 0"/><path class="tr-limb tr-leg l2" d="M0 -4.6L.2 -2.3L-.1 0"/>
+      <path class="tr-torso" d="M0 -4.6V-9.4" style="stroke:${shirt}"/><path class="tr-limb" d="M0 -8.6L-1 -6.4L-.8 -4.4"/>
+      ${bag ? `<path class="tr-limb" d="M0 -8.6L1.4 -6.6L2 -4.8"/><rect class="tr-case" x="1.6" y="-4.8" width="3" height="4.2" rx=".6"/>` : ""}
+      <circle class="tr-head" cx="0" cy="-11.4" r="1.9"/></g>`;
+  function trainBody() {
+    const L = TRAIN.len, H = TRAIN.h, cars = 3, cl = L / cars;
+    // a long, low duck-bill nose at each end, white with a blue stripe; the left end leads
+    const body = `M3,-2 C-1,-2 -.5,-4.6 6,-7.4 C12,-10.6 17,${-H} 26,${-H} H${L - 26} C${L - 17},${-H} ${L - 12},-10.6 ${L - 6},-7.4 C${L + .5},-4.6 ${L + 1},-2 ${L - 3},-2 Z`;
+    const doors = Array.from({ length: cars }, (_, i) => i * cl + cl * .5);
+    const wins = [];
+    for (let x = 24; x < L - 24; x += 4.2) if (doors.every((d) => Math.abs(x + 1 - d) > 3.6)) wins.push(`M${x.toFixed(1)},-9.6h2.4`);
+    return `<path class="tr-body" d="${body}"/>
+      <path class="tr-stripe" d="M5,-4.4 C9,-5.6 14,-5.6 20,-5.4 H${L - 20} C${L - 14},-5.6 ${L - 9},-5.6 ${L - 5},-4.4"/>
+      <path class="tr-cab" d="M9.5,-8.6 C12,-10.6 15,-11.4 19,-11.4M${L - 9.5},-8.6 C${L - 12},-10.6 ${L - 15},-11.4 ${L - 19},-11.4"/>
+      <path class="tr-wins" d="${wins.join("")}"/>
+      <path class="tr-joins" d="${Array.from({ length: cars - 1 }, (_, i) => `M${((i + 1) * cl).toFixed(1)},${-H + .6}V-2.4`).join("")}"/>
+      ${doors.map((d) => `<rect class="tr-door" x="${(d - 1.7).toFixed(1)}" y="-11" width="3.4" height="8.4" rx=".5"/>`).join("")}
+      <circle class="tr-head-lamp" cx="2.2" cy="-3.4" r=".8"/><circle class="tr-tail-lamp" cx="${L - 2.2}" cy="-3.4" r=".8"/>
+      ${[8, cl - 8, cl + 8, 2 * cl - 8, 2 * cl + 8, L - 8].map((x) => `<rect class="tr-bogie" x="${(x - 4).toFixed(1)}" y="-2.2" width="8" height="1.4" rx=".5"/><circle class="tr-wheel" cx="${(x - 2.2).toFixed(1)}" cy="-.9" r=".9"/><circle class="tr-wheel" cx="${(x + 2.2).toFixed(1)}" cy="-.9" r=".9"/>`).join("")}`;
+  }
+  let trainKey = "";
+  function drawTrain() {
+    const layer = $("train");
+    const mk = $("market"), wk = $("week-card");
+    const fixed = FIT_QUERY.matches;
+    const m = mk && mk.getBoundingClientRect(), w = wk && wk.getBoundingClientRect();
+    if (!fixed || !m || !m.height || !mk.firstElementChild || !w || !w.width || w.right > m.left || Math.abs(w.bottom - m.bottom) > 30) {
+      if (trainKey) { layer.innerHTML = ""; layer.setAttribute("width", 0); layer.setAttribute("height", 0); trainKey = ""; }
+      return;
+    }
+    layer.style.position = "fixed";
+    const W = innerWidth, H = innerHeight, floor = m.top + mk.clientHeight - 1;
+    const x0 = w.right, x1 = m.right, L = TRAIN.len;
+    // the stop: the middle car's door at the middle of the market
+    const stopX = (m.left + m.right) / 2 - L / 2;
+    const key = `${W}x${H}|${x0.toFixed(0)}|${x1.toFixed(0)}|${floor.toFixed(1)}`;
+    if (key !== trainKey) {
+      trainKey = key;
+      layer.setAttribute("width", W); layer.setAttribute("height", H); layer.setAttribute("viewBox", `0 0 ${W} ${H}`);
+      const f = (n) => n.toFixed(1), pt = floor - 21;
+      layer.innerHTML = `<defs><clipPath id="tr-clip"><rect x="${f(x0)}" y="${f(floor - 40)}" width="${f(x1 - x0)}" height="44"/></clipPath></defs>
+        <path class="tr-rail" d="M${f(x0)},${f(floor)}H${f(x1)}"/><path class="tr-ties" d="M${f(x0 + 2)},${f(floor + 1.4)}H${f(x1)}"/>
+        <path class="tr-platform" d="M${f(stopX - 4)},${f(floor - .6)}H${f(stopX + L + 4)}"/>
+        <g transform="translate(${f(stopX - 9)},${f(floor)})"><path class="tr-post" d="M0 0V-21"/><rect class="tr-sign" x="-7" y="-25.5" width="14" height="5" rx=".8"/><text class="tr-sign-text" x="0" y="-21.9" text-anchor="middle">STATION</text></g>
+        <path class="tr-portal-in" d="M${f(x0)},${f(floor)}V${f(pt)}H${f(x0 + 7)}V${f(floor)}Z"/>
+        <g class="tr-waiters"></g>
+        <g clip-path="url(#tr-clip)"><g class="tr-train"><title>The bullet train, calling at the market</title>${trainBody()}</g></g>
+        <path class="tr-portal" d="M${f(x0 - 1)},${f(pt)}H${f(x0 + 8.5)}V${f(pt + 2.6)}H${f(x0 + 7)}V${f(floor)}M${f(x0 - 1)},${f(pt - 1.6)}H${f(x0 + 8.5)}"/>`;
+    }
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const T = TRAIN, t = reduce ? T.arrive + 1 : (Date.now() / 1000) % T.period;
+    const startX = x1 + 4, endX = x0 - L - 6, tDep = T.arrive + T.dwell;
+    let x, open = false;
+    // it runs in fast and brakes hard into the platform, waits, then pulls away slowly and keeps
+    // accelerating all the way into the tunnel
+    if (t < T.arrive) { const p = t / T.arrive; x = startX + (stopX - startX) * (1 - (1 - p) ** 2); }
+    else if (t < tDep) { x = stopX; open = t > T.arrive + 1 && t < tDep - 1.2; }
+    else if (t < tDep + T.depart) { const p = (t - tDep) / T.depart; x = stopX + (endX - stopX) * p ** 2.6; }
+    else x = null;
+    const tr = layer.querySelector(".tr-train");
+    tr.style.display = x == null ? "none" : "";
+    if (x != null) tr.setAttribute("transform", `translate(${x.toFixed(1)},${floor.toFixed(1)})`);
+    tr.classList.toggle("open", open);
+    // two passengers: they walk in from the right to wait on the platform, then board through the
+    // first and second cars' doors (behind the train, so it hides them as they step in)
+    const doorsX = [stopX + L / 6, stopX + L / 2];
+    const wait = [stopX + L / 6 + 10, stopX + L / 2 + 14];
+    const ws = layer.querySelector(".tr-waiters");
+    if (!ws.firstChild) ws.innerHTML = [["#f472b6", 1], ["#34d399", 0]].map(([c, b]) => `<g class="tr-waiter">${trainFigure(c, b)}</g>`).join("");
+    [...ws.children].forEach((g, i) => {
+      const walkIn = T.waitersFrom + i * 3, walkDur = 9;
+      let px = null, walking = false, dir = -1;
+      if (reduce) px = wait[i];
+      else if (t >= walkIn && t < walkIn + walkDur) { px = (m.right - 22) + (wait[i] - (m.right - 22)) * (t - walkIn) / walkDur; walking = true; }
+      else if (t >= walkIn + walkDur || t < T.arrive + 1.4 + i * .8) px = wait[i];
+      else if (t < T.arrive + 3.4 + i * .8) { const p = (t - T.arrive - 1.4 - i * .8) / 2; px = wait[i] + (doorsX[i] - wait[i]) * p; walking = true; }
+      g.style.display = px == null ? "none" : "";
+      if (px != null) {
+        g.setAttribute("transform", `translate(${px.toFixed(1)},${floor.toFixed(1)}) scale(1.2)`);
+        g.firstElementChild.setAttribute("transform", `scale(${dir},1)`);
+        g.classList.toggle("walking", walking);
+      }
+    });
+  }
+  (function trainLoop() { if (!document.hidden) drawTrain(); requestAnimationFrame(trainLoop); })();
+
   function renderCalendar() {
     $("month-title").textContent = state.month.toLocaleDateString(undefined, { month: "long", year: "numeric" });
     const byDate = {};

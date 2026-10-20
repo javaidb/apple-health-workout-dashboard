@@ -60,9 +60,14 @@ weekly streak becomes Carl, a little climber working his way up a new mountain e
   the electrician fixing the calendar's lights takes a coffee break at full power and goes home at night.
 - **A window washer on the calendar.** He walks the ledges under each row of days and climbs between
   them, stopping at every day you trained to polish it with his rag until it sparkles.
-- **An underground market.** Below Daily activity, under string lights: a bar with a neon sign, a little
-  restaurant with a TV, a produce stall and an arcade. The calendar's rappeller, who plants a flag down the
-  week column for every week you trained, drops in for a drink on the last day of the month.
+- **An underground market.** A flat, side-on street below Daily activity, with string lights hung from
+  the card's edge. It has a bar with a neon sign, a noodle bar, a diner with a TV and café tables, an
+  arcade, a laundrette and flats above the shops, and people walk through it between tunnels at either
+  end. The calendar's rappeller, who plants a flag down the week column for every week you trained,
+  drops in for a drink on the last day of the month.
+- **A bullet train.** Every minute and a half a shinkansen runs in along the bottom of the page and stops
+  at the market's platform to pick up the passengers waiting there. Then it accelerates away into a
+  tunnel in the side of the This week card.
 - **A campfire for your last workout.** It blazes on a training day and burns down a step each day after,
   to embers and then a wisp of smoke, until the next workout relights it.
 - **Recent form.** The last 12 weeks as batteries (one cell per workout of the goal), box plots of your last
