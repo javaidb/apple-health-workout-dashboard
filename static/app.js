@@ -1185,18 +1185,20 @@
 
   // ---- calendar -----------------------------------------------------------
   // Carl's climbing buddy, in a headband instead of a helmet, sitting on top of the first week
-  // summary with his legs over the front, the headband's tails streaming in the wind. Profile
-  // view: hips on the box's top edge (0,0), thighs along the top, shins hanging over.
+  // summary with his legs over the front, leaning back against a little rail at the box's top-right
+  // corner, the headband's tails streaming in the wind. Drawn facing right and mirrored by CSS, so
+  // the rail (behind him, at x -3.4) ends up on the right. Hips on the box's top edge at (0,0).
   function sitterHtml() {
-    return `<svg class="sitter" viewBox="-7 -12 15 19.5" aria-hidden="true">
-        <path class="s-limb s-back" d="M-.3 -4.4L-2.6 -2L-3.3 0"/>
-        <path class="s-body" d="M0 0L-.5 -5"/>
+    return `<svg class="sitter" viewBox="-6 -12 13 19.5" aria-hidden="true">
+        <path class="s-rail" d="M-3.4 .2V-9.6M-3.4 -9.6H-6M-3.4 -5H-6"/>
+        <path class="s-limb s-back" d="M-1.2 -4.2L-3.2 -6.4L-3.6 -9.4"/>
+        <path class="s-body" d="M0 0L-1.7 -4.8"/>
         <path class="s-limb" d="M0 0H3.2"/>
-        <g class="s-shins"><path class="s-limb" d="M3.2 0L3.7 5.4L5 5.6"/><path class="s-limb s-far" d="M2.4 .2L2.6 5.6L3.8 5.9"/></g>
-        <path class="s-limb" d="M-.4 -4.2L1.6 -2.4L3 -.6"/>
-        <circle class="s-face" cx="-.6" cy="-7.4" r="2"/>
-        <path class="s-band" d="M-2.6 -8H1.4"/>
-        <path class="s-tail t1" d="M-2.6 -8C-4.2 -9.4 -6.2 -7 -9 -8.6"/><path class="s-tail t2" d="M-2.6 -7.8C-4 -6.6 -5.6 -8.2 -7.8 -6.4"/>
+        <path class="s-limb" d="M3.2 0L3.7 5.4L5 5.6"/><path class="s-limb s-far" d="M2.4 .2L2.6 5.6L3.8 5.9"/>
+        <path class="s-limb" d="M-1.3 -4L.8 -2.2L2.8 -.6"/>
+        <circle class="s-face" cx="-2.2" cy="-7.1" r="2"/>
+        <path class="s-band" d="M-4.1 -7.9L-.2 -8.5"/>
+        <path class="s-tail t1" d="M-4.1 -7.9C-5.5 -8.9 -6.6 -7.2 -8.8 -8.4"/><path class="s-tail t2" d="M-4.1 -7.7C-5.3 -6.6 -6.4 -8 -8 -6.6"/>
         <title>Carl's climbing buddy, taking a break</title></svg>`;
   }
 
