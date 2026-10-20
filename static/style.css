@@ -1438,7 +1438,9 @@ svg.night :is(.th-crown-sun, .th-crown-sun-glow, .th-crown-rays) { display: none
 .tr-case { fill: #a16207; }
 .tr-waiter.walking .tr-leg { animation: ww-gait .62s linear infinite; }
 .tr-waiter.walking .tr-leg.l2 { animation-delay: -.31s; }
-.tr-sig-box { fill: #18181b; stroke: #52525b; stroke-width: .4; }
-.tr-sig { fill: #3f3f46; transition: fill .2s ease; }
-.tr-signal.stop .tr-sig.red { fill: #ef4444; filter: drop-shadow(0 0 2px #dc2626); }
-.tr-signal:not(.stop) .tr-sig.green { fill: #22c55e; filter: drop-shadow(0 0 2px #16a34a); }
+.tr-sig-pole { stroke: #a1a1aa; stroke-width: 1.4; stroke-linecap: round; }
+.tr-sig-box { fill: #0b0b0d; stroke: #d4d4d8; stroke-width: .7; }
+.tr-sig-visor { fill: none; stroke: #71717a; stroke-width: .7; }
+.tr-sig { fill: #27272a; transition: fill .2s ease; }
+.tr-signal.stop .tr-sig.red { fill: #ef4444; filter: drop-shadow(0 0 3px #dc2626) drop-shadow(0 0 6px #dc2626); }
+.tr-signal:not(.stop) .tr-sig.green { fill: #22c55e; filter: drop-shadow(0 0 3px #16a34a) drop-shadow(0 0 6px #16a34a); }
