@@ -1184,22 +1184,22 @@
   }
 
   // ---- calendar -----------------------------------------------------------
-  // Carl's climbing buddy, in a headband instead of a helmet, sitting on top of the first week
-  // summary with his legs over the front, leaning back against a little rail at the box's top-right
-  // corner, the headband's tails streaming in the wind. Drawn facing right and mirrored by CSS, so
-  // the rail (behind him, at x -3.4) ends up on the right. Hips on the box's top edge at (0,0).
+  // Carl's climbing buddy, in a headband instead of a helmet, standing on top of the first week
+  // summary and leaning on a little rail at the box's top-right corner, forearms on the top bar,
+  // looking out past it while the wind streams his long headband tails behind him. Feet on the
+  // box's top edge at y 0; the rail post is at x 3.6.
   function sitterHtml() {
-    return `<svg class="sitter" viewBox="-6 -12 13 19.5" aria-hidden="true">
-        <path class="s-rail" d="M-3.4 .2V-9.6M-3.4 -9.6H-6M-3.4 -5H-6"/>
-        <path class="s-limb s-back" d="M-1.2 -4.2L-3.2 -6.4L-3.6 -9.4"/>
-        <path class="s-body" d="M0 0L-1.7 -4.8"/>
-        <path class="s-limb" d="M0 0H3.2"/>
-        <path class="s-limb" d="M3.2 0L3.7 5.4L5 5.6"/><path class="s-limb s-far" d="M2.4 .2L2.6 5.6L3.8 5.9"/>
-        <path class="s-limb" d="M-1.3 -4L.8 -2.2L2.8 -.6"/>
-        <circle class="s-face" cx="-2.2" cy="-7.1" r="2"/>
-        <path class="s-band" d="M-4.1 -7.9L-.2 -8.5"/>
-        <path class="s-tail t1" d="M-4.1 -7.9C-5.5 -8.9 -6.6 -7.2 -8.8 -8.4"/><path class="s-tail t2" d="M-4.1 -7.7C-5.3 -6.6 -6.4 -8 -8 -6.6"/>
-        <title>Carl's climbing buddy, taking a break</title></svg>`;
+    return `<svg class="sitter" viewBox="-8 -13 15 14" aria-hidden="true">
+        <path class="s-rail" d="M3.6 .2V-8M3.6 -8H6.6M3.6 -4H6.6M6.6 .2V-8"/>
+        <path class="s-limb s-far" d="M-.4 -4.6L.2 -2.2L.6 0"/>
+        <path class="s-limb" d="M-.4 -4.6L-1.2 -2.2L-1.4 0"/>
+        <path class="s-body" d="M-.4 -4.6L1.4 -8.6"/>
+        <path class="s-limb s-far" d="M1.2 -8.2L2.6 -7.2L4.6 -8.2"/>
+        <path class="s-limb" d="M1.4 -8.4L3 -7.4L5.2 -8.4"/>
+        <circle class="s-face" cx="2.3" cy="-10.6" r="1.9"/>
+        <path class="s-band" d="M.4 -11.1L4.1 -11.7"/>
+        <path class="s-tail t1" d="M.4 -11.1C-2 -12.4 -4 -10 -7.6 -11.8"/><path class="s-tail t2" d="M.4 -10.9C-1.8 -9.6 -4.2 -11.4 -7.2 -9.6"/>
+        <title>Carl's climbing buddy, taking in the view</title></svg>`;
   }
 
   function renderCalendar() {
