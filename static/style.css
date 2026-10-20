@@ -422,6 +422,7 @@ svg { display: block; }
 
 /* ---------- side panels ----------------------------------------------- */
 .side { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+.activity-stack { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 @media (min-width: 721px) {
   #month-stats .stat-grid { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
@@ -611,7 +612,10 @@ code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; font-
   /* right column split 15 : 55 : 30 (at a glance : Recent form : Daily activity) */
   #month-stats { flex: 15 1 0; min-height: min-content; display: flex; flex-direction: column; justify-content: center; }  /* never below its content */
   #month-stats .stat-grid { align-items: start; }  /* tiles keep their natural height: no empty space inside */
-  .activity-card { flex: 30 1 0; min-height: 0; display: flex; flex-direction: column; }
+  /* the activity card and the market below it share the activity card's old 30 share, so the
+     other right-column cards keep their size and only the activity card gives up room */
+  .activity-stack { flex: 30 1 0; min-height: 0; display: flex; flex-direction: column; gap: inherit; }
+  .activity-card { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; }
   .activity-card .act-top { flex: 1 1 auto; min-height: 0; grid-template-rows: auto 1fr; }
   .activity-card .step-bars { align-self: stretch; height: auto; min-height: 28px; max-height: 140px; margin-top: 10px; }
   .stat { padding: 8px 10px; }
@@ -1191,23 +1195,52 @@ svg.night :is(.th-crown-sun, .th-crown-sun-glow, .th-crown-rays) { display: none
 .rp-flag.gold .cloth { fill: #fbbf24; filter: drop-shadow(0 0 2px rgba(251, 191, 36, .6)); }
 @media (prefers-reduced-motion: reduce) { .rp-bob { animation: none; } }
 
-/* ---- the underground market under the step bars ---- */
-/* its own block under the Daily activity card: the card sits on the ground, the market is below it */
-.market-pit { flex: none; border-radius: 14px; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .35); }
-.market { display: block; width: 100%; height: auto; aspect-ratio: 320 / 44; }
-.mk-soil { fill: #24180f; }
-.mk-grass { stroke: #4d7c0f; stroke-width: 1.2; }
-.mk-speck circle { fill: #4a3424; }
-.mk-cave { fill: #0d0805; }
-.mk-glow { fill: #f59e0b; opacity: .06; }
-.mk-shaft { stroke: #0d0805; stroke-width: 6; }
-.mk-ladder { fill: none; stroke: #8a5a32; stroke-width: .8; stroke-linecap: round; }
-.mk-wire { fill: none; stroke: #57534e; stroke-width: .5; }
-.mk-lantern { fill: #fcd34d; filter: drop-shadow(0 0 2px #f59e0b); animation: th-twinkle 3s ease-in-out infinite; }
+/* ---- the underground market, drawn on the page below the Daily activity card ---- */
+.market-pit { flex: none; height: 66px; position: relative; }
+.market { display: block; overflow: visible; }
+.mk-floor { stroke: color-mix(in srgb, var(--text) 14%, transparent); stroke-width: 1; }
+.mk-ladder { fill: none; stroke: #8a5a32; stroke-width: 1; stroke-linecap: round; }
+.mk-who .mk-body { fill: none; stroke: var(--text); stroke-width: 2.1; stroke-linecap: round; }
+.mk-who .mk-limb { fill: none; stroke: var(--text); stroke-width: 1.25; stroke-linecap: round; stroke-linejoin: round; }
+.mk-who .mk-face { fill: var(--text); }
+.mk-who .mk-helmet { fill: #38bdf8; } .mk-who .mk-pack { fill: #f97316; }
+.mk-neon { font: 800 7px var(--font-ui, sans-serif); letter-spacing: .08em; animation: mk-neon 7s linear infinite; }
+.mk-neon.pink { fill: #f9a8d4; filter: drop-shadow(0 0 2px #ec4899) drop-shadow(0 0 4px #ec4899); }
+.mk-neon.amber { fill: #fde68a; filter: drop-shadow(0 0 2px #f59e0b) drop-shadow(0 0 4px #f59e0b); animation-delay: -3s; }
+@keyframes mk-neon { 0%, 46%, 50%, 100% { opacity: 1; } 47% { opacity: .25; } 48% { opacity: .9; } 49% { opacity: .35; } }
+.mk-shelf { stroke: #6b4423; stroke-width: 1.2; stroke-linecap: round; }
+.mk-bottle { opacity: .9; }
+.mk-counter { fill: #5b3a1c; } .mk-counter-top { stroke: #8a5a32; stroke-width: 1.4; stroke-linecap: round; }
+.mk-stool, .mk-table, .mk-chair { fill: none; stroke: #a8a29e; stroke-width: 1; stroke-linecap: round; stroke-linejoin: round; }
+.mk-table { stroke: #8a5a32; stroke-width: 1.4; }
+.mk-shaker { fill: #cbd5e1; }
+.mk-glass { fill: rgba(253, 230, 138, .7); stroke: rgba(255, 255, 255, .5); stroke-width: .3; } .mk-glass.beer { fill: #f59e0b; }
+.mk-shake { transform-box: fill-box; transform-origin: 0% 100%; animation: mk-shake .35s ease-in-out infinite alternate; }
+@keyframes mk-shake { to { transform: rotate(-12deg) translateY(-.6px); } }
+.mk-sip { transform-box: fill-box; transform-origin: 100% 100%; animation: mk-sip 8s ease-in-out infinite; }
+@keyframes mk-sip { 0%, 70%, 100% { transform: rotate(0); } 78%, 88% { transform: rotate(28deg); } }
+.mk-fork { transform-box: fill-box; transform-origin: 100% 0%; animation: mk-fork 2.6s ease-in-out infinite; }
+@keyframes mk-fork { 0%, 60%, 100% { transform: rotate(0); } 75% { transform: rotate(-35deg); } }
+.mk-tv { fill: #111827; stroke: #374151; stroke-width: 1; }
+.mk-tv-arm { stroke: #6b7280; stroke-width: 1; }
+.mk-tv-sky { fill: #1e3a8a; }
+.mk-tv-mtn { fill: #2f8f5b; }
+.mk-tv-dot { fill: #f97316; }
+.mk-tv-picture { animation: mk-tv 4s steps(1) infinite; }
+@keyframes mk-tv { 0%, 100% { opacity: 1; filter: none; } 30% { filter: brightness(1.4); } 55% { filter: hue-rotate(40deg) brightness(1.1); } 80% { opacity: .85; } }
+.mk-candle { fill: #fde68a; filter: drop-shadow(0 0 2px #f59e0b); animation: th-twinkle 2.4s ease-in-out infinite; }
+.mk-plate { fill: #e5e7eb; }
+.mk-steam { fill: none; stroke: color-mix(in srgb, var(--text) 40%, transparent); stroke-width: .6; stroke-linecap: round; animation: cf-smoke 3s ease-in-out infinite; }
 .mk-post { stroke: #8a5a32; stroke-width: 1.2; }
-.mk-stripes { stroke: rgba(255, 255, 255, .55); stroke-width: 1.6; }
-.mk-counter { fill: #6b4423; }
-.mk-person .mk-body, .mk-visitor .mk-body { stroke: #d6d3d1; stroke-width: 1.6; stroke-linecap: round; }
-.mk-person .mk-limb, .mk-visitor .mk-limb { fill: none; stroke: #d6d3d1; stroke-width: .9; stroke-linecap: round; stroke-linejoin: round; }
-.mk-visitor .mk-face { fill: #e5e7eb; } .mk-visitor .mk-helmet { fill: #38bdf8; } .mk-visitor .mk-pack { fill: #f97316; }
-@media (prefers-reduced-motion: reduce) { .mk-lantern { animation: none; } }
+.mk-awning { fill: #14b8a6; } .mk-stripes { stroke: rgba(255, 255, 255, .55); stroke-width: 1.6; }
+.mk-bag { fill: #fde68a; }
+.mk-cabinet { fill: #312e81; stroke: #6366f1; stroke-width: .6; }
+.mk-screen { animation: mk-screen 1.8s steps(1) infinite; }
+@keyframes mk-screen { 0% { fill: #22d3ee; } 33% { fill: #f472b6; } 66% { fill: #a3e635; } }
+.mk-stick { stroke: #e5e7eb; stroke-width: .8; stroke-linecap: round; }
+.mk-play { transform-box: fill-box; transform-origin: 0% 50%; animation: mk-play .5s ease-in-out infinite alternate; }
+@keyframes mk-play { to { transform: rotate(-6deg); } }
+@media (prefers-reduced-motion: reduce) { .mk-neon, .mk-shake, .mk-sip, .mk-fork, .mk-tv-picture, .mk-candle, .mk-steam, .mk-screen, .mk-play { animation: none; } }
+/* shorter windows: a smaller market; very short ones have no room for it at all */
+@media (min-width: 1100px) and (min-height: 560px) and (max-height: 860px) { .market-pit { height: 52px; } }
+@media (min-width: 1100px) and (max-height: 700px) { .market-pit { display: none; } }

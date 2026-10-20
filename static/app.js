@@ -1462,7 +1462,7 @@
   function metricOn(name, date) { return state.metrics[name]?.byDate.get(date); }
 
   function renderActivity() {
-    $("market").innerHTML = marketHtml();
+    drawMarket();
     const el = $("activity-card");
     const hasAny = Object.values(state.metrics).some((m) => m.byDate.size);
     if (!hasAny) {
@@ -1520,38 +1520,111 @@
   // to the underground market.
   const atMonthEnd = (d = new Date()) => d.getDate() === new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
 
-  // An underground market below the Daily activity card, which sits on the ground above it: in a
-  // lantern-lit cavern reached by a ladder shaft, a few stalls trade with a couple of shoppers. At
-  // the end of the month the calendar's rappeller is down here too, browsing.
-  function marketHtml() {
-    const stall = (x, stripe, goods) => `<g transform="translate(${x},0)">
-        <path class="mk-post" d="M-13 41V27M13 41V27"/>
-        <path class="mk-awning" d="M-15 27L-12 21H12L15 27Z" fill="${stripe}"/>
-        <path class="mk-stripes" d="M-7 21L-8.6 27M-1 21L-1 27M5 21L6.4 27"/>
-        <path class="mk-scallop" d="M-15 27q2.5 2.4 5 0q2.5 2.4 5 0q2.5 2.4 5 0q2.5 2.4 5 0q2.5 2.4 5 0q2.5 2.4 5 0Z" fill="${stripe}"/>
-        <rect class="mk-counter" x="-14" y="35" width="28" height="6" rx="1"/>
-        ${goods.map(([dx, c]) => `<circle cx="${dx}" cy="33.6" r="1.5" fill="${c}"/>`).join("")}</g>`;
-    const person = (x, flip, color) => `<g class="mk-person" transform="translate(${x},41.6) scale(${flip ? -1 : 1},1)">
-        <path class="mk-body" d="M0 -3.6V-8.4"/><path class="mk-limb" d="M0 -3.6L-1.4 0M0 -3.6L1.4 0M0 -7.6L1.8 -5.4M0 -7.6L-1.6 -5.6"/>
-        <circle cx=".2" cy="-10" r="1.6" fill="${color}"/></g>`;
-    const visitor = atMonthEnd() ? `<g class="mk-visitor" transform="translate(196,41.6)"><title>The calendar's rappeller made it to the bottom of the month: shopping at the underground market</title>
-        <rect class="mk-pack" x="-3.2" y="-8.6" width="2.4" height="4.2" rx=".8"/>
-        <path class="mk-body" d="M0 -3.6V-8.4"/><path class="mk-limb" d="M0 -3.6L-1.4 0M0 -3.6L1.4 0M0 -7.6L2.6 -6.6L3.6 -7.6M0 -7.6L-1.4 -5.4"/>
-        <circle cx=".2" cy="-10" r="1.6" class="mk-face"/><path class="mk-helmet" d="M-1.8 -10.2A2 2 0 0 1 2.2 -10.2Z"/></g>` : "";
-    const lanterns = [44, 92, 128, 176, 214, 262, 296].map((x, i) => `<circle class="mk-lantern" cx="${x}" cy="${17.5 + (i % 2) * 1.6}" r="1.3" style="animation-delay:${(i * .5).toFixed(1)}s"/>`).join("");
-    const specks = Array.from({ length: 26 }, (_, i) => `<circle cx="${(i * 47.3) % 320}" cy="${3 + ((i * 7.7) % 9)}" r="${i % 3 ? .5 : .8}"/>`).join("");
-    return `<svg class="market" viewBox="0 0 320 44" preserveAspectRatio="xMidYMid meet" role="img" aria-label="The underground market">
-        <title>The underground market</title>
-        <rect class="mk-soil" width="320" height="44"/><path class="mk-grass" d="M0 .6H320"/><g class="mk-speck">${specks}</g>
-        <path class="mk-cave" d="M4 43V22Q4 13.6 16 13.4H296Q308 13.6 308 22V43Z"/>
-        <path class="mk-glow" d="M4 43V22Q4 13.6 16 13.4H296Q308 13.6 308 22V43Z"/>
-        <path class="mk-shaft" d="M9 0V14"/><path class="mk-ladder" d="M7 0V40M11 0V40M7 4H11M7 9H11M7 14H11M7 19H11M7 24H11M7 29H11M7 34H11M7 39H11"/>
-        <path class="mk-wire" d="M30 16.4Q90 21 150 17.4T300 17"/>${lanterns}
-        ${stall(76, "#ef4444", [[-8, "#f97316"], [-3, "#facc15"], [3, "#f97316"], [8, "#84cc16"]])}
-        ${stall(150, "#14b8a6", [[-8, "#a855f7"], [-2, "#ef4444"], [4, "#a855f7"], [9, "#ef4444"]])}
-        ${stall(240, "#eab308", [[-8, "#fde68a"], [-2, "#fb923c"], [4, "#fde68a"], [9, "#fb923c"]])}
-        ${person(108, false, "#e5e7eb")}${person(270, true, "#e5e7eb")}${visitor}
-      </svg>`;
+  // The underground market, drawn straight onto the page below the Daily activity card (the card's
+  // bottom edge is its ceiling), at 1px per unit so everyone is the rappeller's size (scale 1.2):
+  // a ladder down from the surface, string lights in uneven arches, a bar with a flickering neon
+  // sign, a bartender and a regular, a little restaurant with a TV and a diner, and, with room, a
+  // produce stall and an arcade cabinet. On the last day of the month the rappeller is at the bar
+  // with a drink.
+  let marketKey = "";
+  function drawMarket(onlyIfMoved = false) {
+    const el = $("market");
+    if (!el) return;
+    const W = Math.round(el.clientWidth), H = Math.round(el.clientHeight), end = atMonthEnd();
+    const key = `${W}x${H}|${end}`;
+    if (onlyIfMoved && key === marketKey) return;
+    marketKey = key;
+    if (W < 160 || H < 36) { el.innerHTML = ""; return; }
+    const f = (n) => n.toFixed(1), fy = H - 1.5;
+    // people, in the rappeller's units (scale 1.2): standing with feet at (0,0), or sitting with the
+    // seat at (0,0) facing left
+    const at = (x, y, flip, inner, cls = "") => `<g class="mk-who ${cls}" transform="translate(${f(x)},${f(y)}) scale(${flip ? -1.2 : 1.2},1.2)">${inner}</g>`;
+    const head = (x, y, extra = "") => `<circle class="mk-face" cx="${x}" cy="${y}" r="1.9"/>${extra}`;
+    const standing = (arms) => `<path class="mk-limb" d="M-1.4 0L0 -4.6L1.4 0"/><path class="mk-body" d="M0 -4.6V-9.4"/>${arms}${head(0, -11.4)}`;
+    const sitting = (arms, extra = "") => `<path class="mk-limb" d="M0 0H-3.2L-3.4 4.4"/><path class="mk-body" d="M0 0L.2 -4.8"/>${arms}${head(.2, -6.9, extra)}`;
+
+    // ---- lights: pins under the card's edge, the string drooping between them, warm bulbs hanging
+    const pins = [];
+    for (let x = 20, k = 0; x < W - 8; k++) { pins.push(x); x += 52 + ((k * 37) % 30); }
+    pins.push(W - 6);
+    let wire = `M${pins[0]},2.5`, bulbs = "";
+    const warm = ["#fde68a", "#fdba74", "#fef3c7", "#fca5a5"];
+    let nb = 0;
+    pins.slice(1).forEach((x1, k) => {
+      const x0 = pins[k], sag = 3.5 + ((k * 13) % 4), cy = 2.5 + 2 * sag;
+      wire += `Q${f((x0 + x1) / 2)},${f(cy)} ${x1},2.5`;
+      const n = Math.max(1, Math.round((x1 - x0) / 17));
+      for (let b = 1; b <= n; b++) {
+        const t = b / (n + 1), x = x0 + (x1 - x0) * t, y = (1 - t) ** 2 * 2.5 + 2 * (1 - t) * t * cy + t * t * 2.5;
+        bulbs += `<g class="bulb on" transform="translate(${f(x)},${f(y)}) rotate(${180 + ((nb * 7) % 13) - 6})">
+          <circle class="bulb-halo" cy="-5" r="5" fill="${warm[nb % 4]}" style="animation-delay:${((nb * .41) % 3).toFixed(2)}s"/>
+          <rect class="bulb-cap" x="-1" y="-2" width="2" height="2" rx=".4"/>
+          <path class="bulb-glass" d="M0,-1.9C-2,-2.9 -1.9,-6.4 0,-7.2C1.9,-6.4 2,-2.9 0,-1.9Z" fill="${warm[nb % 4]}"/></g>`;
+        nb += 1;
+      }
+    });
+    const lights = `<path class="light-wire" d="${wire}"/>${bulbs}${pins.map((x) => `<circle class="light-tack" cx="${x}" cy="2.5" r="1.3"/>`).join("")}`;
+
+    // ---- ladder down from the surface
+    const ladder = `<path class="mk-ladder" d="M5 0V${f(fy)}M10 0V${f(fy)}${Array.from({ length: Math.floor(fy / 5) }, (_, i) => `M5 ${f(3 + i * 5)}H10`).join("")}"/>`;
+
+    // ---- the bar
+    const bx = 18, cw = 48;
+    const bottles = (y, x0, n) => Array.from({ length: n }, (_, i) => {
+      const x = x0 + i * 6.4, c = ["#22c55e", "#f59e0b", "#60a5fa", "#e11d48", "#a3e635"][(i + y) % 5];
+      return `<path class="mk-bottle" d="M${f(x)},${f(y)}v-5.4h2.2v5.4ZM${f(x + .7)},${f(y - 5.4)}v-1.6h.8v1.6Z" fill="${c}"/>`;
+    }).join("");
+    const bar = `<g class="mk-bar">
+        <text class="mk-neon pink" x="${bx + cw / 2}" y="${f(fy - 29)}" text-anchor="middle">BAR</text>
+        <path class="mk-shelf" d="M${bx + 2},${f(fy - 21)}H${bx + cw - 2}M${bx + 2},${f(fy - 14.5)}H${bx + cw - 2}"/>
+        ${bottles(Math.round(fy - 21), bx + 5, 6)}${bottles(Math.round(fy - 14.5), bx + 8, 5)}
+        ${at(bx + 14, fy - 4.5, false, standing(`<g class="mk-shake"><path class="mk-limb" d="M0 -8.4L2.4 -9.6L3 -12.6"/><rect class="mk-shaker" x="2.2" y="-15.6" width="1.8" height="3.4" rx=".6"/></g><path class="mk-limb" d="M0 -8.4L-2 -6.4"/>`), "bartender")}
+        <rect class="mk-counter" x="${bx}" y="${f(fy - 9)}" width="${cw}" height="9" rx="1"/><path class="mk-counter-top" d="M${bx - 1},${f(fy - 9)}H${bx + cw + 1}"/>
+        ${[bx + cw + 7, bx + cw + 20].map((x) => `<path class="mk-stool" d="M${x - 3},${f(fy - 9.4)}H${x + 3}M${x},${f(fy - 9.4)}V${f(fy)}M${x - 2.4},${f(fy)}H${x + 2.4}"/>`).join("")}
+        ${at(bx + cw + 7, fy - 10, false, sitting(`<g class="mk-sip"><path class="mk-limb" d="M.1 -4L-2.6 -3.4L-3 -6"/><rect class="mk-glass" x="-4" y="-8.4" width="1.8" height="2.6" rx=".3"/></g>`))}
+        ${end ? at(bx + cw + 20, fy - 10, false, sitting(`<path class="mk-limb" d="M.1 -4L-2.8 -2.8L-4.4 -3.6"/><rect class="mk-glass beer" x="-5.6" y="-5.6" width="2" height="2.8" rx=".3"/>`,
+          `<path class="mk-helmet" d="M-1.9 -7.1A2.3 2.3 0 0 1 2.3 -7.1Z"/>`).replace('<path class="mk-body"', '<rect class="mk-pack" x=".6" y="-5.2" width="2.4" height="4" rx=".8"/><path class="mk-body"'), "visitor")
+          .replace("<g class", `<g class`).replace(`">`, `"><title>The calendar's rappeller made it to the bottom of the month: a drink at the underground bar</title>`) : ""}
+      </g>`;
+
+    // ---- the restaurant
+    const rx = Math.max(bx + cw + 34, Math.round(W * .3));
+    const table = (x) => `<path class="mk-table" d="M${x - 7},${f(fy - 8)}H${x + 7}M${x},${f(fy - 8)}V${f(fy)}M${x - 3},${f(fy)}H${x + 3}"/>`;
+    const chair = (x, flip) => `<path class="mk-chair" d="M${x},${f(fy - 15)}V${f(fy)}M${x},${f(fy - 7)}H${x + (flip ? -5 : 5)}V${f(fy)}"/>`;
+    const diner = rx + 7 + 5;
+    const restaurant = `<g class="mk-diner-place">
+        <text class="mk-neon amber" x="${rx + 6}" y="${f(fy - 29)}">EATS</text>
+        <path class="mk-tv-arm" d="M${rx + 46},${f(fy - 33)}V${f(fy - 30)}"/>
+        <rect class="mk-tv" x="${rx + 37}" y="${f(fy - 30)}" width="18" height="11" rx="1"/>
+        <g class="mk-tv-picture"><rect class="mk-tv-sky" x="${rx + 38.2}" y="${f(fy - 28.8)}" width="15.6" height="8.6"/>
+          <path class="mk-tv-mtn" d="M${rx + 38.2},${f(fy - 20.2)}L${rx + 43},${f(fy - 26)}L${rx + 45.6},${f(fy - 23.4)}L${rx + 48},${f(fy - 26.8)}L${rx + 53.8},${f(fy - 20.2)}Z"/>
+          <circle class="mk-tv-dot" cx="${rx + 46.6}" cy="${f(fy - 24.6)}" r=".6"/></g>
+        ${chair(rx + 7, false)}${table(rx + 18)}${chair(rx + 29, true)}
+        ${table(rx + 46)}${chair(rx + 57, true)}<circle class="mk-candle" cx="${rx + 46}" cy="${f(fy - 9.6)}" r="1.1"/>
+        <ellipse class="mk-plate" cx="${rx + 15}" cy="${f(fy - 8.6)}" rx="2.6" ry=".7"/><path class="mk-steam" d="M${rx + 14.4},${f(fy - 10)}q-.8 -1.6 .2 -3.2M${rx + 16},${f(fy - 10)}q-.8 -1.6 .2 -3.2"/>
+        ${at(diner, fy - 7.4, true, sitting(`<g class="mk-fork"><path class="mk-limb" d="M.1 -4L-2.4 -2.6L-3.2 -3.6"/></g>`))}
+      </g>`;
+
+    // ---- a produce stall, when there's room
+    const sx = Math.max(rx + 84, Math.round(W * .62)), stall = W - sx > 44 ? `<g class="mk-stall">
+        <path class="mk-post" d="M${sx - 12},${f(fy)}V${f(fy - 22)}M${sx + 12},${f(fy)}V${f(fy - 22)}"/>
+        <path class="mk-awning" d="M${sx - 14},${f(fy - 21)}L${sx - 11},${f(fy - 26)}H${sx + 11}L${sx + 14},${f(fy - 21)}Z"/>
+        <path class="mk-stripes" d="M${sx - 6},${f(fy - 26)}L${sx - 7.4},${f(fy - 21)}M${sx},${f(fy - 26)}V${f(fy - 21)}M${sx + 6},${f(fy - 26)}L${sx + 7.4},${f(fy - 21)}"/>
+        <rect class="mk-counter" x="${sx - 13}" y="${f(fy - 8)}" width="26" height="8" rx="1"/>
+        ${[-8, -3.4, 1.2, 5.8, 9.4].map((dx, i) => `<circle cx="${sx + dx}" cy="${f(fy - 9.4)}" r="1.5" fill="${["#f97316", "#84cc16", "#ef4444", "#facc15", "#a855f7"][i]}"/>`).join("")}
+        ${at(sx + 20, fy, true, standing(`<path class="mk-limb" d="M0 -8.4L-1.8 -6M0 -8.4L2.4 -6.4L3.6 -7.4"/><path class="mk-bag" d="M3 -7.6h2.4v3h-2.4Z"/>`), "shopper")}
+      </g>` : "";
+
+    // ---- an arcade cabinet and its player, on the far right when there's room
+    const ax = Math.max(sx + 44, Math.round(W * .86)), arcade = W - ax > 14 ? `<g class="mk-arcade">
+        <path class="mk-cabinet" d="M${ax - 5},${f(fy)}V${f(fy - 18)}L${ax - 3},${f(fy - 24)}H${ax + 6}V${f(fy)}Z"/>
+        <rect class="mk-screen" x="${ax - 2.6}" y="${f(fy - 21.6)}" width="7" height="6" rx=".6"/>
+        <path class="mk-stick" d="M${ax - 4},${f(fy - 13)}h-2.2M${ax - 5.2},${f(fy - 13)}v-2"/>
+        ${at(ax - 12, fy, false, standing(`<g class="mk-play"><path class="mk-limb" d="M0 -8.4L4 -8L5.4 -9.4M0 -8.2L3.6 -7.2L5 -7.8"/></g>`), "player")}
+      </g>` : "";
+
+    el.innerHTML = `<svg class="market" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="The underground market: a bar, a little restaurant with a TV and a produce stall">
+        <path class="mk-floor" d="M0,${f(fy + .6)}H${W}"/>${ladder}${bar}${restaurant}${stall}${arcade}${lights}</svg>`;
   }
 
   function weightRow() {
@@ -1679,10 +1752,10 @@
   let fitTimer = 0, ropeTimer = 0;
   function scheduleFit() {
     clearTimeout(fitTimer);
-    fitTimer = setTimeout(() => { document.querySelectorAll(".card").forEach(fitCard); drawRopes(); drawLights(); drawRappel(); }, 40);
+    fitTimer = setTimeout(() => { document.querySelectorAll(".card").forEach(fitCard); drawRopes(); drawLights(); drawRappel(); drawMarket(true); }, 40);
     // late layout shifts (fonts, the calendar redrawing) can move the rope's ends, so check again
     clearTimeout(ropeTimer);
-    ropeTimer = setTimeout(() => { drawRopes(); drawLights(); drawRappel(); }, 600);
+    ropeTimer = setTimeout(() => { drawRopes(); drawLights(); drawRappel(); drawMarket(true); }, 600);
   }
 
   // Slim line: trailing moving average of workouts per week since the first workout.
@@ -1951,7 +2024,7 @@
   new ResizeObserver(scheduleFit).observe(document.querySelector(".page"));
   document.fonts?.ready.then(scheduleFit);
   // catch any late layout shift that moves the rope's ends without resizing the page
-  setInterval(() => { if (!document.hidden) { drawRopes(true); drawLights(true); drawRappel(true); } }, 1500);
+  setInterval(() => { if (!document.hidden) { drawRopes(true); drawLights(true); drawRappel(true); drawMarket(true); } }, 1500);
   window.addEventListener("load", scheduleFit);
 
   let resizeTimer;
