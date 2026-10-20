@@ -1244,3 +1244,17 @@ svg.night :is(.th-crown-sun, .th-crown-sun-glow, .th-crown-rays) { display: none
 /* shorter windows: a smaller market; very short ones have no room for it at all */
 @media (min-width: 1100px) and (min-height: 560px) and (max-height: 860px) { .market-pit { height: 52px; } }
 @media (min-width: 1100px) and (max-height: 700px) { .market-pit { display: none; } }
+
+/* ---- the Last workout card as a billboard ---- */
+.bb-frame { fill: none; stroke: #4b5563; stroke-width: 3; }
+.bb-rivet { fill: #9ca3af; } .bb-rivet.big { fill: #d1d5db; }
+.bb-bracket { fill: none; stroke: #6b7280; stroke-width: 3.4; stroke-linecap: square; }
+.bb-rail { fill: none; stroke: #6b7280; stroke-width: 1; stroke-linecap: round; }
+.bb-walk { fill: #374151; stroke: #1f2937; stroke-width: .6; }
+.bb-grate { stroke: #6b7280; stroke-width: .8; stroke-dasharray: 1.4 1.4; }
+.bb-arm { fill: none; stroke: #6b7280; stroke-width: 1.2; stroke-linecap: round; }
+.bb-lamp { fill: #374151; stroke: #1f2937; stroke-width: .6; }
+.bb-lens { fill: #fef3c7; filter: drop-shadow(0 0 2px #fde68a); }
+.bb-cone { fill: url(#bb-light); pointer-events: none; filter: blur(6px); }
+.bb-light-near { stop-color: #fef3c7; stop-opacity: .12; } .bb-light-far { stop-color: #fef3c7; stop-opacity: 0; }
+.billboard.night .bb-light-near { stop-opacity: .26; }

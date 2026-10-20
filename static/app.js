@@ -303,6 +303,56 @@
         ${embers}${flames}${sparks}${smoke}</svg></span>`;
   }
 
+  // The Last workout card as a billboard: a riveted steel frame just outside the card with corner
+  // brackets, a grated catwalk with a little railing in the gap below, and three floodlights on
+  // arms whose soft cones wash up the poster (stronger at night). Drawn on its own layer, so the
+  // card and its content are untouched.
+  let billboardKey = "";
+  function drawBillboard(onlyIfMoved = false) {
+    const layer = $("billboard"), card = $("last-card");
+    const fixed = FIT_QUERY.matches, sx = fixed ? 0 : scrollX, sy = fixed ? 0 : scrollY;
+    layer.style.position = fixed ? "fixed" : "absolute";
+    const r = card.getBoundingClientRect(), night = skyPhase() === "night";
+    const key = [r.left, r.top, r.right, r.bottom].map(Math.round).join(",") + night;
+    if (onlyIfMoved && key === billboardKey) return;
+    billboardKey = key;
+    layer.setAttribute("width", 0); layer.setAttribute("height", 0); layer.innerHTML = "";
+    if (!r.width || r.height < 80) return;
+    const f = (n) => n.toFixed(1);
+    const L = r.left + sx, T = r.top + sy, R = r.right + sx, B = r.bottom + sy, o = 2.5;
+    // the frame, with rivets along it
+    const rivets = [];
+    for (let x = L + 14; x < R - 10; x += 26) rivets.push([x, T - o], [x, B + o]);
+    for (let y = T + 14; y < B - 10; y += 26) rivets.push([L - o, y], [R + o, y]);
+    const frame = `<rect class="bb-frame" x="${f(L - o)}" y="${f(T - o)}" width="${f(R - L + 2 * o)}" height="${f(B - T + 2 * o)}" rx="7"/>
+      ${rivets.map(([x, y]) => `<circle class="bb-rivet" cx="${f(x)}" cy="${f(y)}" r="1.1"/>`).join("")}
+      ${[[L - o, T - o, 1, 1], [R + o, T - o, -1, 1], [L - o, B + o, 1, -1], [R + o, B + o, -1, -1]].map(([x, y, dx, dy]) =>
+        `<path class="bb-bracket" d="M${f(x)},${f(y + dy * 12)}V${f(y)}H${f(x + dx * 12)}"/><circle class="bb-rivet big" cx="${f(x + dx * 4)}" cy="${f(y + dy * 4)}" r="1.4"/>`).join("")}`;
+    // the catwalk and its railing, in the gap below the card
+    // fit the catwalk into whatever gap there is above the next card
+    const next = $("streak-card")?.getBoundingClientRect(), gap = next ? next.top + sy - B : 16;
+    const cy = B + Math.max(5.5, Math.min(9.5, gap - 3.6)), cl = L + 10, cr = R - 10;
+    const posts = [];
+    for (let x = cl; x <= cr + .1; x += (cr - cl) / Math.max(1, Math.round((cr - cl) / 34))) posts.push(x);
+    const railY = Math.min(B + 4, cy - 3);
+    const catwalk = `<path class="bb-rail" d="M${f(cl)},${f(railY)}H${f(cr)}${posts.map((x) => `M${f(x)},${f(railY)}V${f(cy)}`).join("")}"/>
+      <rect class="bb-walk" x="${f(cl - 3)}" y="${f(cy)}" width="${f(cr - cl + 6)}" height="2.6" rx=".6"/>
+      <path class="bb-grate" d="M${f(cl - 1)},${f(cy + 1.3)}H${f(cr + 1)}"/>`;
+    // three floodlights below the edge, washing light up the face
+    const lamps = [.2, .5, .8].map((t) => {
+      const x = L + (R - L) * t, h = (B - T) * .9, spread = (R - L) * .24, ly = B + 5;
+      return `<path class="bb-cone" d="M${f(x - 3)},${f(ly)}L${f(x - spread)},${f(B - h)}H${f(x + spread)}L${f(x + 3)},${f(ly)}Z"/>
+        <path class="bb-arm" d="M${f(x + 6)},${f(cy)}Q${f(x + 6)},${f(ly + 2)} ${f(x + 2)},${f(ly + 1.8)}"/>
+        <g transform="translate(${f(x)},${f(ly + 1.6)}) rotate(-8)"><rect class="bb-lamp" x="-4" y="-1.6" width="8" height="3.4" rx="1.2"/><rect class="bb-lens" x="-3" y="-2.1" width="6" height="1.1" rx=".5"/></g>`;
+    }).join("");
+    const de = document.documentElement, W = fixed ? innerWidth : de.scrollWidth, H = fixed ? innerHeight : de.scrollHeight;
+    layer.setAttribute("width", W); layer.setAttribute("height", H);
+    layer.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    layer.innerHTML = `<g class="billboard${night ? " night" : ""}">
+      <defs><linearGradient id="bb-light" x1="0" y1="1" x2="0" y2="0"><stop offset="0" class="bb-light-near"/><stop offset="1" class="bb-light-far"/></linearGradient></defs>
+      ${lamps}${frame}${catwalk}</g>`;
+  }
+
   function renderLastCard(w) {
     const el = $("last-card");
     if (!w) {
@@ -1752,10 +1802,10 @@
   let fitTimer = 0, ropeTimer = 0;
   function scheduleFit() {
     clearTimeout(fitTimer);
-    fitTimer = setTimeout(() => { document.querySelectorAll(".card").forEach(fitCard); drawRopes(); drawLights(); drawRappel(); drawMarket(true); }, 40);
+    fitTimer = setTimeout(() => { document.querySelectorAll(".card").forEach(fitCard); drawRopes(); drawLights(); drawRappel(); drawMarket(true); drawBillboard(); }, 40);
     // late layout shifts (fonts, the calendar redrawing) can move the rope's ends, so check again
     clearTimeout(ropeTimer);
-    ropeTimer = setTimeout(() => { drawRopes(); drawLights(); drawRappel(); drawMarket(true); }, 600);
+    ropeTimer = setTimeout(() => { drawRopes(); drawLights(); drawRappel(); drawMarket(true); drawBillboard(); }, 600);
   }
 
   // Slim line: trailing moving average of workouts per week since the first workout.
@@ -2024,7 +2074,7 @@
   new ResizeObserver(scheduleFit).observe(document.querySelector(".page"));
   document.fonts?.ready.then(scheduleFit);
   // catch any late layout shift that moves the rope's ends without resizing the page
-  setInterval(() => { if (!document.hidden) { drawRopes(true); drawLights(true); drawRappel(true); drawMarket(true); } }, 1500);
+  setInterval(() => { if (!document.hidden) { drawRopes(true); drawLights(true); drawRappel(true); drawMarket(true); drawBillboard(true); } }, 1500);
   window.addEventListener("load", scheduleFit);
 
   let resizeTimer;
