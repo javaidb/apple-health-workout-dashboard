@@ -1768,7 +1768,8 @@
   //   street carts, café tables, a fruit tent, a vending machine standing in front of them
   //   people strolling both ways (the further ones a touch smaller and dimmer), a bench with a
   //          reader, a cat, a plant, a bin, a puddle, and string lights tacked to the card's edge
-  //   tunnels in the rock walls at either end, where people come from and go
+  //   tunnels through the rock at either end (seen side-on, like everything else), where people
+  //          walk in and out of the market
   // On the last day of the month the calendar's rappeller sits outside the bar with a beer.
   let marketKey = "";
   function drawMarket(onlyIfMoved = false) {
@@ -1937,7 +1938,7 @@
       [floor, 1.2, 1, 12, "#fbbf24", .45, "near"],
       [floor, 1.2, -1, 10.5, "#a3e635", .85, "near"],
     ].map(([y, k, dir, speed, shirt, off, depth]) => {
-      const a = TW / 2, b = W - TW / 2, dur = (b - a) / speed;
+      const a = -12, b = W + 12, dur = (b - a) / speed;
       return [depth, `<g class="mk-walker ${depth}" style="--from:${dir > 0 ? a : b}px;--to:${dir > 0 ? b : a}px;animation-duration:${dur.toFixed(1)}s;animation-delay:${(-off * dur).toFixed(1)}s">
           <g transform="translate(0,${f(y)}) scale(${dir * k},${k})">${gait(shirt)}</g></g>`];
     });
@@ -1976,14 +1977,19 @@
       }
     });
     const lights = `<path class="light-wire" d="${wire}"/>${bulbs}${pins.map((x) => `<circle class="light-tack" cx="${x}" cy="${f(cy0)}" r="1.3"/>`).join("")}`;
-    // ---- tunnels out of the market at either end, in the rock walls under the card's edge
-    const mouth = (cx) => { const aw = TW - 6, ah = 25;
-      return `M${f(cx - aw / 2)},${f(floor)}V${f(floor - ah + aw / 2)}A${f(aw / 2)} ${f(aw / 2)} 0 0 1 ${f(cx + aw / 2)},${f(floor - ah + aw / 2)}V${f(floor)}`; };
-    const tunnels = [TW / 2, W - TW / 2].map((cx, i) => `<path class="mk-rock" d="M${i ? W - TW : 0},${ceil}H${i ? W : TW}V${f(floor)}H${i ? W - TW : 0}Z"/><path class="mk-tunnel" d="${mouth(cx)}Z"/>`).join("");
-    const rims = [TW / 2, W - TW / 2].map((cx) => `<path class="mk-tunnel-rim" d="${mouth(cx)}"/><circle class="mk-doorlamp" cx="${f(cx)}" cy="${f(floor - 28)}" r="1"/>`).join("");
+    // ---- tunnels out of the market at either end, cut side-on through the rock under the card's
+    // edge: rock down to the tunnel's roof, the dark passage beneath it running off the edge
+    const roof = floor - 24;
+    const tunnels = [0, 1].map((i) => {
+      const o = (x) => f(i ? W - x : x);   // mirror for the right-hand end
+      return `<path class="mk-rock" d="M${o(0)},${ceil}H${o(TW)}L${o(TW - 2)},${f(ceil + 8)}L${o(TW + 1)},${f(roof - 12)}L${o(TW - 1)},${f(roof - 4)}L${o(TW + 2)},${f(roof)}Q${o(TW * .5)},${f(roof + 2.5)} ${o(0)},${f(roof + 1)}Z"/>
+        <path class="mk-tunnel" d="M${o(0)},${f(roof + 1)}Q${o(TW * .5)},${f(roof + 2.5)} ${o(TW + 2)},${f(roof)}V${f(floor)}H${o(0)}Z"/>
+        <circle class="mk-doorlamp" cx="${o(TW - 3)}" cy="${f(roof + 4)}" r="1"/>`;
+    }).join("");
 
     el.innerHTML = `<svg class="market" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="The underground market: a street of shops under string lights, people strolling by">
-        ${tunnels}${shops}${street}${farWalkers}${front0}${front}${nearWalkers}${rims}${lights}</svg>`;
+        <defs><clipPath id="mk-clip"><rect x="0" y="${ceil}" width="${W}" height="${f(H - ceil)}"/></clipPath></defs>
+        ${tunnels}${shops}${street}<g clip-path="url(#mk-clip)">${farWalkers}</g>${front0}${front}<g clip-path="url(#mk-clip)">${nearWalkers}</g>${lights}</svg>`;
   }
 
   function weightRow() {

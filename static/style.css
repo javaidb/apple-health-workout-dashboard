@@ -1304,11 +1304,7 @@ svg.night :is(.th-crown-sun, .th-crown-sun-glow, .th-crown-rays) { display: none
 .mk-tiles { fill: none; stroke: color-mix(in srgb, var(--text) 8%, transparent); stroke-width: .5; }
 .mk-puddle { fill: #ec4899; opacity: .14; filter: blur(.6px); }
 .mk-walker { animation-name: mk-walk; animation-timing-function: linear; animation-iteration-count: infinite; }
-@keyframes mk-walk {
-  from { translate: var(--from) 0; opacity: 0; }
-  4%, 96% { opacity: 1; }
-  to { translate: var(--to) 0; opacity: 0; }
-}
+@keyframes mk-walk { from { translate: var(--from) 0; } to { translate: var(--to) 0; } }
 .mk-walker.far > g { opacity: .6; }
 .mk-walker .mk-gait { animation: ww-gait .62s linear infinite; }
 .mk-walker .mk-gait.l2 { animation-delay: -.31s; }
@@ -1329,8 +1325,7 @@ svg.night :is(.th-crown-sun, .th-crown-sun-glow, .th-crown-rays) { display: none
 .mk-stool-front { fill: none; stroke: #a8a29e; stroke-width: .8; }
 .mk-glass { fill: rgba(253, 230, 138, .7); } .mk-glass.beer { fill: #f59e0b; }
 .mk-rock { fill: color-mix(in srgb, var(--text) 7%, transparent); }
-.mk-tunnel { fill: #030405; }
-.mk-tunnel-rim { fill: none; stroke: #57534e; stroke-width: 1.6; stroke-dasharray: 3 .8; }
+.mk-tunnel { fill: color-mix(in srgb, #000 55%, transparent); }
 @media (prefers-reduced-motion: reduce) {
   .mk-flat, .mk-cloth, .mk-neon, .mk-shake, .mk-sip, .mk-steam, .mk-tv-picture, .mk-fork, .mk-screen, .mk-drum, .mk-walker, .mk-walker *, .mk-cat-tail { animation: none !important; }
 }
