@@ -1688,6 +1688,7 @@
         <path class="tr-rail" d="M${f(x0)},${f(floor)}H${f(x1)}"/><path class="tr-ties" d="M${f(x0 + 2)},${f(floor + 1.4)}H${f(x1)}"/>
         <path class="tr-platform" d="M${f(stopX - 4)},${f(floor - .6)}H${f(stopX + L + 4)}"/>
         <g transform="translate(${f(stopX - 9)},${f(floor)})"><path class="tr-post" d="M0 0V-21"/><rect class="tr-sign" x="-7" y="-25.5" width="14" height="5" rx=".8"/><text class="tr-sign-text" x="0" y="-21.9" text-anchor="middle">STATION</text></g>
+        <g class="tr-signal" transform="translate(${f(stopX + L + 9)},${f(floor)})"><title>The platform signal: red while a train is due or in, green once it has left</title><path class="tr-post" d="M0 0V-16"/><rect class="tr-sig-box" x="-2.3" y="-24.4" width="4.6" height="8.8" rx="1.1"/><circle class="tr-sig red" cy="-22" r="1.3"/><circle class="tr-sig green" cy="-18" r="1.3"/></g>
         <path class="tr-portal-in" d="M${f(x0)},${f(floor)}V${f(pt)}H${f(x0 + 7)}V${f(floor)}Z"/>
         <g class="tr-waiters"></g>
         <g clip-path="url(#tr-clip)"><g class="tr-train" style="--tr-body:${v.livery.body};--tr-skirt:${v.livery.skirt};--tr-stripe:${v.livery.stripe};--tr-edge:${v.livery.edge}"><title>A ${v.livery.name} bullet train, calling at the market</title>${trainBody(v.cars)}</g></g>
@@ -1709,6 +1710,8 @@
     // the nose with the headlight leads: mirrored when it's heading right
     if (x != null) tr.setAttribute("transform", v.dir < 0 ? `translate(${x.toFixed(1)},${floor.toFixed(1)})` : `translate(${(x + L).toFixed(1)},${floor.toFixed(1)}) scale(-1,1)`);
     tr.classList.toggle("open", open);
+    // the platform signal turns red 5 seconds before the train pulls in, and back to green as it leaves
+    layer.querySelector(".tr-signal").classList.toggle("stop", t >= T.period - (5 - T.arrive) || t < tDep);
     // two passengers: they walk in from the right to wait on the platform, then board through the
     // first and second cars' doors (behind the train, so it hides them as they step in)
     const doorsX = [stopX + TRAIN.car / 2, stopX + L - TRAIN.car / 2];
