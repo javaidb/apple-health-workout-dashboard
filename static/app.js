@@ -1453,16 +1453,27 @@
   // the day sparkles when he's done, and he moves on to the next. The plan is redone whenever the
   // calendar or layout changes; with reduced motion he just stands cleaning the latest workout day.
   // An unhurried pace: a stroll (with steps matched to the speed so his feet don't slide), easing in
-  // and out of each stretch, a short pause before and after each climb or turn, and climbing hand
-  // over hand in pulls: reach and pull up, then settle, once per CLIMB_BEAT.
-  const WASHER = { walk: 11, climb: 7, clean: 6, pause: .9, beat: 1.1 };   // px/s, px/s, s, s, s
+  // and out of each stretch, a short pause before and after each climb or turn, and a steady climb
+  // up a ladder he props in the gap between columns, one rung per beat.
+  const WASHER = { walk: 11, climb: 8, clean: 6, pause: .9, beat: .8 };   // px/s, px/s, s, s, s
   const washer = { x: null, y: null, mode: "walk", plan: [], target: null, until: 0, facing: 1, last: 0, sparkle: null, key: "",
     pauseUntil: 0, legFrom: null };
+  // Two poses: on the ledge (walking, cleaning) with jointed legs that step one after the other, and
+  // on the ladder, facing the wall, hands and feet moving rung by rung. Legs and arms animate their
+  // shapes in CSS (d: path keyframes); the head and cap are shared.
   const washerFigure = `<g class="ww-body">
-      <g class="ww-legs"><path class="ww-limb leg-a" d="M0 -4.6L-1.4 0"/><path class="ww-limb leg-b" d="M0 -4.6L1.4 0"/></g>
-      <path class="ww-torso" d="M0 -4.6V-9.4"/>
-      <g class="ww-arm-back"><path class="ww-limb" d="M0 -8.6L-2.4 -6.4L-2.6 -4.6"/><g class="ww-bucket"><path class="ww-handle" d="M-4.2 -4.6Q-2.6 -6.2 -1 -4.6"/><path class="ww-pail" d="M-4.4 -4.6H-.8L-1.3 -1.6H-3.9Z"/></g></g>
-      <g class="ww-arm-front"><path class="ww-limb" d="M0 -8.6L2.4 -10.6L2.8 -13"/><rect class="ww-rag" x="1.6" y="-15.2" width="2.6" height="2.4" rx=".6"/></g>
+      <g class="ww-pose-ledge">
+        <path class="ww-limb ww-leg l1" d="M0 -4.6L-.4 -2.3L-.9 0"/><path class="ww-limb ww-leg l2" d="M0 -4.6L.4 -2.3L.9 0"/>
+        <path class="ww-torso" d="M0 -4.6V-9.4"/>
+        <g class="ww-arm-back"><path class="ww-limb" d="M0 -8.6L-1.4 -6.4L-1.6 -4.6"/><g class="ww-bucket"><path class="ww-handle" d="M-3.2 -4.6Q-1.6 -6.2 0 -4.6"/><path class="ww-pail" d="M-3.4 -4.6H.2L-.3 -1.6H-2.9Z"/></g></g>
+        <g class="ww-arm-front"><path class="ww-limb" d="M0 -8.6L2.4 -10.6L2.8 -13"/><rect class="ww-rag" x="1.6" y="-15.2" width="2.6" height="2.4" rx=".6"/></g>
+      </g>
+      <g class="ww-pose-ladder">
+        <path class="ww-limb ww-cl c1" d="M0 -4.6L-1 -2.6L-1.2 -.2"/><path class="ww-limb ww-cl c2" d="M0 -4.6L-1 -2.6L-1.2 -.2"/>
+        <path class="ww-torso" d="M0 -4.6V-9.4"/>
+        <path class="ww-belt-pail" d="M1 -5H3.4L3 -2.8H1.4Z"/>
+        <path class="ww-limb ww-ca a1" d="M0 -8.8L-1.8 -10.4L-2 -12.6"/><path class="ww-limb ww-ca a2" d="M0 -8.8L-1.8 -10.4L-2 -12.6"/>
+      </g>
       <circle class="ww-head" cx="0" cy="-11.4" r="1.9"/><path class="ww-cap" d="M-2 -12.2A2.1 2.1 0 0 1 2 -12.2ZM1.8 -12.2H3.6"/></g>`;
 
   function drawWasher() {
@@ -1474,7 +1485,7 @@
     const de = document.documentElement, W = fixed ? innerWidth : de.scrollWidth, H = fixed ? innerHeight : de.scrollHeight;
     layer.setAttribute("width", W); layer.setAttribute("height", H); layer.setAttribute("viewBox", `0 0 ${W} ${H}`);
     if (!layer.querySelector(".washer")) {
-      layer.innerHTML = `<g class="ww-sparkle"></g><g class="washer walk"><title>The window washer, keeping your workout days sparkling</title><g class="ww-flip">${washerFigure}</g></g>`;
+      layer.innerHTML = `<g class="ww-ladder"></g><g class="ww-sparkle"></g><g class="washer walk"><title>The window washer, keeping your workout days sparkling</title><g class="ww-flip">${washerFigure}</g></g>`;
     }
     // the calendar's geometry: rows of days (their bottom edges are the ledges) and the gaps
     // between columns he climbs in
@@ -1493,7 +1504,7 @@
         [washer.x, washer.y] = spot(start);
       }
       washer.y = ledges.reduce((a, b) => (Math.abs(b - washer.y) < Math.abs(a - washer.y) ? b : a), ledges[0]);
-      washer.plan = []; washer.target = null; washer.mode = "walk"; washer.legFrom = null; washer.rested = false;
+      washer.plan = []; washer.target = null; washer.mode = "walk"; washer.legFrom = null; washer.rested = false; washer.ladder = null;
     }
     const g = layer.querySelector(".washer");
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -1531,9 +1542,11 @@
         if (!washer.legFrom) {
           // starting a stretch: before a climb or a turn round, stop and take a breath first
           const turning = how === "walk" && Math.abs(dx) > .5 && (dx > 0 ? 1 : -1) !== washer.facing;
+          if (how === "climb" && !washer.rested) washer.ladder = { x: px, y0: Math.min(washer.y, py), y1: Math.max(washer.y, py) };
           if ((how === "climb" || turning) && !washer.rested) {
             washer.rested = true; washer.pauseUntil = now + WASHER.pause; washer.mode = "pause";
           } else {
+            if (how === "walk") washer.ladder = null;
             washer.rested = false; washer.legFrom = [washer.x, washer.y];
             if (how === "walk" && Math.abs(dx) > .5) washer.facing = dx > 0 ? 1 : -1;
           }
@@ -1542,9 +1555,8 @@
           washer.mode = how;
           let speed;
           if (how === "climb") {
-            // hand over hand: pull for 60% of each beat, hold for the rest
-            const phase = (now % WASHER.beat) / WASHER.beat;
-            speed = phase < .6 ? WASHER.climb / .6 * Math.sin(Math.PI * phase / .6) * (Math.PI / 2) : 0;
+            // a steady climb, with a slight rhythm as each rung is taken
+            speed = WASHER.climb * (.8 + .2 * Math.sin(now * Math.PI * 2 / WASHER.beat));
           } else {
             // ease in over the first 10px and out over the last 12px
             const gone = Math.hypot(washer.x - washer.legFrom[0], washer.y - washer.legFrom[1]);
@@ -1566,6 +1578,14 @@
       } else if (sp.innerHTML) { sp.innerHTML = ""; washer.sparkle = null; }
     }
     g.setAttribute("class", `washer ${washer.mode === "pause" ? "idle" : washer.mode}`);
+    // the ladder, while he's using it
+    const lad = layer.querySelector(".ww-ladder"), L = washer.ladder;
+    const ladKey = L ? `${L.x.toFixed(1)},${L.y0.toFixed(1)},${L.y1.toFixed(1)}` : "";
+    if (lad.dataset.key !== ladKey) {
+      lad.dataset.key = ladKey;
+      const rungs = L ? Array.from({ length: Math.floor((L.y1 - L.y0 + 6) / 4) }, (_, i) => `M${(L.x - 2.6).toFixed(1)},${(L.y1 - 2 - i * 4).toFixed(1)}H${(L.x + 2.6).toFixed(1)}`).join("") : "";
+      lad.innerHTML = L ? `<path class="ww-rails" d="M${(L.x - 2.6).toFixed(1)},${(L.y0 - 6).toFixed(1)}V${L.y1.toFixed(1)}M${(L.x + 2.6).toFixed(1)},${(L.y0 - 6).toFixed(1)}V${L.y1.toFixed(1)}"/><path class="ww-rungs" d="${rungs}"/>` : "";
+    }
     g.setAttribute("transform", `translate(${washer.x.toFixed(1)},${washer.y.toFixed(1)}) scale(1.2)`);
     g.querySelector(".ww-flip").setAttribute("transform", `scale(${washer.mode === "clean" || washer.mode === "climb" ? 1 : washer.facing},1)`);
   }

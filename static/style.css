@@ -1286,21 +1286,41 @@ svg.night :is(.th-crown-sun, .th-crown-sun-glow, .th-crown-rays) { display: none
 .washer .ww-cap { fill: #22c55e; stroke: #22c55e; stroke-width: .5; stroke-linecap: round; }
 .washer .ww-rag { fill: #38bdf8; }
 .washer .ww-pail { fill: #94a3b8; stroke: #64748b; stroke-width: .3; } .washer .ww-handle { fill: none; stroke: #94a3b8; stroke-width: .4; }
-.washer .leg-a, .washer .leg-b { transform-box: view-box; transform-origin: 0 -4.6px; }
-/* walking: an easy stride timed to his 11px/s (about 3.7px per step), with a slight bob */
-.washer.walk .leg-a { animation: ww-step .34s ease-in-out infinite alternate; }
-.washer.walk .leg-b { animation: ww-step .34s ease-in-out infinite alternate-reverse; }
-.washer.walk .ww-body { animation: ww-bob .34s ease-in-out infinite alternate; }
-@keyframes ww-step { from { transform: rotate(-22deg); } to { transform: rotate(22deg); } }
-@keyframes ww-bob { from { translate: 0 0; } to { translate: 0 -.35px; } }
-/* climbing: arms up, reaching hand over hand; the bucket hangs from his belt */
-/* climbing: hand over hand in time with the 1.1s pulls (reach, pull, settle), knees lifting */
-.washer.climb .ww-arm-front { transform-box: view-box; transform-origin: 0 -8.6px; animation: ww-reach 1.1s ease-in-out infinite; }
-.washer.climb .ww-arm-back { transform-box: view-box; transform-origin: 0 -8.6px; animation: ww-reach 1.1s ease-in-out infinite; animation-delay: -.55s; }
-.washer.climb .leg-a { animation: ww-knee 1.1s ease-in-out infinite; }
-.washer.climb .leg-b { animation: ww-knee 1.1s ease-in-out infinite; animation-delay: -.55s; }
-@keyframes ww-reach { 0%, 100% { transform: rotate(-150deg); } 55% { transform: rotate(-70deg); } }
-@keyframes ww-knee { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-28deg); } }
+/* on the ledge or on the ladder */
+.washer.climb .ww-pose-ledge, .washer:not(.climb) .ww-pose-ladder { display: none; }
+.ww-belt-pail { fill: #94a3b8; }
+/* walking: a real gait at 11px/s. Each leg plants (heel strike), carries his weight as it passes
+   under him, pushes off behind, then bends at the knee and swings through; the other leg runs half
+   a cycle behind. Arms swing lightly against the legs, and he bobs a little on each step. */
+.washer.walk .ww-leg { animation: ww-gait .62s linear infinite; }
+.washer.walk .ww-leg.l2 { animation-delay: -.31s; }
+@keyframes ww-gait {
+  0%   { d: path("M0 -4.6L.8 -2.4L1.5 0"); }
+  25%  { d: path("M0 -4.6L.3 -2.3L0 0"); }
+  50%  { d: path("M0 -4.6L-.5 -2.3L-1.5 0"); }
+  62%  { d: path("M0 -4.6L-.4 -2.5L-1.6 -.8"); }
+  80%  { d: path("M0 -4.6L.9 -2.9L.1 -1.3"); }
+  100% { d: path("M0 -4.6L.8 -2.4L1.5 0"); }
+}
+.washer.walk .ww-arm-back, .washer.walk .ww-arm-front { transform-box: view-box; transform-origin: 0 -8.6px; }
+.washer.walk .ww-arm-back { animation: ww-swing .62s ease-in-out infinite alternate; }
+.washer.walk .ww-arm-front { animation: ww-swing .62s ease-in-out infinite alternate-reverse; }
+@keyframes ww-swing { from { rotate: -7deg; } to { rotate: 7deg; } }
+/* walking or pausing he carries his arm down, the rag tucked away until he starts cleaning */
+.washer:is(.walk, .idle) .ww-arm-front .ww-limb { d: path("M0 -8.6L1.2 -6.4L1.4 -4.6"); }
+.washer:is(.walk, .idle) .ww-rag { display: none; }
+.washer.walk .ww-body { animation: ww-bob .31s ease-in-out infinite alternate; }
+@keyframes ww-bob { from { translate: 0 0; } to { translate: 0 -.3px; } }
+/* on the ladder, seen from behind: hands reach for the next rung one after the other, knees lift in turn */
+.washer.climb .ww-ca, .washer.climb .ww-cl { transform-box: view-box; transform-origin: 0 0; }
+.washer.climb .ww-ca.a1 { animation: ww-hand .8s ease-in-out infinite; }
+.washer.climb .ww-ca.a2 { animation: ww-hand .8s ease-in-out infinite; animation-delay: -.4s; scale: -1 1; }
+@keyframes ww-hand { 0%, 100% { d: path("M0 -8.8L-1.8 -10.4L-2 -12.6"); } 50% { d: path("M0 -8.8L-1.6 -9.4L-2 -10.6"); } }
+.washer.climb .ww-cl.c1 { animation: ww-foot .8s ease-in-out infinite; animation-delay: -.4s; }
+.washer.climb .ww-cl.c2 { animation: ww-foot .8s ease-in-out infinite; scale: -1 1; }
+@keyframes ww-foot { 0%, 100% { d: path("M0 -4.6L-1 -2.6L-1.2 -.2"); } 50% { d: path("M0 -4.6L-1.4 -3.6L-1.2 -1.8"); } }
+.ww-rails { fill: none; stroke: #a8a29e; stroke-width: 1; stroke-linecap: round; }
+.ww-rungs { fill: none; stroke: #a8a29e; stroke-width: .8; }
 /* cleaning: bucket set down, the rag going round in circles on the glass */
 .washer.clean .ww-arm-front { animation: ww-wipe 1.1s linear infinite; }
 @keyframes ww-wipe { 0% { translate: 0 0; } 25% { translate: 1.6px -1.2px; } 50% { translate: 0 -2.4px; } 75% { translate: -1.6px -1.2px; } 100% { translate: 0 0; } }
