@@ -1663,40 +1663,48 @@
       <circle class="tr-head-lamp" cx="2.2" cy="-3.4" r=".8"/><circle class="tr-tail-lamp" cx="${L - 2.2}" cy="-3.4" r=".8"/>
       ${Array.from({ length: cars }, (_, i) => [i * cl + 8, (i + 1) * cl - 8]).flat().map((x) => `<rect class="tr-bogie" x="${(x - 4).toFixed(1)}" y="-2.2" width="8" height="1.4" rx=".5"/><circle class="tr-wheel" cx="${(x - 2.2).toFixed(1)}" cy="-.9" r=".9"/><circle class="tr-wheel" cx="${(x + 2.2).toFixed(1)}" cy="-.9" r=".9"/>`).join("")}`;
   }
-  let trainKey = "";
+  // The scene (rail, platform, sign, signal, portal) depends only on the page's geometry and is never
+  // redrawn between trains; only the train itself is swapped for each run, while it's out of sight.
+  // The platform, sign, signal and the spots where passengers wait are all fixed, sized for the
+  // longest train, so nothing moves when a different train comes along.
+  let trainKey = "", trainRunKey = "";
   function drawTrain() {
     const layer = $("train");
     const mk = $("market"), wk = $("week-card");
     const fixed = FIT_QUERY.matches;
     const m = mk && mk.getBoundingClientRect(), w = wk && wk.getBoundingClientRect();
     if (!fixed || !m || !m.height || !mk.firstElementChild || !w || !w.width || w.right > m.left || Math.abs(w.bottom - m.bottom) > 30) {
-      if (trainKey) { layer.innerHTML = ""; layer.setAttribute("width", 0); layer.setAttribute("height", 0); trainKey = ""; }
+      if (trainKey) { layer.innerHTML = ""; layer.setAttribute("width", 0); layer.setAttribute("height", 0); trainKey = trainRunKey = ""; }
       return;
     }
     layer.style.position = "fixed";
-    const W = innerWidth, H = innerHeight, floor = m.top + mk.clientHeight - 1;
-    const run = Math.floor(Date.now() / 1000 / TRAIN.period), v = trainRun(run);
-    const x0 = w.right, x1 = m.right, L = TRAIN.car * v.cars;
-    // the stop: the middle car's door at the middle of the market
-    const stopX = (m.left + m.right) / 2 - L / 2;
-    const key = `${W}x${H}|${x0.toFixed(0)}|${x1.toFixed(0)}|${floor.toFixed(1)}|${run}`;
+    const W = innerWidth, H = innerHeight, floor = m.top + mk.clientHeight - 1, f = (n) => n.toFixed(1);
+    const x0 = w.right, x1 = m.right, mid = (m.left + m.right) / 2, half = TRAIN.car * 2;   // the longest train is 4 cars
+    const key = `${W}x${H}|${x0.toFixed(0)}|${x1.toFixed(0)}|${floor.toFixed(1)}`;
     if (key !== trainKey) {
-      trainKey = key;
+      trainKey = key; trainRunKey = "";
       layer.setAttribute("width", W); layer.setAttribute("height", H); layer.setAttribute("viewBox", `0 0 ${W} ${H}`);
-      const f = (n) => n.toFixed(1), pt = floor - 21;
+      const pt = floor - 21;
       layer.innerHTML = `<defs><clipPath id="tr-clip"><rect x="${f(x0)}" y="${f(floor - 40)}" width="${f(x1 - x0)}" height="44"/></clipPath></defs>
         <path class="tr-rail" d="M${f(x0)},${f(floor)}H${f(x1)}"/><path class="tr-ties" d="M${f(x0 + 2)},${f(floor + 1.4)}H${f(x1)}"/>
-        <path class="tr-platform" d="M${f(stopX - 4)},${f(floor - .6)}H${f(stopX + L + 4)}"/>
-        <g transform="translate(${f(stopX - 9)},${f(floor)})"><path class="tr-post" d="M0 0V-21"/><rect class="tr-sign" x="-7" y="-25.5" width="14" height="5" rx=".8"/><text class="tr-sign-text" x="0" y="-21.9" text-anchor="middle">STATION</text></g>
-        <g class="tr-signal" transform="translate(${f(stopX + L + 9)},${f(floor)})"><title>The platform signal: red while a train is due or in, green once it has left</title><path class="tr-sig-pole" d="M0 0V-20"/><rect class="tr-sig-box" x="-4" y="-38" width="8" height="19" rx="2"/>
+        <path class="tr-platform" d="M${f(mid - half - 4)},${f(floor - .6)}H${f(mid + half + 4)}"/>
+        <g transform="translate(${f(mid - half - 9)},${f(floor)})"><path class="tr-post" d="M0 0V-21"/><rect class="tr-sign" x="-7" y="-25.5" width="14" height="5" rx=".8"/><text class="tr-sign-text" x="0" y="-21.9" text-anchor="middle">STATION</text></g>
+        <g class="tr-signal" transform="translate(${f(mid + half + 9)},${f(floor)})"><title>The platform signal: red while a train is due or in, green once it has left</title><path class="tr-sig-pole" d="M0 0V-20"/><rect class="tr-sig-box" x="-4" y="-38" width="8" height="19" rx="2"/>
           ${[["red", -33.4], ["amber", -28.5], ["green", -23.6]].map(([c, y]) => `<path class="tr-sig-visor" d="M-3,${y - 1.6}A3 3 0 0 1 3,${y - 1.6}"/><circle class="tr-sig ${c}" cy="${y}" r="2.1"/>`).join("")}</g>
         <path class="tr-portal-in" d="M${f(x0)},${f(floor)}V${f(pt)}H${f(x0 + 7)}V${f(floor)}Z"/>
-        <g class="tr-waiters"></g>
-        <g clip-path="url(#tr-clip)"><g class="tr-train" style="--tr-body:${v.livery.body};--tr-skirt:${v.livery.skirt};--tr-stripe:${v.livery.stripe};--tr-edge:${v.livery.edge}"><title>A ${v.livery.name} bullet train, calling at the market</title>${trainBody(v.cars)}</g></g>
+        <g clip-path="url(#tr-clip)"><g class="tr-waiters">${[0, 1].map(() => `<g class="tr-waiter"></g>`).join("")}</g><g class="tr-train"></g></g>
         <path class="tr-portal" d="M${f(x0 - 1)},${f(pt)}H${f(x0 + 8.5)}V${f(pt + 2.6)}H${f(x0 + 7)}V${f(floor)}M${f(x0 - 1)},${f(pt - 1.6)}H${f(x0 + 8.5)}"/>`;
     }
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const T = TRAIN, t = reduce ? T.arrive + 1 : (Date.now() / 1000) % T.period;
+    const T = TRAIN, now = Date.now() / 1000, t = reduce ? T.arrive + 1 : now % T.period;
+    const run = Math.floor(now / T.period), v = trainRun(run), L = T.car * v.cars, stopX = mid - L / 2;
+    const tr = layer.querySelector(".tr-train");
+    // this run's train, put together while the track is empty (before it appears)
+    if (trainRunKey !== `${run}`) {
+      trainRunKey = `${run}`;
+      tr.setAttribute("style", `--tr-body:${v.livery.body};--tr-skirt:${v.livery.skirt};--tr-stripe:${v.livery.stripe};--tr-edge:${v.livery.edge}`);
+      tr.innerHTML = `<title>A ${v.livery.name} bullet train, calling at the market</title>${trainBody(v.cars)}`;
+    }
     // going left it comes in from the market's tunnel and leaves by the card's; going right, the reverse
     const startX = v.dir < 0 ? x1 + 4 : x0 - L - 6, endX = v.dir < 0 ? x0 - L - 6 : x1 + 4, tDep = T.arrive + T.dwell;
     let x, open = false;
@@ -1706,29 +1714,36 @@
     else if (t < tDep) { x = stopX; open = t > T.arrive + 1 && t < tDep - 1.2; }
     else if (t < tDep + T.depart) { const p = (t - tDep) / T.depart; x = stopX + (endX - stopX) * p ** 2.2; }
     else x = null;
-    const tr = layer.querySelector(".tr-train");
     tr.style.display = x == null ? "none" : "";
     // the nose with the headlight leads: mirrored when it's heading right
-    if (x != null) tr.setAttribute("transform", v.dir < 0 ? `translate(${x.toFixed(1)},${floor.toFixed(1)})` : `translate(${(x + L).toFixed(1)},${floor.toFixed(1)}) scale(-1,1)`);
+    if (x != null) tr.setAttribute("transform", v.dir < 0 ? `translate(${f(x)},${f(floor)})` : `translate(${f(x + L)},${f(floor)}) scale(-1,1)`);
     tr.classList.toggle("open", open);
     // the platform signal turns red 5 seconds before the train pulls in, and back to green as it leaves
     layer.querySelector(".tr-signal").classList.toggle("stop", t >= T.period - (5 - T.arrive) || t < tDep);
-    // two passengers: they walk in from the right to wait on the platform, then board through the
-    // first and second cars' doors (behind the train, so it hides them as they step in)
-    const doorsX = [stopX + TRAIN.car / 2, stopX + L - TRAIN.car / 2];
-    const wait = [doorsX[0] + 10, doorsX[1] - 12];
-    const ws = layer.querySelector(".tr-waiters");
-    if (!ws.firstChild) ws.innerHTML = [["#f472b6", 1], ["#34d399", 0]].map(([c, b]) => `<g class="tr-waiter">${trainFigure(c, b)}</g>`).join("");
-    [...ws.children].forEach((g, i) => {
-      const walkIn = T.waitersFrom + i * 3, walkDur = 9;
+    // two passengers. They come out of the market's right-hand tunnel well after a train has gone and
+    // wait at fixed spots on the platform; when the next train is in, each walks to its nearest door
+    // and steps aboard (behind the train, so it hides them). Who they are is set by the train they
+    // will catch, and changes only while they're out of sight.
+    const waitAt = [mid - 30, mid + 34];
+    const doors = Array.from({ length: v.cars }, (_, k) => stopX + T.car * (k + .5));
+    [...layer.querySelectorAll(".tr-waiter")].forEach((g, i) => {
+      const catching = t >= T.waitersFrom ? run + 1 : run;
+      const who = `${catching}`;
+      if (g.dataset.who !== who) {
+        const h = (k) => { const q = Math.sin((catching + 1) * 39.17 + k * 7.31 + i * 3.7) * 43758.5453; return q - Math.floor(q); };
+        g.dataset.who = who;
+        g.innerHTML = trainFigure(["#f472b6", "#34d399", "#60a5fa", "#fbbf24", "#c084fc", "#f87171"][Math.floor(h(1) * 6)], h(2) < .45);
+      }
+      const door = doors.reduce((a, d) => Math.abs(d - waitAt[i]) < Math.abs(a - waitAt[i]) ? d : a, doors[0]);
+      const walkIn = T.waitersFrom + i * 3, walkDur = 10, board = T.arrive + 1.4 + i * .8;
       let px = null, walking = false, dir = -1;
-      if (reduce) px = wait[i];
-      else if (t >= walkIn && t < walkIn + walkDur) { px = (m.right - 22) + (wait[i] - (m.right - 22)) * (t - walkIn) / walkDur; walking = true; }
-      else if (t >= walkIn + walkDur || t < T.arrive + 1.4 + i * .8) px = wait[i];
-      else if (t < T.arrive + 3.4 + i * .8) { const p = (t - T.arrive - 1.4 - i * .8) / 2; px = wait[i] + (doorsX[i] - wait[i]) * p; walking = true; }
+      if (reduce) px = waitAt[i];
+      else if (t >= walkIn && t < walkIn + walkDur) { px = (x1 + 8) + (waitAt[i] - (x1 + 8)) * (t - walkIn) / walkDur; walking = true; }
+      else if (t >= walkIn + walkDur || t < board) px = waitAt[i];
+      else if (t < board + 2) { px = waitAt[i] + (door - waitAt[i]) * (t - board) / 2; walking = true; dir = door < waitAt[i] ? -1 : 1; }
       g.style.display = px == null ? "none" : "";
       if (px != null) {
-        g.setAttribute("transform", `translate(${px.toFixed(1)},${floor.toFixed(1)}) scale(1.2)`);
+        g.setAttribute("transform", `translate(${f(px)},${f(floor)}) scale(1.2)`);
         g.firstElementChild.setAttribute("transform", `scale(${dir},1)`);
         g.classList.toggle("walking", walking);
       }
@@ -2055,7 +2070,7 @@
       [floor, 1.2, -1, 10.5, "#a3e635", .85, "near"],
     ].map(([y, k, dir, speed, shirt, off, depth]) => {
       const a = -12, b = W + 12, dur = (b - a) / speed;
-      return [depth, `<g class="mk-walker ${depth}" style="--from:${dir > 0 ? a : b}px;--to:${dir > 0 ? b : a}px;animation-duration:${dur.toFixed(1)}s;animation-delay:${(-off * dur).toFixed(1)}s">
+      return [depth, `<g class="mk-walker ${depth}" style="--from:${dir > 0 ? a : b}px;--to:${dir > 0 ? b : a}px;animation-duration:${dur.toFixed(1)}s;animation-delay:${(-((Date.now() / 1000 + off * dur) % dur)).toFixed(2)}s">
           <g transform="translate(0,${f(y)}) scale(${dir * k},${k})">${gait(shirt)}</g></g>`];
     });
     const farWalkers = walkers.filter(([d]) => d === "far").map(([, g]) => g).join("");
