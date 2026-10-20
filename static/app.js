@@ -304,8 +304,8 @@
   }
 
   // The Last workout card as a billboard: a riveted steel frame just outside the card with corner
-  // brackets, a grated catwalk with a little railing in the gap below, and three floodlights on
-  // arms whose soft cones wash up the poster (stronger at night). Drawn on its own layer, so the
+  // brackets, a ledge underneath on brackets with a little railing, and three floodlights on the
+  // ledge whose soft cones wash up the poster (stronger at night). Drawn on its own layer, so the
   // card and its content are untouched.
   let billboardKey = "";
   function drawBillboard(onlyIfMoved = false) {
@@ -328,19 +328,19 @@
       ${rivets.map(([x, y]) => `<circle class="bb-rivet" cx="${f(x)}" cy="${f(y)}" r="1.1"/>`).join("")}
       ${[[L - o, T - o, 1, 1], [R + o, T - o, -1, 1], [L - o, B + o, 1, -1], [R + o, B + o, -1, -1]].map(([x, y, dx, dy]) =>
         `<path class="bb-bracket" d="M${f(x)},${f(y + dy * 12)}V${f(y)}H${f(x + dx * 12)}"/><circle class="bb-rivet big" cx="${f(x + dx * 4)}" cy="${f(y + dy * 4)}" r="1.4"/>`).join("")}`;
-    // the catwalk and its railing, in the gap below the card
-    // fit the catwalk into whatever gap there is above the next card
+    // a ledge under the billboard: a slab overhanging both sides on brackets, with a railing on it
     const next = $("streak-card")?.getBoundingClientRect(), gap = next ? next.top + sy - B : 16;
-    const cy = B + Math.max(5.5, Math.min(9.5, gap - 3.6)), cl = L + 10, cr = R - 10;
+    const ly0 = B + 3, ly1 = B + 4.6, ly2 = B + Math.min(8, gap - 4), cl = L - 8, cr = R + 8;
     const posts = [];
-    for (let x = cl; x <= cr + .1; x += (cr - cl) / Math.max(1, Math.round((cr - cl) / 34))) posts.push(x);
-    const railY = Math.min(B + 4, cy - 3);
-    const catwalk = `<path class="bb-rail" d="M${f(cl)},${f(railY)}H${f(cr)}${posts.map((x) => `M${f(x)},${f(railY)}V${f(cy)}`).join("")}"/>
-      <rect class="bb-walk" x="${f(cl - 3)}" y="${f(cy)}" width="${f(cr - cl + 6)}" height="2.6" rx=".6"/>
-      <path class="bb-grate" d="M${f(cl - 1)},${f(cy + 1.3)}H${f(cr + 1)}"/>`;
+    for (let x = L + 8; x <= R - 8 + .1; x += (R - L - 16) / Math.max(1, Math.round((R - L - 16) / 34))) posts.push(x);
+    const corbels = [.12, .5, .88].map((t) => { const x = L + (R - L) * t; return `<path class="bb-corbel" d="M${f(x - 4)},${f(ly2)}H${f(x + 4)}L${f(x)},${f(Math.min(ly2 + 6, B + gap - 1.5))}Z"/>`; }).join("");
+    const cy = ly0;
+    const catwalk = `${corbels}<rect class="bb-ledge-front" x="${f(cl)}" y="${f(ly1)}" width="${f(cr - cl)}" height="${f(ly2 - ly1)}" rx=".6"/>
+      <rect class="bb-ledge-top" x="${f(cl - 1)}" y="${f(ly0)}" width="${f(cr - cl + 2)}" height="${f(ly1 - ly0)}" rx=".5"/>
+      <path class="bb-rail" d="M${f(L + 8)},${f(B - 5)}H${f(R - 8)}${posts.map((x) => `M${f(x)},${f(B - 5)}V${f(ly0)}`).join("")}"/>`;
     // three floodlights below the edge, washing light up the face
     const lamps = [.2, .5, .8].map((t) => {
-      const x = L + (R - L) * t, h = (B - T) * .9, spread = (R - L) * .24, ly = B + 5;
+      const x = L + (R - L) * t, h = (B - T) * .9, spread = (R - L) * .24, ly = B - 2.4;
       return `<path class="bb-cone" d="M${f(x - 3)},${f(ly)}L${f(x - spread)},${f(B - h)}H${f(x + spread)}L${f(x + 3)},${f(ly)}Z"/>
         <path class="bb-arm" d="M${f(x + 6)},${f(cy)}Q${f(x + 6)},${f(ly + 2)} ${f(x + 2)},${f(ly + 1.8)}"/>
         <g transform="translate(${f(x)},${f(ly + 1.6)}) rotate(-8)"><rect class="bb-lamp" x="-4" y="-1.6" width="8" height="3.4" rx="1.2"/><rect class="bb-lens" x="-3" y="-2.1" width="6" height="1.1" rx=".5"/></g>`;

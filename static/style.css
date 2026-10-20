@@ -797,7 +797,7 @@ code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; font-
 .week-head .nudge { margin-top: 0; }
 @media (min-width: 1100px) and (min-height: 560px) {
   .hero .week-head .nudge { font-size: clamp(11px, 5.4cqh, 14px); padding: clamp(3px, 1.6cqh, 6px) clamp(8px, 3.4cqh, 12px); }
-  .hero .last-card { flex: 1 1 0; }
+  .hero .last-card { flex: 1 1 0; margin: 8px 0 7px; }   /* a little air around the billboard and its ledge */
   .hero .week-card { flex: .8 1 0; }
   .hero .streak-card { flex: 1.25 1 0; }
 }
@@ -1250,8 +1250,9 @@ svg.night :is(.th-crown-sun, .th-crown-sun-glow, .th-crown-rays) { display: none
 .bb-rivet { fill: #9ca3af; } .bb-rivet.big { fill: #d1d5db; }
 .bb-bracket { fill: none; stroke: #6b7280; stroke-width: 3.4; stroke-linecap: square; }
 .bb-rail { fill: none; stroke: #6b7280; stroke-width: 1; stroke-linecap: round; }
-.bb-walk { fill: #374151; stroke: #1f2937; stroke-width: .6; }
-.bb-grate { stroke: #6b7280; stroke-width: .8; stroke-dasharray: 1.4 1.4; }
+.bb-ledge-top { fill: #6b7280; }
+.bb-ledge-front { fill: #374151; stroke: #1f2937; stroke-width: .6; }
+.bb-corbel { fill: #374151; stroke: #1f2937; stroke-width: .6; }
 .bb-arm { fill: none; stroke: #6b7280; stroke-width: 1.2; stroke-linecap: round; }
 .bb-lamp { fill: #374151; stroke: #1f2937; stroke-width: .6; }
 .bb-lens { fill: #fef3c7; filter: drop-shadow(0 0 2px #fde68a); }
