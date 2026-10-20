@@ -1625,27 +1625,43 @@
   // underground market's right-hand tunnel, and stops at the market's platform. Its doors open, the
   // people waiting there step aboard, and it pulls away to the left, past the calendar and into a
   // tunnel in the side of the This week card. A while later the next passengers wander out to wait.
+  // Each run is a different train: a livery, two to four cars, and either direction (going right,
+  // it comes out of the This week card's tunnel and leaves through the market's).
   // Seen side-on and flat, like the market. Only on the one-screen layout, with the market showing.
-  const TRAIN = { period: 90, arrive: 3, dwell: 7, depart: 2.6, waitersFrom: 44, len: 150, h: 13 };
+  const TRAIN = { period: 90, arrive: 3, dwell: 7, depart: 2.6, waitersFrom: 44, car: 50, h: 13 };
+  const LIVERIES = [
+    { name: "white and blue", body: "#f8fafc", skirt: "#f8fafc", stripe: "#1d4ed8", edge: "#94a3b8" },
+    { name: "green and white, with a pink stripe", body: "#0f766e", skirt: "#f1f5f9", stripe: "#f472b6", edge: "#115e59" },
+    { name: "red and white", body: "#dc2626", skirt: "#f1f5f9", stripe: "#94a3b8", edge: "#991b1b" },
+    { name: "yellow, with a blue stripe", body: "#facc15", skirt: "#facc15", stripe: "#1e40af", edge: "#a16207" },
+    { name: "silver, with a blue stripe", body: "#cbd5e1", skirt: "#94a3b8", stripe: "#1e3a8a", edge: "#64748b" },
+    { name: "purple and gold", body: "#6d28d9", skirt: "#ede9fe", stripe: "#f59e0b", edge: "#4c1d95" },
+  ];
+  // which train is running this time round: picked from the run's number, so it's the same on every redraw
+  const trainRun = (run) => {
+    const h = (k) => { const v = Math.sin((run + 1) * 78.233 + k * 12.9898) * 43758.5453; return v - Math.floor(v); };
+    return { livery: LIVERIES[Math.floor(h(1) * LIVERIES.length)], cars: 2 + Math.floor(h(2) * 3), dir: h(3) < .5 ? -1 : 1 };
+  };
   const trainFigure = (shirt, bag) => `<g class="tr-flip"><path class="tr-limb tr-leg l1" d="M0 -4.6L.2 -2.3L-.1 0"/><path class="tr-limb tr-leg l2" d="M0 -4.6L.2 -2.3L-.1 0"/>
       <path class="tr-torso" d="M0 -4.6V-9.4" style="stroke:${shirt}"/><path class="tr-limb" d="M0 -8.6L-1 -6.4L-.8 -4.4"/>
       ${bag ? `<path class="tr-limb" d="M0 -8.6L1.4 -6.6L2 -4.8"/><rect class="tr-case" x="1.6" y="-4.8" width="3" height="4.2" rx=".6"/>` : ""}
       <circle class="tr-head" cx="0" cy="-11.4" r="1.9"/></g>`;
-  function trainBody() {
-    const L = TRAIN.len, H = TRAIN.h, cars = 3, cl = L / cars;
+  function trainBody(cars) {
+    const cl = TRAIN.car, L = cl * cars, H = TRAIN.h;
     // a long, low duck-bill nose at each end, white with a blue stripe; the left end leads
     const body = `M3,-2 C-1,-2 -.5,-4.6 6,-7.4 C12,-10.6 17,${-H} 26,${-H} H${L - 26} C${L - 17},${-H} ${L - 12},-10.6 ${L - 6},-7.4 C${L + .5},-4.6 ${L + 1},-2 ${L - 3},-2 Z`;
     const doors = Array.from({ length: cars }, (_, i) => i * cl + cl * .5);
     const wins = [];
     for (let x = 24; x < L - 24; x += 4.2) if (doors.every((d) => Math.abs(x + 1 - d) > 3.6)) wins.push(`M${x.toFixed(1)},-9.6h2.4`);
-    return `<path class="tr-body" d="${body}"/>
+    return `<clipPath id="tr-shape"><path d="${body}"/></clipPath><path class="tr-body" d="${body}"/>
+      <rect class="tr-skirt" x="-2" y="-6.4" width="${L + 4}" height="4.4" clip-path="url(#tr-shape)"/>
       <path class="tr-stripe" d="M5,-4.4 C9,-5.6 14,-5.6 20,-5.4 H${L - 20} C${L - 14},-5.6 ${L - 9},-5.6 ${L - 5},-4.4"/>
       <path class="tr-cab" d="M9.5,-8.6 C12,-10.6 15,-11.4 19,-11.4M${L - 9.5},-8.6 C${L - 12},-10.6 ${L - 15},-11.4 ${L - 19},-11.4"/>
       <path class="tr-wins" d="${wins.join("")}"/>
       <path class="tr-joins" d="${Array.from({ length: cars - 1 }, (_, i) => `M${((i + 1) * cl).toFixed(1)},${-H + .6}V-2.4`).join("")}"/>
       ${doors.map((d) => `<rect class="tr-door" x="${(d - 1.7).toFixed(1)}" y="-11" width="3.4" height="8.4" rx=".5"/>`).join("")}
       <circle class="tr-head-lamp" cx="2.2" cy="-3.4" r=".8"/><circle class="tr-tail-lamp" cx="${L - 2.2}" cy="-3.4" r=".8"/>
-      ${[8, cl - 8, cl + 8, 2 * cl - 8, 2 * cl + 8, L - 8].map((x) => `<rect class="tr-bogie" x="${(x - 4).toFixed(1)}" y="-2.2" width="8" height="1.4" rx=".5"/><circle class="tr-wheel" cx="${(x - 2.2).toFixed(1)}" cy="-.9" r=".9"/><circle class="tr-wheel" cx="${(x + 2.2).toFixed(1)}" cy="-.9" r=".9"/>`).join("")}`;
+      ${Array.from({ length: cars }, (_, i) => [i * cl + 8, (i + 1) * cl - 8]).flat().map((x) => `<rect class="tr-bogie" x="${(x - 4).toFixed(1)}" y="-2.2" width="8" height="1.4" rx=".5"/><circle class="tr-wheel" cx="${(x - 2.2).toFixed(1)}" cy="-.9" r=".9"/><circle class="tr-wheel" cx="${(x + 2.2).toFixed(1)}" cy="-.9" r=".9"/>`).join("")}`;
   }
   let trainKey = "";
   function drawTrain() {
@@ -1659,10 +1675,11 @@
     }
     layer.style.position = "fixed";
     const W = innerWidth, H = innerHeight, floor = m.top + mk.clientHeight - 1;
-    const x0 = w.right, x1 = m.right, L = TRAIN.len;
+    const run = Math.floor(Date.now() / 1000 / TRAIN.period), v = trainRun(run);
+    const x0 = w.right, x1 = m.right, L = TRAIN.car * v.cars;
     // the stop: the middle car's door at the middle of the market
     const stopX = (m.left + m.right) / 2 - L / 2;
-    const key = `${W}x${H}|${x0.toFixed(0)}|${x1.toFixed(0)}|${floor.toFixed(1)}`;
+    const key = `${W}x${H}|${x0.toFixed(0)}|${x1.toFixed(0)}|${floor.toFixed(1)}|${run}`;
     if (key !== trainKey) {
       trainKey = key;
       layer.setAttribute("width", W); layer.setAttribute("height", H); layer.setAttribute("viewBox", `0 0 ${W} ${H}`);
@@ -1673,12 +1690,13 @@
         <g transform="translate(${f(stopX - 9)},${f(floor)})"><path class="tr-post" d="M0 0V-21"/><rect class="tr-sign" x="-7" y="-25.5" width="14" height="5" rx=".8"/><text class="tr-sign-text" x="0" y="-21.9" text-anchor="middle">STATION</text></g>
         <path class="tr-portal-in" d="M${f(x0)},${f(floor)}V${f(pt)}H${f(x0 + 7)}V${f(floor)}Z"/>
         <g class="tr-waiters"></g>
-        <g clip-path="url(#tr-clip)"><g class="tr-train"><title>The bullet train, calling at the market</title>${trainBody()}</g></g>
+        <g clip-path="url(#tr-clip)"><g class="tr-train" style="--tr-body:${v.livery.body};--tr-skirt:${v.livery.skirt};--tr-stripe:${v.livery.stripe};--tr-edge:${v.livery.edge}"><title>A ${v.livery.name} bullet train, calling at the market</title>${trainBody(v.cars)}</g></g>
         <path class="tr-portal" d="M${f(x0 - 1)},${f(pt)}H${f(x0 + 8.5)}V${f(pt + 2.6)}H${f(x0 + 7)}V${f(floor)}M${f(x0 - 1)},${f(pt - 1.6)}H${f(x0 + 8.5)}"/>`;
     }
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const T = TRAIN, t = reduce ? T.arrive + 1 : (Date.now() / 1000) % T.period;
-    const startX = x1 + 4, endX = x0 - L - 6, tDep = T.arrive + T.dwell;
+    // going left it comes in from the market's tunnel and leaves by the card's; going right, the reverse
+    const startX = v.dir < 0 ? x1 + 4 : x0 - L - 6, endX = v.dir < 0 ? x0 - L - 6 : x1 + 4, tDep = T.arrive + T.dwell;
     let x, open = false;
     // it runs in fast and brakes hard into the platform, waits, then pulls away slowly and keeps
     // accelerating all the way into the tunnel
@@ -1688,12 +1706,13 @@
     else x = null;
     const tr = layer.querySelector(".tr-train");
     tr.style.display = x == null ? "none" : "";
-    if (x != null) tr.setAttribute("transform", `translate(${x.toFixed(1)},${floor.toFixed(1)})`);
+    // the nose with the headlight leads: mirrored when it's heading right
+    if (x != null) tr.setAttribute("transform", v.dir < 0 ? `translate(${x.toFixed(1)},${floor.toFixed(1)})` : `translate(${(x + L).toFixed(1)},${floor.toFixed(1)}) scale(-1,1)`);
     tr.classList.toggle("open", open);
     // two passengers: they walk in from the right to wait on the platform, then board through the
     // first and second cars' doors (behind the train, so it hides them as they step in)
-    const doorsX = [stopX + L / 6, stopX + L / 2];
-    const wait = [stopX + L / 6 + 10, stopX + L / 2 + 14];
+    const doorsX = [stopX + TRAIN.car / 2, stopX + L - TRAIN.car / 2];
+    const wait = [doorsX[0] + 10, doorsX[1] - 12];
     const ws = layer.querySelector(".tr-waiters");
     if (!ws.firstChild) ws.innerHTML = [["#f472b6", 1], ["#34d399", 0]].map(([c, b]) => `<g class="tr-waiter">${trainFigure(c, b)}</g>`).join("");
     [...ws.children].forEach((g, i) => {
