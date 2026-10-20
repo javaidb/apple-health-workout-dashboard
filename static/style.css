@@ -1121,10 +1121,13 @@ svg.night :is(.th-crown-sun, .th-crown-sun-glow, .th-crown-rays) { display: none
 .elec-man .e-face { fill: var(--text); }
 .elec-man .e-hat { fill: #facc15; } .elec-man .e-brim { stroke: #eab308; stroke-width: .8; stroke-linecap: round; }
 .elec-man .e-bulb { fill: #fde68a; }
-.elec-man .e-spark { fill: none; stroke: #fde047; stroke-width: .6; stroke-linecap: round; opacity: 0; animation: e-spark 4.2s linear infinite; }
-@keyframes e-spark { 0%, 84%, 100% { opacity: 0; } 86% { opacity: 1; } 88% { opacity: .2; } 90% { opacity: 1; } 93% { opacity: 0; } }
-.elec-arm { transform-box: fill-box; transform-origin: 0% 100%; animation: e-work 1.4s ease-in-out infinite alternate; }
-@keyframes e-work { to { transform: rotate(-7deg); } }
-.elec-ride { animation: e-ride 38s ease-in-out infinite alternate; }
-@keyframes e-ride { from { translate: 0 0; } to { translate: var(--travel) 0; } }
-@media (prefers-reduced-motion: reduce) { .elec-ride, .elec-arm, .elec-man .e-spark { animation: none; } }
+/* every now and then a spark goes off on the bulb he's fixing */
+.elec-man .e-spark { fill: none; stroke: #fde047; stroke-width: .6; stroke-linecap: round; opacity: 0; animation: e-spark 9s linear infinite; }
+.elec-man .e-flash { fill: #fef08a; opacity: 0; filter: blur(1px); animation: e-spark 9s linear infinite; }
+@keyframes e-spark { 0%, 90%, 100% { opacity: 0; } 91% { opacity: 1; } 92% { opacity: .15; } 93% { opacity: .95; } 95.5% { opacity: 0; } }
+.elec-arm { transform-box: fill-box; transform-origin: 0% 100%; animation: e-work 2.6s ease-in-out infinite alternate; }
+@keyframes e-work { to { transform: rotate(-4deg); } }
+/* stop and go: works at a spot for ~22 s, then eases a couple of bulbs along over ~8 s; 8 stops each way */
+.elec-ride { animation: e-ride 240s ease-in-out infinite alternate; }
+@keyframes e-ride { 0% { translate: 0 0; } 9.4% { translate: calc(var(--travel) * 0.000) 0; } 12.5% { translate: calc(var(--travel) * 0.125) 0; } 21.9% { translate: calc(var(--travel) * 0.125) 0; } 25.0% { translate: calc(var(--travel) * 0.250) 0; } 34.4% { translate: calc(var(--travel) * 0.250) 0; } 37.5% { translate: calc(var(--travel) * 0.375) 0; } 46.9% { translate: calc(var(--travel) * 0.375) 0; } 50.0% { translate: calc(var(--travel) * 0.500) 0; } 59.4% { translate: calc(var(--travel) * 0.500) 0; } 62.5% { translate: calc(var(--travel) * 0.625) 0; } 71.9% { translate: calc(var(--travel) * 0.625) 0; } 75.0% { translate: calc(var(--travel) * 0.750) 0; } 84.4% { translate: calc(var(--travel) * 0.750) 0; } 87.5% { translate: calc(var(--travel) * 0.875) 0; } 96.9% { translate: calc(var(--travel) * 0.875) 0; } 100.0% { translate: calc(var(--travel) * 1.000) 0; } }
+@media (prefers-reduced-motion: reduce) { .elec-ride, .elec-arm, .elec-man .e-spark, .elec-man .e-flash { animation: none; } }

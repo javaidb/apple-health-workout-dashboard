@@ -1057,7 +1057,8 @@
               <rect class="e-vest" x="-1.9" y="-11" width="3.8" height="5.6" rx="1"/>
               <path class="e-limb" d="M-.2 -10.4L-3 -7.4L-4.6 -6"/>
               <g class="elec-arm"><path class="e-limb" d="M.2 -10.4L2.6 -14.4L3.6 -18"/><path class="e-bulb" d="M3.6 -18.2c-1.4 -.8 -1.2 -3.4 0 -3.8c1.2 .4 1.4 3 0 3.8Z"/>
-                <path class="e-spark" d="M5.4 -21l1.6 -1.2M5.8 -19l2 .2M4.6 -22.6l.6 -1.8"/></g>
+                <circle class="e-flash" cx="4" cy="-20.2" r="2.6"/>
+                <path class="e-spark" d="M5.4 -21l2 -1.4M5.8 -19l2.4 .3M4.6 -22.6l.7 -2.2M2.4 -22.2l-1.2 -1.8M6 -20l2.6 -.6"/></g>
               <circle class="e-face" cx=".3" cy="-13.6" r="1.9"/>
               <path class="e-hat" d="M-2.3 -14.1A2.4 2.4 0 0 1 2.9 -14.1Z"/><path class="e-brim" d="M-2.6 -14H3.6"/></g>
             <rect class="elec-panel" x="0" y="19.5" width="${CW}" height="6.5" rx="1"/>
