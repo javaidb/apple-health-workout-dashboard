@@ -1768,6 +1768,7 @@
   //   street carts, café tables, a fruit tent, a vending machine standing in front of them
   //   people strolling both ways (the further ones a touch smaller and dimmer), a bench with a
   //          reader, a cat, a plant, a bin, a puddle, and string lights tacked to the card's edge
+  //   tunnels in the rock walls at either end, where people come from and go
   // On the last day of the month the calendar's rappeller sits outside the bar with a beer.
   let marketKey = "";
   function drawMarket(onlyIfMoved = false) {
@@ -1784,7 +1785,7 @@
     // A flat, side-on view on the page itself: the Daily activity card's bottom edge is the ceiling
     // (the lights hang from it), and everything stands on one ground line. Depth is only layering:
     // the shops at the back, things out in the street in front of them, people in front of those.
-    const floor = H - 1.5, shopH = Math.min(34, floor - 16);
+    const floor = H - 1.5, shopH = Math.max(30, floor - Math.max(6, ceil + 20)), TW = 20;
 
     // ---- shops: an organic back row. Buildings of different widths and heights, a lamp post in the
     // gaps between some, a closed shop with its shutter half down, hanging blade signs.
@@ -1795,24 +1796,35 @@
       { kind: "arcade", w: 54, drop: 0 }, { kind: "laundry", w: 46, drop: 5 }, { kind: "bakery", w: 50, drop: 8 },
     ];
     // keep as much of the row as fits, then stretch it to fill the street
-    const avail = W - 16;
+    const avail = W - 2 * TW - 8;
     let rowItems = [], used = 0;
     for (const it of ROW) { if (used + it.w > avail * 1.08) break; rowItems.push(it); used += it.w; }
     if (rowItems[rowItems.length - 1].kind === "alley") { used -= rowItems.pop().w; }
     const stretch = avail / used;
-    let cx = 14, barDoor = null, eatsSpan = null, shutterSpan = null, arcadeSpan = null, bakerySpan = null, ramenSpan = null;
+    let cx = TW + 4, barDoor = null, eatsSpan = null, shutterSpan = null, arcadeSpan = null, bakerySpan = null, ramenSpan = null;
     const backRow = rowItems.map((it) => {
       const w = it.w * stretch, x = cx; cx += w;
       if (it.kind === "alley") {
-        const lx = x + w / 2, ly = floor - shopH * .8;
+        const lx = x + w / 2, ly = floor - 24;
         return `<path class="mk-lamppost" d="M${f(lx)},${f(floor)}V${f(ly)}q0 -2 2 -2"/><circle class="mk-doorlamp" cx="${f(lx + 2.2)}" cy="${f(ly - 1)}" r="1.1"/>`;
       }
-      const shopBot = floor, top = floor - shopH + it.drop * .7, h = shopBot - top, wx = x + 3.5, ww = w * .52, winTop = top + h * .38, winH = h * .4;
-      const dx = x + w * .64, dw = Math.max(6, w * .22), doorTop = top + h * .36;
+      const shopBot = floor, top = floor - shopH + it.drop * .7, h = shopBot - top;
+      const gs = Math.min(h - 9, 27), gTop = floor - gs, sgH = 6.4;   // ground storey, sign height
+      const wx = x + 3.5, ww = w * .52, winTop = gTop + gs * .2, winH = gs * .52;
+      const dx = x + w * .64, dw = Math.max(6, w * .22), doorTop = gTop + gs * .22;
+      // flats over the shop, between its sign and the ground storey: some lit, some curtained
+      const upper = [];
+      for (let ry = top + sgH + 3.6, r = 0; ry + 4 <= gTop - 1.6; ry += 6.5, r++) {
+        for (let wx2 = x + 4 + (r % 2) * 3, k = 0; wx2 + 5 <= x + w - 3; wx2 += 9, k++) {
+          const seed = Math.round(x) * 7 + r * 13 + k * 5, lit = seed % 5 > 1, warm = seed % 3 > 0, flick = seed % 11 === 0;
+          upper.push(`<rect class="mk-flat${lit ? (warm ? " warm" : " cool") : ""}${flick ? " flick" : ""}" x="${f(wx2)}" y="${f(ry)}" width="5" height="4" rx=".5" style="animation-delay:${(-seed % 23)}s"/>`
+            + (lit && seed % 4 === 0 ? `<path class="mk-curtain" d="M${f(wx2)},${f(ry)}h5v1.4q-2.5 .9 -5 0Z"/>` : ""));
+        }
+      }
       const facade = (fill, extra = "") => `<path class="mk-facade" d="M${f(x + .6)},${f(shopBot)}V${f(top + 1.2)}H${f(x + w - .6)}V${f(shopBot)}Z" fill="${fill}"/>
-        <path class="mk-cornice" d="M${f(x)},${f(top + .8)}H${f(x + w)}"/>${extra}`;
-      const sign = (text, cls, at = .5, sw = w - 8) => `<rect class="mk-signboard" x="${f(x + w * at - sw / 2)}" y="${f(top + 2.2)}" width="${f(sw)}" height="${f(Math.max(5.6, h * .19))}" rx=".8"/>
-        <text class="mk-sign ${cls}" x="${f(x + w * at)}" y="${f(top + 2.2 + Math.max(5.6, h * .19) - 1.4)}" text-anchor="middle">${text}</text>`;
+        <path class="mk-cornice" d="M${f(x)},${f(top + .8)}H${f(x + w)}M${f(x)},${f(gTop - 1)}H${f(x + w)}"/>${upper.join("")}${extra}`;
+      const sign = (text, cls, at = .5, sw = w - 8) => `<rect class="mk-signboard" x="${f(x + w * at - sw / 2)}" y="${f(top + 2.2)}" width="${f(sw)}" height="${sgH}" rx=".8"/>
+        <text class="mk-sign ${cls}" x="${f(x + w * at)}" y="${f(top + 2.2 + sgH - 1.4)}" text-anchor="middle">${text}</text>`;
       const win = (glow, inside = "") => `<rect class="mk-window" x="${f(wx)}" y="${f(winTop)}" width="${f(ww)}" height="${f(winH)}" style="fill:${glow}"/>${inside}<rect class="mk-frame" x="${f(wx)}" y="${f(winTop)}" width="${f(ww)}" height="${f(winH)}"/>`;
       const door = (arched) => `<path class="mk-door" d="M${f(dx)},${f(shopBot)}V${f(doorTop + (arched ? dw / 2 : 0))}${arched ? `A${f(dw / 2)} ${f(dw / 2)} 0 0 1 ${f(dx + dw)},${f(doorTop + dw / 2)}` : `H${f(dx + dw)}`}V${f(shopBot)}Z"/>
         <circle class="mk-knob" cx="${f(dx + dw - 1.3)}" cy="${f(doorTop + (shopBot - doorTop) * .58)}" r=".5"/><circle class="mk-doorlamp" cx="${f(dx + dw / 2)}" cy="${f(doorTop - 1.6)}" r=".9"/>`;
@@ -1848,10 +1860,10 @@
       if (it.kind === "shutter") {
         shutterSpan = [x, x + w];
         return `<g class="mk-shop">${facade("#1f2023")}${sign("CLOSED", "painted dim", .5, w - 8)}
-          <rect class="mk-shutter" x="${f(x + 3)}" y="${f(top + h * .34)}" width="${f(w - 6)}" height="${f(h * .5)}"/>
-          <path class="mk-shutter-slats" d="${Array.from({ length: 6 }, (_, i) => `M${f(x + 3)},${f(top + h * .34 + i * h * .085)}H${f(x + w - 3)}`).join("")}"/>
-          <rect class="mk-shutter-gap" x="${f(x + 3)}" y="${f(top + h * .84)}" width="${f(w - 6)}" height="${f(h * .16)}"/>
-          <path class="mk-tag" d="M${f(x + 6)},${f(top + h * .6)}q3 -3 6 0t6 0"/></g>`;
+          <rect class="mk-shutter" x="${f(x + 3)}" y="${f(gTop + gs * .1)}" width="${f(w - 6)}" height="${f(gs * .6)}"/>
+          <path class="mk-shutter-slats" d="${Array.from({ length: 6 }, (_, i) => `M${f(x + 3)},${f(gTop + gs * (.1 + i * .1))}H${f(x + w - 3)}`).join("")}"/>
+          <rect class="mk-shutter-gap" x="${f(x + 3)}" y="${f(gTop + gs * .7)}" width="${f(w - 6)}" height="${f(gs * .3)}"/>
+          <path class="mk-tag" d="M${f(x + 6)},${f(gTop + gs * .45)}q3 -3 6 0t6 0"/></g>`;
       }
       if (it.kind === "arcade") {
         arcadeSpan = [x, x + w];
@@ -1884,13 +1896,13 @@
       frontRow.push(`<g class="mk-cart"><path class="mk-umbrella" d="M${f(x - 9)},${f(fy - 13)}Q${f(x)},${f(fy - 19)} ${f(x + 9)},${f(fy - 13)}Z"/><path class="mk-pole" d="M${f(x)},${f(fy - 16)}V${f(fy - 6)}"/>
         <rect class="mk-cartbox" x="${f(x - 8)}" y="${f(fy - 8)}" width="16" height="6" rx="1"/><circle class="mk-wheel" cx="${f(x - 5)}" cy="${f(fy - 1.2)}" r="1.6"/><circle class="mk-wheel" cx="${f(x + 5)}" cy="${f(fy - 1.2)}" r="1.6"/>
         <path class="mk-steam" d="M${f(x - 3)},${f(fy - 9)}q-1 -2 .4 -4M${f(x - 1.6)},${f(fy - 9)}q-1 -2 .4 -4"/>
-        <g transform="translate(${f(x + 4)},${f(fy - 8)}) scale(1.1)"><path class="mk-body" d="M0 0V-4.8" style="stroke:#f87171"/><circle class="mk-face" cy="-6.6" r="1.8"/><path class="mk-limb" d="M0 -4L-2.6 -2.4"/></g></g>`);
+        <g transform="translate(${f(x + 4)},${f(fy - 8)}) scale(1.2)"><path class="mk-body" d="M0 0V-4.8" style="stroke:#f87171"/><circle class="mk-face" cy="-6.6" r="1.8"/><path class="mk-limb" d="M0 -4L-2.6 -2.4"/></g></g>`);
     }
     if (eatsSpan) {   // two café tables outside the diner, one taken
       [eatsSpan[0] + (eatsSpan[1] - eatsSpan[0]) * .45, eatsSpan[0] + (eatsSpan[1] - eatsSpan[0]) * .82].forEach((x, i) => {
         frontRow.push(`<path class="mk-table" d="M${f(x - 4)},${f(fy - 7)}H${f(x + 4)}M${f(x)},${f(fy - 7)}V${f(fy)}M${f(x - 2)},${f(fy)}H${f(x + 2)}"/>
           <path class="mk-chair" d="M${f(x + 7)},${f(fy - 11)}V${f(fy)}M${f(x + 7)},${f(fy - 5.4)}H${f(x + 3.6)}V${f(fy)}"/>`
-          + (i === 0 ? `<g transform="translate(${f(x + 5.6)},${f(fy - 5.8)}) scale(-1.1,1.1)"><path class="mk-limb" d="M0 0H-3.2L-3.4 4.4"/><path class="mk-body" d="M0 0L.2 -4.8" style="stroke:#38bdf8"/><circle class="mk-face" cx=".2" cy="-6.8" r="1.8"/><g class="mk-sip"><path class="mk-limb" d="M.1 -4L-2.6 -3.4L-3 -6"/><rect class="mk-glass" x="-4" y="-8.4" width="1.8" height="2.6" rx=".3"/></g></g>`
+          + (i === 0 ? `<g transform="translate(${f(x + 5.6)},${f(fy - 5.8)}) scale(-1.2,1.2)"><path class="mk-limb" d="M0 0H-3.2L-3.4 4.4"/><path class="mk-body" d="M0 0L.2 -4.8" style="stroke:#38bdf8"/><circle class="mk-face" cx=".2" cy="-6.8" r="1.8"/><g class="mk-sip"><path class="mk-limb" d="M.1 -4L-2.6 -3.4L-3 -6"/><rect class="mk-glass" x="-4" y="-8.4" width="1.8" height="2.6" rx=".3"/></g></g>`
             : `<rect class="mk-glass" x="${f(x - 1)}" y="${f(fy - 9.4)}" width="1.6" height="2.4" rx=".3"/>`));
       });
     }
@@ -1912,7 +1924,7 @@
     }
     const front0 = frontRow.join("");
 
-    // ---- the street: the ground line, a puddle, people strolling both ways
+    // ---- the street: the ground line, a puddle, people strolling both ways between the tunnels
     const street = `<path class="mk-ground" d="M0,${f(floor + .5)}H${W}"/>
       <ellipse class="mk-puddle" cx="${f(W * .72)}" cy="${f(floor + .4)}" rx="9" ry=".9"/>`;
     const gait = (shirt) => `<path class="mk-limb mk-gait l1" d="M0 -4.6L.2 -2.3L-.1 0"/><path class="mk-limb mk-gait l2" d="M0 -4.6L.2 -2.3L-.1 0"/>
@@ -1920,13 +1932,13 @@
       <circle class="mk-face" cx="0" cy="-11.4" r="1.9"/>`;
     const walkers = [
       // [feet y, scale, direction, px/s, shirt, start offset 0-1, depth class]
-      [floor, .95, 1, 9, "#60a5fa", .15, "far"],
-      [floor, .95, -1, 8, "#f472b6", .6, "far"],
+      [floor, 1.2, 1, 9, "#60a5fa", .15, "far"],
+      [floor, 1.2, -1, 8, "#f472b6", .6, "far"],
       [floor, 1.2, 1, 12, "#fbbf24", .45, "near"],
       [floor, 1.2, -1, 10.5, "#a3e635", .85, "near"],
     ].map(([y, k, dir, speed, shirt, off, depth]) => {
-      const span = W + 40, dur = span / speed;
-      return [depth, `<g class="mk-walker ${depth}" style="--from:${dir > 0 ? -20 : W + 20}px;--to:${dir > 0 ? W + 20 : -20}px;animation-duration:${dur.toFixed(1)}s;animation-delay:${(-off * dur).toFixed(1)}s">
+      const a = TW / 2, b = W - TW / 2, dur = (b - a) / speed;
+      return [depth, `<g class="mk-walker ${depth}" style="--from:${dir > 0 ? a : b}px;--to:${dir > 0 ? b : a}px;animation-duration:${dur.toFixed(1)}s;animation-delay:${(-off * dur).toFixed(1)}s">
           <g transform="translate(0,${f(y)}) scale(${dir * k},${k})">${gait(shirt)}</g></g>`];
     });
     const farWalkers = walkers.filter(([d]) => d === "far").map(([, g]) => g).join("");
@@ -1964,10 +1976,14 @@
       }
     });
     const lights = `<path class="light-wire" d="${wire}"/>${bulbs}${pins.map((x) => `<circle class="light-tack" cx="${x}" cy="${f(cy0)}" r="1.3"/>`).join("")}`;
-    const ladder = `<path class="mk-ladder" d="M4 ${ceil}V${f(floor)}M9 ${ceil}V${f(floor)}${Array.from({ length: Math.floor((floor - ceil) / 5) }, (_, i) => `M4 ${f(ceil + 3 + i * 5)}H9`).join("")}"/>`;
+    // ---- tunnels out of the market at either end, in the rock walls under the card's edge
+    const mouth = (cx) => { const aw = TW - 6, ah = 25;
+      return `M${f(cx - aw / 2)},${f(floor)}V${f(floor - ah + aw / 2)}A${f(aw / 2)} ${f(aw / 2)} 0 0 1 ${f(cx + aw / 2)},${f(floor - ah + aw / 2)}V${f(floor)}`; };
+    const tunnels = [TW / 2, W - TW / 2].map((cx, i) => `<path class="mk-rock" d="M${i ? W - TW : 0},${ceil}H${i ? W : TW}V${f(floor)}H${i ? W - TW : 0}Z"/><path class="mk-tunnel" d="${mouth(cx)}Z"/>`).join("");
+    const rims = [TW / 2, W - TW / 2].map((cx) => `<path class="mk-tunnel-rim" d="${mouth(cx)}"/><circle class="mk-doorlamp" cx="${f(cx)}" cy="${f(floor - 28)}" r="1"/>`).join("");
 
     el.innerHTML = `<svg class="market" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="The underground market: a street of shops under string lights, people strolling by">
-        ${shops}${street}${farWalkers}${front0}${front}${nearWalkers}${ladder}${lights}</svg>`;
+        ${tunnels}${shops}${street}${farWalkers}${front0}${front}${nearWalkers}${rims}${lights}</svg>`;
   }
 
   function weightRow() {
