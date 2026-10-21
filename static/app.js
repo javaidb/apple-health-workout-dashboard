@@ -1646,20 +1646,23 @@
       <path class="tr-torso" d="M0 -4.6V-9.4" style="stroke:${shirt}"/><path class="tr-limb" d="M0 -8.6L-1 -6.4L-.8 -4.4"/>
       ${bag ? `<path class="tr-limb" d="M0 -8.6L1.4 -6.6L2 -4.8"/><rect class="tr-case" x="1.6" y="-4.8" width="3" height="4.2" rx=".6"/>` : ""}
       <circle class="tr-head" cx="0" cy="-11.4" r="1.9"/></g>`;
-  // A small footbridge over the rail, seen end-on: a deck with a railing above the train's roof, and a
-  // flight of open stairs coming down towards us (the train shows through between the treads), with
-  // the trainspotter up on the deck.
+  // A small footbridge over the rail: a deck with a railing just clear of the train's roof, and a
+  // flight of open stairs (seen side-on, parallel to the street) coming down from its left end, so
+  // the train runs under the deck and on behind the stairs. The trainspotter stands up on the deck.
   function footbridge(bx, bw, floor, f) {
-    const deck = floor - 25, sTop = 9, sBot = 13, steps = 8;
-    const treads = Array.from({ length: steps }, (_, i) => { const y = deck + 2 + (i + 1) * (floor - deck - 2) / steps, hw = (sTop + (sBot - sTop) * (i + 1) / steps) / 2;
-      return `M${f(bx - hw)},${f(y)}H${f(bx + hw)}`; }).join("");
+    const deck = floor - 16, x0 = bx - bw / 2, x1 = bx + bw / 2, run = 16, steps = 6, sx = x0 - run;
+    const treads = Array.from({ length: steps }, (_, i) => {
+      const y = deck + (i + 1) * (floor - deck) / (steps + 1), x = x0 - (i + 1) * run / (steps + 1);
+      return `M${f(x - run / (steps + 1))},${f(y)}H${f(x + .6)}`;
+    }).join("");
     return `<g class="tr-bridge"><title>A footbridge over the line, and a trainspotter waiting for the shot</title>
-      <path class="tr-stringer" d="M${f(bx - sTop / 2)},${f(deck + 2)}L${f(bx - sBot / 2)},${f(floor)}M${f(bx + sTop / 2)},${f(deck + 2)}L${f(bx + sBot / 2)},${f(floor)}"/>
+      <path class="tr-stringer" d="M${f(x0)},${f(deck + 1.2)}L${f(sx)},${f(floor)}"/>
       <path class="tr-tread" d="${treads}"/>
-      <path class="tr-handrail" d="M${f(bx - sTop / 2 - 1)},${f(deck - 4)}L${f(bx - sBot / 2 - 1)},${f(floor - 6)}M${f(bx + sTop / 2 + 1)},${f(deck - 4)}L${f(bx + sBot / 2 + 1)},${f(floor - 6)}"/>
-      <rect class="tr-deck" x="${f(bx - bw / 2)}" y="${f(deck)}" width="${f(bw)}" height="2.4" rx=".4"/>
-      <g class="tr-spotter" transform="translate(${f(bx + bw / 2 - 5)},${f(deck)}) scale(1.2)">${spotterFigure}</g>
-      <path class="tr-bridge-rail" d="M${f(bx - bw / 2)},${f(deck - 6)}H${f(bx + bw / 2)}${Array.from({ length: Math.floor(bw / 4) + 1 }, (_, i) => `M${f(bx - bw / 2 + i * bw / Math.floor(bw / 4))},${f(deck - 6)}V${f(deck)}`).join("")}"/></g>`;
+      <path class="tr-handrail" d="M${f(x0)},${f(deck - 6)}L${f(sx)},${f(floor - 6)}M${f(x0 - run * .5)},${f(deck - 6 + (floor - deck) * .5)}v6M${f(sx)},${f(floor - 6)}V${f(floor)}"/>
+      <path class="tr-stringer" d="M${f(x1 - 1)},${f(deck + 2)}V${f(floor)}"/>
+      <rect class="tr-deck" x="${f(x0)}" y="${f(deck)}" width="${f(bw)}" height="2.2" rx=".4"/>
+      <g class="tr-spotter" transform="translate(${f(x1 - 6)},${f(deck)}) scale(1.2)">${spotterFigure}</g>
+      <path class="tr-bridge-rail" d="M${f(x0)},${f(deck - 6)}H${f(x1)}${Array.from({ length: Math.floor(bw / 4) + 1 }, (_, i) => `M${f(x0 + i * bw / Math.floor(bw / 4))},${f(deck - 6)}V${f(deck)}`).join("")}"/></g>`;
   }
   function trainBody(cars) {
     const cl = TRAIN.car, L = cl * cars, H = TRAIN.h;
