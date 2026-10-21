@@ -1444,3 +1444,15 @@ svg.night :is(.th-crown-sun, .th-crown-sun-glow, .th-crown-rays) { display: none
 .tr-sig { fill: #27272a; transition: fill .2s ease; }
 .tr-signal.stop .tr-sig.red { fill: #ef4444; filter: drop-shadow(0 0 3px #dc2626) drop-shadow(0 0 6px #dc2626); }
 .tr-signal:not(.stop) .tr-sig.green { fill: #22c55e; filter: drop-shadow(0 0 3px #16a34a) drop-shadow(0 0 6px #16a34a); }
+/* the footbridge and the trainspotter */
+.tr-deck { fill: #52525b; stroke: #71717a; stroke-width: .4; }
+.tr-bridge-rail { fill: none; stroke: #a1a1aa; stroke-width: .6; }
+.tr-stringer { stroke: #52525b; stroke-width: 1.2; stroke-linecap: round; }
+.tr-tread { stroke: #a1a1aa; stroke-width: .9; }
+.tr-handrail { stroke: #a1a1aa; stroke-width: .5; stroke-linecap: round; }
+.tr-cam { fill: #18181b; stroke: #a1a1aa; stroke-width: .3; } .tr-lens { fill: #38bdf8; }
+.tr-spotter:not(.shoot) .tr-spot-shoot, .tr-spotter.shoot .tr-spot-wait { display: none; }
+.tr-flash { opacity: 0; }
+.tr-spotter.flash .tr-flash { opacity: 1; }
+.tr-flash-glow { fill: #fff; filter: drop-shadow(0 0 3px #fff) drop-shadow(0 0 8px #fef9c3); }
+.tr-flash-rays { stroke: #fff; stroke-width: .6; stroke-linecap: round; }

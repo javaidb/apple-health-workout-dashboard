@@ -1646,6 +1646,21 @@
       <path class="tr-torso" d="M0 -4.6V-9.4" style="stroke:${shirt}"/><path class="tr-limb" d="M0 -8.6L-1 -6.4L-.8 -4.4"/>
       ${bag ? `<path class="tr-limb" d="M0 -8.6L1.4 -6.6L2 -4.8"/><rect class="tr-case" x="1.6" y="-4.8" width="3" height="4.2" rx=".6"/>` : ""}
       <circle class="tr-head" cx="0" cy="-11.4" r="1.9"/></g>`;
+  // A small footbridge over the rail, seen end-on: a deck with a railing above the train's roof, and a
+  // flight of open stairs coming down towards us (the train shows through between the treads), with
+  // the trainspotter up on the deck.
+  function footbridge(bx, bw, floor, f) {
+    const deck = floor - 25, sTop = 9, sBot = 13, steps = 8;
+    const treads = Array.from({ length: steps }, (_, i) => { const y = deck + 2 + (i + 1) * (floor - deck - 2) / steps, hw = (sTop + (sBot - sTop) * (i + 1) / steps) / 2;
+      return `M${f(bx - hw)},${f(y)}H${f(bx + hw)}`; }).join("");
+    return `<g class="tr-bridge"><title>A footbridge over the line, and a trainspotter waiting for the shot</title>
+      <path class="tr-stringer" d="M${f(bx - sTop / 2)},${f(deck + 2)}L${f(bx - sBot / 2)},${f(floor)}M${f(bx + sTop / 2)},${f(deck + 2)}L${f(bx + sBot / 2)},${f(floor)}"/>
+      <path class="tr-tread" d="${treads}"/>
+      <path class="tr-handrail" d="M${f(bx - sTop / 2 - 1)},${f(deck - 4)}L${f(bx - sBot / 2 - 1)},${f(floor - 6)}M${f(bx + sTop / 2 + 1)},${f(deck - 4)}L${f(bx + sBot / 2 + 1)},${f(floor - 6)}"/>
+      <rect class="tr-deck" x="${f(bx - bw / 2)}" y="${f(deck)}" width="${f(bw)}" height="2.4" rx=".4"/>
+      <g class="tr-spotter" transform="translate(${f(bx + bw / 2 - 5)},${f(deck)}) scale(1.2)">${spotterFigure}</g>
+      <path class="tr-bridge-rail" d="M${f(bx - bw / 2)},${f(deck - 6)}H${f(bx + bw / 2)}${Array.from({ length: Math.floor(bw / 4) + 1 }, (_, i) => `M${f(bx - bw / 2 + i * bw / Math.floor(bw / 4))},${f(deck - 6)}V${f(deck)}`).join("")}"/></g>`;
+  }
   function trainBody(cars) {
     const cl = TRAIN.car, L = cl * cars, H = TRAIN.h;
     // a long, low duck-bill nose at each end, white with a blue stripe; the left end leads
@@ -1668,6 +1683,17 @@
   // The platform, sign, signal and the spots where passengers wait are all fixed, sized for the
   // longest train, so nothing moves when a different train comes along.
   let trainKey = "", trainRunKey = "";
+  // the trainspotter on the footbridge: where the train's nose was last frame, and when the flash went
+  const spotter = { front: null, run: -1, flashAt: -9, shot: false };
+  // standing on the deck, facing +x: leaning on the railing looking down at the track with the camera
+  // at the chest, or with the camera up to the eye
+  const spotterFigure = `<g class="tr-spot-flip">
+      <path class="tr-limb" d="M-.6 0L-.4 -4.6M.8 0L.4 -4.6"/>
+      <g class="tr-spot-wait"><path class="tr-torso" d="M0 -4.6L1.4 -9" style="stroke:#f97316"/><path class="tr-limb" d="M1.2 -8.4L3 -6.6L3.8 -7.2"/>
+        <rect class="tr-cam" x="3" y="-8.4" width="2.6" height="1.8" rx=".4"/><circle class="tr-head" cx="2.4" cy="-10.6" r="1.9"/></g>
+      <g class="tr-spot-shoot"><path class="tr-torso" d="M0 -4.6L.7 -9.2" style="stroke:#f97316"/><path class="tr-limb" d="M.6 -8.6L2.8 -9.4L3.6 -10.6"/>
+        <circle class="tr-head" cx="1.4" cy="-11.2" r="1.9"/><rect class="tr-cam" x="2.6" y="-12.2" width="2.8" height="2" rx=".4"/><circle class="tr-lens" cx="5.6" cy="-11.2" r=".7"/>
+        <g class="tr-flash"><circle class="tr-flash-glow" cx="5.8" cy="-11.6" r="4"/><path class="tr-flash-rays" d="M5.8 -14.4V-16.4M8.4 -11.6H10.4M7.8 -13.6L9.2 -15M7.8 -9.6L9.2 -8.2"/></g></g></g>`;
   function drawTrain() {
     const layer = $("train");
     const mk = $("market"), wk = $("week-card");
@@ -1680,7 +1706,10 @@
     layer.style.position = "fixed";
     const W = innerWidth, H = innerHeight, floor = m.top + mk.clientHeight - 1, f = (n) => n.toFixed(1);
     const x0 = w.right, x1 = m.right, mid = (m.left + m.right) / 2, half = TRAIN.car * 2;   // the longest train is 4 cars
-    const key = `${W}x${H}|${x0.toFixed(0)}|${x1.toFixed(0)}|${floor.toFixed(1)}`;
+    // the footbridge, in the gap between the calendar and the market (if there's room for it)
+    const cal = $("calendar")?.getBoundingClientRect(), gap = cal && cal.width ? m.left - cal.right : 0;
+    const bx = gap >= 18 ? cal.right + gap / 2 : null, bw = Math.min(30, gap - 2);
+    const key = `${W}x${H}|${x0.toFixed(0)}|${x1.toFixed(0)}|${floor.toFixed(1)}|${bx == null ? "" : bx.toFixed(0)}`;
     if (key !== trainKey) {
       trainKey = key; trainRunKey = "";
       layer.setAttribute("width", W); layer.setAttribute("height", H); layer.setAttribute("viewBox", `0 0 ${W} ${H}`);
@@ -1693,6 +1722,7 @@
           ${[["red", -33.4], ["amber", -28.5], ["green", -23.6]].map(([c, y]) => `<path class="tr-sig-visor" d="M-3,${y - 1.6}A3 3 0 0 1 3,${y - 1.6}"/><circle class="tr-sig ${c}" cy="${y}" r="2.1"/>`).join("")}</g>
         <path class="tr-portal-in" d="M${f(x0)},${f(floor)}V${f(pt)}H${f(x0 + 7)}V${f(floor)}Z"/>
         <g clip-path="url(#tr-clip)"><g class="tr-waiters">${[0, 1].map(() => `<g class="tr-waiter"></g>`).join("")}</g><g class="tr-train"></g></g>
+        ${bx == null ? "" : footbridge(bx, bw, floor, f)}
         <path class="tr-portal" d="M${f(x0 - 1)},${f(pt)}H${f(x0 + 8.5)}V${f(pt + 2.6)}H${f(x0 + 7)}V${f(floor)}M${f(x0 - 1)},${f(pt - 1.6)}H${f(x0 + 8.5)}"/>`;
     }
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -1720,6 +1750,20 @@
     tr.classList.toggle("open", open);
     // the platform signal turns red 5 seconds before the train pulls in, and back to green as it leaves
     layer.querySelector(".tr-signal").classList.toggle("stop", t >= T.period - (5 - T.arrive) || t < tDep);
+    // the trainspotter faces the way this run's train will come from, raises the camera as it
+    // gets close, and takes its picture (a flash) the moment the nose passes under the bridge
+    const sp = layer.querySelector(".tr-spotter");
+    if (sp) {
+      const front = x == null ? null : v.dir < 0 ? x : x + L;
+      if (spotter.run !== run) { spotter.run = run; spotter.shot = false; spotter.front = null; }
+      if (front != null && spotter.front != null && !spotter.shot && (spotter.front - bx) * (front - bx) <= 0) { spotter.shot = true; spotter.flashAt = now; }
+      spotter.front = front;
+      const near = front != null && !spotter.shot && Math.abs(front - bx) < (v.dir < 0 ? 260 : 9999) && (v.dir > 0 || t >= tDep - 1.5);
+      const since = now - spotter.flashAt;   // (never negative, even if the clock is set back)
+      sp.classList.toggle("shoot", reduce ? false : near || (since >= 0 && since < 1.2));
+      sp.classList.toggle("flash", since >= 0 && since < .18);
+      sp.querySelector(".tr-spot-flip").setAttribute("transform", `scale(${v.dir < 0 ? 1 : -1},1)`);
+    }
     // two passengers. They come out of the market's right-hand tunnel well after a train has gone and
     // wait at fixed spots on the platform; when the next train is in, each walks to its nearest door
     // and steps aboard (behind the train, so it hides them). Who they are is set by the train they
