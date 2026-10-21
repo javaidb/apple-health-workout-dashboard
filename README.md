@@ -44,14 +44,19 @@ weekly streak becomes Carl, a little climber working his way up a new mountain e
 - **Built to keep you consistent.** Time since your last workout with a rest-day-aware nudge, a weekly goal
   ring (3 workouts by default, adjustable) with each day of the week ticked off, a weekly streak (weeks in a
   row with any workout) with your personal best, and a GitHub-style heatmap of the last 12 months.
-- **Carl's climb.** The weekly streak card shows Carl climbing a range of eight themed mountains that get
-  longer through the year: Pine Ridge, Red Rock Mesa and Ember Peak (a month each), Frost Spire and Canopy
-  Crag (six weeks each), then Summit of Stars, Thunderhead and Gilded Crown (two months each). He pitches a
-  new camp on each summit, and after a full year the cycle repeats as a higher tier. Each summit
-  brings home a souvenir, wildlife drops by on some weeks, and the sky follows your clock (Carl sleeps in
-  his tent or climbs by headlamp at night). Click the climb for the trail map: the whole range, your best
-  point, summits, falls and the souvenir shelf. Carl's camp sits in the This week card, tied to the foot of
-  the mountain by a rope that runs across the cards. See [climb rules](#carls-climb).
+- **Carl's climb.** Carl climbs the Weekly streak card itself. Rock ledges stick out of the card in a
+  zig-zag, one per week, with a wider ledge halfway. He works his way up them to a clearing carved just under
+  the card's top edge, where he rings the bell and pitches his tent. The wall is themed for each of eight
+  mountains that get longer through the year:
+  - a month each: Pine Ridge (pines), Red Rock Mesa (hoodoos and strata) and Ember Peak (basalt and lava)
+  - six weeks each: Frost Spire (jagged ice) and Canopy Crag (vines and ferns)
+  - two months each: Summit of Stars (crystals and stars), Thunderhead (rain and boulders) and Gilded
+    Crown (gold)
+
+  After a full year the cycle repeats as a higher tier. Each summit brings home a souvenir. At night Carl
+  climbs by headlamp. Click the climb for the trail map, which shows the whole range, your best point,
+  summits, falls and the souvenir shelf. Carl's camp sits in the This week card, roped to the bottom
+  ledge. See [climb rules](#carls-climb).
 - **A small celebration for each new workout.** When a newly synced workout reaches the dashboard,
   confetti bursts from the last-workout card, the campfire flares and Carl hops (once per workout, per
   browser; old or backfilled workouts don't count).
