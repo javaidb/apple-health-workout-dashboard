@@ -1724,12 +1724,17 @@
         <path class="tr-rail" d="M${f(x0)},${f(floor)}H${f(x1)}"/><path class="tr-ties" d="M${f(x0 + 2)},${f(floor + 1.4)}H${f(x1)}"/>
         <path class="tr-platform" d="M${f(mid - half - 4)},${f(floor - .6)}H${f(mid + half + 4)}"/>
         <g transform="translate(${f(mid - half - 9)},${f(floor)})"><path class="tr-post" d="M0 0V-21"/><rect class="tr-sign" x="-7" y="-25.5" width="14" height="5" rx=".8"/><text class="tr-sign-text" x="0" y="-21.9" text-anchor="middle">STATION</text></g>
-        <g class="tr-signal" transform="translate(${f(mid + half + 9)},${f(floor)})"><title>The platform signal: red while a train is due or in, green once it has left</title><path class="tr-sig-pole" d="M0 0V-20"/><rect class="tr-sig-box" x="-4" y="-38" width="8" height="19" rx="2"/>
+        <g class="tr-signal" transform="translate(${f(x0 + 30)},${f(floor)})"><title>The crossing signal: red while a train is due or about, green once it has gone</title><path class="tr-sig-pole" d="M0 0V-20"/><rect class="tr-sig-box" x="-4" y="-38" width="8" height="19" rx="2"/>
           ${[["red", -33.4], ["amber", -28.5], ["green", -23.6]].map(([c, y]) => `<path class="tr-sig-visor" d="M-3,${y - 1.6}A3 3 0 0 1 3,${y - 1.6}"/><circle class="tr-sig ${c}" cy="${y}" r="2.1"/>`).join("")}</g>
         <path class="tr-portal-in" d="M${f(x0)},${f(floor)}V${f(pt)}H${f(x0 + 7)}V${f(floor)}Z"/>
         ${bx == null ? "" : footbridge(bx, bw, floor, f, "back")}
         <g clip-path="url(#tr-clip)"><g class="tr-waiters">${[0, 1].map(() => `<g class="tr-waiter"></g>`).join("")}</g><g class="tr-train"></g></g>
         ${bx == null ? "" : footbridge(bx, bw, floor, f, "front")}
+        <g class="tr-gate" transform="translate(${f(bx == null ? x0 + 26 : bx - bw / 2 - 22)},${f(floor)}) scale(${bx == null ? 1 : -1},1)"><title>The level crossing barrier</title>
+          <path class="tr-gate-post" d="M0 0V-10"/><rect class="tr-gate-box" x="-2.6" y="-14.6" width="5.2" height="4.4" rx="1"/>
+          <circle class="tr-gate-lamp a" cx="-1.2" cy="-12.4" r=".9"/><circle class="tr-gate-lamp b" cx="1.2" cy="-12.4" r=".9"/>
+          <g class="tr-gate-arm" transform="translate(0,-8) rotate(-90)"><rect class="tr-arm" x="0" y="-1" width="24" height="2" rx=".6"/>
+            <path class="tr-arm-stripes" d="M5 -1v2M9 -1v2M13 -1v2M17 -1v2M21 -1v2"/><circle class="tr-arm-lamp" cx="22.6" cy="0" r=".7"/><circle class="tr-gate-hub" r="1.2"/></g></g>
         <path class="tr-portal" d="M${f(x0 - 1)},${f(pt)}H${f(x0 + 8.5)}V${f(pt + 2.6)}H${f(x0 + 7)}V${f(floor)}M${f(x0 - 1)},${f(pt - 1.6)}H${f(x0 + 8.5)}"/>`;
     }
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -1756,7 +1761,16 @@
     if (x != null) tr.setAttribute("transform", v.dir < 0 ? `translate(${f(x)},${f(floor)})` : `translate(${f(x + L)},${f(floor)}) scale(-1,1)`);
     tr.classList.toggle("open", open);
     // the platform signal turns red 5 seconds before the train pulls in, and back to green as it leaves
-    layer.querySelector(".tr-signal").classList.toggle("stop", t >= T.period - (5 - T.arrive) || t < tDep);
+    // The crossing by the left-hand tunnel: the signal turns red 5 seconds before the train pulls in
+    // and the barrier comes down with it. Both go back up once the train has left the station and is
+    // clear of the crossing (a train heading left still has to run through it into the tunnel).
+    const redAt = T.period - (5 - T.arrive), clearAt = tDep + (v.dir < 0 ? T.depart : 0), swing = 1.6;
+    const ease = (q) => q * q * (3 - 2 * q);
+    const down = reduce ? 1 : t >= redAt ? ease(Math.min(1, (t - redAt) / swing)) : t < clearAt ? 1 : t < clearAt + swing ? 1 - ease((t - clearAt) / swing) : 0;
+    layer.querySelector(".tr-signal").classList.toggle("stop", t >= redAt || t < clearAt);
+    const gate = layer.querySelector(".tr-gate");
+    gate.classList.toggle("down", down > 0);
+    gate.querySelector(".tr-gate-arm").setAttribute("transform", `translate(0,-8) rotate(${f(-90 * (1 - down))})`);
     // the trainspotter faces the way this run's train will come from, raises the camera as it
     // gets close, and takes its picture (a flash) the moment the nose passes under the bridge
     const sp = layer.querySelector(".tr-spotter");
