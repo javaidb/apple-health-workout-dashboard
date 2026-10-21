@@ -1647,18 +1647,21 @@
       ${bag ? `<path class="tr-limb" d="M0 -8.6L1.4 -6.6L2 -4.8"/><rect class="tr-case" x="1.6" y="-4.8" width="3" height="4.2" rx=".6"/>` : ""}
       <circle class="tr-head" cx="0" cy="-11.4" r="1.9"/></g>`;
   // A small footbridge over the rail: a deck with a railing just clear of the train's roof, and a
-  // flight of open stairs (seen side-on, parallel to the street) coming down from its left end, so
-  // the train runs under the deck and on behind the stairs. The trainspotter stands up on the deck.
-  function footbridge(bx, bw, floor, f) {
+  // flight of open stairs (seen side-on, parallel to the street) coming down from its left end. The
+  // stairs are on the far side of the line, so the train passes in front of them; the deck spans
+  // over it and its post stands on the near side, in front of the train. Drawn in two parts: "back"
+  // goes under the train, "front" over it. The trainspotter stands up on the deck.
+  function footbridge(bx, bw, floor, f, part) {
     const deck = floor - 16, x0 = bx - bw / 2, x1 = bx + bw / 2, run = 16, steps = 6, sx = x0 - run;
     const treads = Array.from({ length: steps }, (_, i) => {
       const y = deck + (i + 1) * (floor - deck) / (steps + 1), x = x0 - (i + 1) * run / (steps + 1);
       return `M${f(x - run / (steps + 1))},${f(y)}H${f(x + .6)}`;
     }).join("");
-    return `<g class="tr-bridge"><title>A footbridge over the line, and a trainspotter waiting for the shot</title>
+    if (part === "back") return `<g class="tr-bridge">
       <path class="tr-stringer" d="M${f(x0)},${f(deck + 1.2)}L${f(sx)},${f(floor)}"/>
       <path class="tr-tread" d="${treads}"/>
-      <path class="tr-handrail" d="M${f(x0)},${f(deck - 6)}L${f(sx)},${f(floor - 6)}M${f(x0 - run * .5)},${f(deck - 6 + (floor - deck) * .5)}v6M${f(sx)},${f(floor - 6)}V${f(floor)}"/>
+      <path class="tr-handrail" d="M${f(x0)},${f(deck - 6)}L${f(sx)},${f(floor - 6)}M${f(x0 - run * .5)},${f(deck - 6 + (floor - deck) * .5)}v6M${f(sx)},${f(floor - 6)}V${f(floor)}"/></g>`;
+    return `<g class="tr-bridge"><title>A footbridge over the line, and a trainspotter waiting for the shot</title>
       <path class="tr-stringer" d="M${f(x1 - 1)},${f(deck + 2)}V${f(floor)}"/>
       <rect class="tr-deck" x="${f(x0)}" y="${f(deck)}" width="${f(bw)}" height="2.2" rx=".4"/>
       <g class="tr-spotter" transform="translate(${f(x1 - 6)},${f(deck)}) scale(1.2)">${spotterFigure}</g>
@@ -1724,8 +1727,9 @@
         <g class="tr-signal" transform="translate(${f(mid + half + 9)},${f(floor)})"><title>The platform signal: red while a train is due or in, green once it has left</title><path class="tr-sig-pole" d="M0 0V-20"/><rect class="tr-sig-box" x="-4" y="-38" width="8" height="19" rx="2"/>
           ${[["red", -33.4], ["amber", -28.5], ["green", -23.6]].map(([c, y]) => `<path class="tr-sig-visor" d="M-3,${y - 1.6}A3 3 0 0 1 3,${y - 1.6}"/><circle class="tr-sig ${c}" cy="${y}" r="2.1"/>`).join("")}</g>
         <path class="tr-portal-in" d="M${f(x0)},${f(floor)}V${f(pt)}H${f(x0 + 7)}V${f(floor)}Z"/>
+        ${bx == null ? "" : footbridge(bx, bw, floor, f, "back")}
         <g clip-path="url(#tr-clip)"><g class="tr-waiters">${[0, 1].map(() => `<g class="tr-waiter"></g>`).join("")}</g><g class="tr-train"></g></g>
-        ${bx == null ? "" : footbridge(bx, bw, floor, f)}
+        ${bx == null ? "" : footbridge(bx, bw, floor, f, "front")}
         <path class="tr-portal" d="M${f(x0 - 1)},${f(pt)}H${f(x0 + 8.5)}V${f(pt + 2.6)}H${f(x0 + 7)}V${f(floor)}M${f(x0 - 1)},${f(pt - 1.6)}H${f(x0 + 8.5)}"/>`;
     }
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
