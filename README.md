@@ -46,12 +46,13 @@ weekly streak becomes Carl, a little climber working his way up a new mountain e
   row with any workout) with your personal best, and a GitHub-style heatmap of the last 12 months.
 - **Carl's climb.** Carl climbs the Weekly streak card itself. Rock ledges stick out of the card in a
   zig-zag, one per week, with a wider ledge halfway. He works his way up them to a clearing carved just under
-  the card's top edge, where he rings the bell and pitches his tent. The wall is themed for each of eight
-  mountains that get longer through the year:
-  - a month each: Pine Ridge (pines), Red Rock Mesa (hoodoos and strata) and Ember Peak (basalt and lava)
-  - six weeks each: Frost Spire (jagged ice) and Canopy Crag (vines and ferns)
-  - two months each: Summit of Stars (crystals and stars), Thunderhead (rain and boulders) and Gilded
-    Crown (gold)
+  the card's top edge, where he rings the bell and pitches his tent. The climb's half of the card is one
+  solid wall, in a material for each of eight mountains that get longer through the year:
+  - a month each: Pine Ridge (a grassy wall with pines), Red Rock Mesa (sandstone strata and hoodoos) and
+    Ember Peak (basalt columns veined with lava)
+  - six weeks each: Frost Spire (an ice wall) and Canopy Crag (a wall of jungle leaves and vines)
+  - two months each: Summit of Stars (crystal rock), Thunderhead (rain-streaked slate) and Gilded
+    Crown (gold brick)
 
   After a full year the cycle repeats as a higher tier. Each summit brings home a souvenir. At night Carl
   climbs by headlamp. Click the climb for the trail map, which shows the whole range, your best point,
