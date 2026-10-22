@@ -735,7 +735,7 @@ code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; font-
 .climb-caption { position: relative; z-index: 1; text-align: left; line-height: 1.25; padding: 3px 0 0 8px; }
 .climb-caption::before { content: ""; float: right; width: var(--clear-w, 50%); height: var(--clear-h, 28px); }
 .cc-name { clear: none; }
-.cc-name::before { content: ""; float: right; clear: right; width: var(--chim-w, 0px); height: var(--chim-h, 0px); }
+.cc-sub::before { content: ""; float: right; clear: right; width: var(--chim-w, 0px); height: var(--chim-h, 0px); }
 .cc-name { font-size: 12.5px; font-weight: 700; color: var(--text); letter-spacing: -.01em; }
 .cc-tier { font-size: 10px; font-weight: 700; color: var(--warn); margin-left: 3px; }
 .cc-sub { font-size: 10.5px; color: var(--muted); }
@@ -1366,77 +1366,17 @@ svg.night .cl-campfire .flame { filter: drop-shadow(0 0 2.4px #f97316); }
 .climb-art .cl-summit path { stroke-width: .8; }
 .cl-yawn { fill: var(--muted); font-size: 6px; font-style: italic; }
 /* each mountain's touches */
-.lg-pine { fill: color-mix(in srgb, #2f8f5b 70%, var(--surface)); }
-.lg-band { stroke: color-mix(in srgb, #f4a25d 55%, transparent); stroke-width: .6; }
-.lg-cactus { fill: none; stroke: #4d9a4a; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-.lg-lava { fill: #f97316; filter: drop-shadow(0 0 1.6px #f97316); }
-.lg-ember { stroke: #fb923c; stroke-width: 1; stroke-linecap: round; filter: drop-shadow(0 0 1.4px #f97316); }
-.lg-smoke { fill: none; stroke: color-mix(in srgb, var(--text) 30%, transparent); stroke-width: .8; stroke-linecap: round; opacity: .7; }
-.lg-snow { fill: #f1f8fc; }
-.lg-icicle { fill: #bae6fd; stroke: #e0f2fe; stroke-width: .2; }
-.lg-vine path:first-child { fill: none; stroke: #2f9e5b; stroke-width: .8; stroke-linecap: round; }
-.lg-vine .leaf { fill: #43c67f; }
-.lg-leaf-tuft { fill: none; stroke: #43c67f; stroke-width: 1.1; stroke-linecap: round; }
-.lg-star { fill: #fde68a; }
-.lg-star-glow { fill: #fef9c3; filter: drop-shadow(0 0 2px #fde047); }
-.lg-cloud path { fill: color-mix(in srgb, #94a3b8 55%, var(--surface)); }
-.lg-rain { stroke: #7dd3fc; stroke-width: .6; stroke-linecap: round; opacity: .7; }
-.lg-bolt { fill: #fde047; opacity: .85; }
-.lg-wet { stroke: #7dd3fc; stroke-width: .6; stroke-linecap: round; opacity: .55; }
-.lg-gilt { stroke: #fbbf24; stroke-width: .9; stroke-linecap: round; }
-.lg-crown path { fill: #fbbf24; stroke: #fef3c7; stroke-width: .4; stroke-linejoin: round; }
-.lg-crown .gem { fill: #ef4444; }
-.lg-sparkle { fill: #fef3c7; }
 @media (prefers-reduced-motion: reduce) { .lg-bell .swing { animation: none; } }
 
 /* the wall: one solid face per mountain, its material drawn into it (static) */
-svg.th-pine   { --wall: color-mix(in srgb, #3f8a52 52%, var(--surface)); --wall-hi: #8fd6a4; --wall-lo: #1f4d2e; }
-svg.th-mesa   { --wall: color-mix(in srgb, #b45a32 55%, var(--surface)); --wall-hi: #f2a878; --wall-lo: #6b2c14; }
-svg.th-ember  { --wall: color-mix(in srgb, #2a1f1f 85%, var(--surface)); --wall-hi: #ff8a4c; --wall-lo: #120c0c; }
-svg.th-frost  { --wall: color-mix(in srgb, #8fd0f0 50%, var(--surface)); --wall-hi: #f2fbff; --wall-lo: #3a7fa8; }
-svg.th-canopy { --wall: color-mix(in srgb, #1f6b40 60%, var(--surface)); --wall-hi: #6fdc98; --wall-lo: #0f3a22; }
-svg.th-stars  { --wall: color-mix(in srgb, #432574 65%, var(--surface)); --wall-hi: #e3c8ff; --wall-lo: #1e0f3a; }
-svg.th-storm  { --wall: color-mix(in srgb, #4a586c 65%, var(--surface)); --wall-hi: #b8c8dc; --wall-lo: #232b36; }
-svg.th-crown  { --wall: color-mix(in srgb, #b07c1c 58%, var(--surface)); --wall-hi: #fde68a; --wall-lo: #5a3c08; }
 .lg-wall .face { fill: var(--wall); }
 .lg-wall .rim { fill: none; stroke: color-mix(in srgb, var(--wall-hi) 55%, var(--wall-lo)); stroke-width: 1; stroke-linejoin: round; }
-.lg-hold { fill: var(--wall-lo); stroke: color-mix(in srgb, var(--wall-hi) 45%, transparent); stroke-width: .4; stroke-linejoin: round; }
 
 .lg-shelf .top-face { fill: color-mix(in srgb, var(--wall-hi) 38%, var(--wall-lo)); }
 .lg-shelf .shade { fill: color-mix(in srgb, var(--wall-lo) 60%, #000); }
 .lg-shelf .under { fill: none; stroke: color-mix(in srgb, #000 35%, transparent); stroke-width: .7; stroke-linejoin: round; }
 :is(.climb-art, .trail) .lg-shelf .rock { fill: var(--wall-lo); stroke: color-mix(in srgb, var(--wall-hi) 40%, transparent); }
 .climb-art .lg-clear, .trail .lg-clear { fill: color-mix(in srgb, var(--surface) 70%, #000); }
-.t-shard { fill: color-mix(in srgb, var(--wall-lo) 35%, transparent); }
-.t-shard.lite { fill: color-mix(in srgb, var(--wall-hi) 28%, transparent); }
-.t-crack { fill: none; stroke: color-mix(in srgb, var(--wall-hi) 55%, transparent); stroke-width: .6; stroke-linecap: round; stroke-linejoin: round; }
-.t-base.ice { fill: color-mix(in srgb, var(--wall-hi) 55%, transparent); stroke: var(--wall-hi); stroke-width: .5; stroke-linejoin: round; }
-.t-grass { fill: none; stroke: color-mix(in srgb, var(--wall-hi) 55%, transparent); stroke-width: .7; stroke-linecap: round; }
-.t-grass.dark { stroke: color-mix(in srgb, var(--wall-lo) 70%, transparent); }
-.t-dirt { fill: color-mix(in srgb, #6b4a2a 45%, transparent); }
-.t-flower { fill: #fde68a; opacity: .8; }
-.t-stone { fill: color-mix(in srgb, #9ca3af 55%, transparent); }
-.t-tree { fill: var(--wall-lo); }
-.t-strata { fill: color-mix(in srgb, var(--wall-lo) 30%, transparent); }
-.t-strata.lite { fill: color-mix(in srgb, var(--wall-hi) 20%, transparent); }
-.t-pebble { fill: color-mix(in srgb, var(--wall-lo) 55%, transparent); }
-.t-hoodoo { fill: var(--wall-lo); stroke: color-mix(in srgb, var(--wall-hi) 40%, transparent); stroke-width: .4; }
-.t-column, .t-joint { fill: none; stroke: color-mix(in srgb, #000 55%, transparent); stroke-width: .8; }
-.t-lava { fill: none; stroke: #f97316; stroke-width: .9; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 1.6px #f97316); }
-.t-lava.pool { stroke-width: 3; }
-.t-leaf { fill: color-mix(in srgb, var(--wall-hi) 40%, transparent); }
-.t-leaf.dark { fill: color-mix(in srgb, var(--wall-lo) 70%, transparent); }
-.t-leaf.lite { fill: color-mix(in srgb, var(--wall-hi) 65%, transparent); }
-.t-vine, .t-fern { fill: none; stroke: color-mix(in srgb, var(--wall-hi) 70%, transparent); stroke-width: 1; stroke-linecap: round; }
-.t-star { fill: #fde68a; }
-.t-speck { fill: color-mix(in srgb, var(--wall-hi) 60%, transparent); }
-.t-vein { fill: none; stroke: color-mix(in srgb, var(--wall-hi) 45%, transparent); stroke-width: .7; stroke-linejoin: round; }
-.t-crystal { fill: color-mix(in srgb, #a78bfa 70%, transparent); stroke: #e9d5ff; stroke-width: .5; }
-.t-streak { fill: none; stroke: color-mix(in srgb, var(--wall-hi) 35%, transparent); stroke-width: .6; stroke-linecap: round; }
-.t-boulder { fill: var(--wall-lo); stroke: color-mix(in srgb, var(--wall-hi) 40%, transparent); stroke-width: .4; }
-.t-brick { fill: none; stroke: color-mix(in srgb, var(--wall-lo) 70%, transparent); stroke-width: .6; }
-.t-gleam { fill: color-mix(in srgb, var(--wall-hi) 70%, transparent); }
-.t-coin { fill: #fbbf24; stroke: #fef3c7; stroke-width: .4; }
 
 
 /* the Weekly streak card's own surface only runs behind its left half; the climbing wall stands
@@ -1444,50 +1384,37 @@ svg.th-crown  { --wall: color-mix(in srgb, #b07c1c 58%, var(--surface)); --wall-
 .streak-card { background: transparent; border-color: transparent; box-shadow: none; overflow: visible !important; isolation: isolate; }
 .streak-card::before { content: ""; position: absolute; left: -1px; top: -1px; bottom: -1px; width: var(--wall-x, calc(100% + 2px));
   background: var(--surface); border: 1px solid var(--border); border-right: 0; border-radius: var(--radius) 0 0 var(--radius); box-shadow: var(--shadow); z-index: -1; }
-/* bits jutting out of the wall's edge */
-.j-grass { fill: none; stroke: color-mix(in srgb, var(--wall-hi) 75%, var(--wall)); stroke-width: .8; stroke-linecap: round; }
-.j-twig { fill: none; stroke: #6b4a2a; stroke-width: .8; stroke-linecap: round; }
-.j-root { fill: none; stroke: #7a5634; stroke-width: .8; stroke-linecap: round; }
-.j-root.dry { stroke: #9a6a40; }
-.j-ice { fill: color-mix(in srgb, #e0f6ff 80%, transparent); stroke: #f8fdff; stroke-width: .4; stroke-linejoin: round; }
-.j-crystal { fill: color-mix(in srgb, #c4b5fd 80%, transparent); stroke: #ede9fe; stroke-width: .4; filter: drop-shadow(0 0 1.4px #a78bfa); }
-.j-rock { fill: var(--wall-lo); stroke: color-mix(in srgb, var(--wall-hi) 45%, transparent); stroke-width: .4; stroke-linejoin: round; }
-.j-basalt { fill: #1a1212; stroke: #4a3a3a; stroke-width: .4; }
-.j-lava { fill: #f97316; filter: drop-shadow(0 0 1.6px #f97316); }
-.j-leaf { fill: color-mix(in srgb, var(--wall-hi) 70%, var(--wall)); }
-.j-vine { fill: none; stroke: color-mix(in srgb, var(--wall-hi) 70%, var(--wall)); stroke-width: .8; stroke-linecap: round; }
-.j-drip { stroke: #7dd3fc; stroke-width: .7; stroke-linecap: round; opacity: .7; }
-.j-moss { fill: none; stroke: #6b8f6b; stroke-width: .8; stroke-linecap: round; }
-.j-coin { fill: #fbbf24; stroke: #fef3c7; stroke-width: .4; }
-.j-gold { fill: color-mix(in srgb, #d4a017 85%, #000); stroke: #fde68a; stroke-width: .5; stroke-linejoin: round; }
-.j-glint { fill: #fef9c3; }
-.j-scrub { fill: none; stroke: #a3824a; stroke-width: .8; stroke-linecap: round; }
-.j-gem { fill: #ef4444; stroke: #fecaca; stroke-width: .4; }
-/* the caption's cleared patch, per mountain */
-.lg-patch { fill: var(--patch); stroke: var(--patch-rim); stroke-width: .8; }
-svg.th-pine   { --patch: #4a3320; --patch-rim: #6b4a2a; }
-svg.th-mesa   { --patch: #e2b48a; --patch-rim: #c98a5a; }
-svg.th-ember  { --patch: #0b0707; --patch-rim: #f97316; }
-svg.th-frost  { --patch: color-mix(in srgb, #0c3a56 88%, transparent); --patch-rim: #e0f6ff; }
-svg.th-canopy { --patch: #3a2817; --patch-rim: #5a3e22; }
-svg.th-stars  { --patch: #0c0624; --patch-rim: #c4b5fd; }
-svg.th-storm  { --patch: #1b222c; --patch-rim: #8fa3ba; }
-svg.th-crown  { --patch: #3a2606; --patch-rim: #fbbf24; }
-/* the caption's lettering, in the mountain's own material */
-.climb-caption .cc-name { font-weight: 800; letter-spacing: .01em; }
-.cap-pine .cc-name { background: repeating-linear-gradient(97deg, #86efac 0 1.1px, #22c55e 1.1px 2.2px, #4ade80 2.2px 3.1px, #15803d 3.1px 3.8px); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 1px 0 #14532d); }
-.cap-pine .cc-sub { color: #bbf7d0; }
-.cap-mesa .cc-name { color: #6b2c14; text-shadow: 0 1px 0 rgba(255, 228, 200, .55), 0 -1px 0 rgba(80, 30, 10, .35); }
-.cap-mesa .cc-sub { color: #7c3a1c; }
-.cap-ember .cc-name { background: linear-gradient(180deg, #fde047, #f97316 70%, #dc2626); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 2px rgba(249, 115, 22, .8)); }
-.cap-ember .cc-sub { color: #fdba74; }
-.cap-frost .cc-name { background: linear-gradient(180deg, #ffffff 30%, #a5e8ff); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 2px rgba(125, 211, 252, .8)); }
-.cap-frost .cc-sub { color: #cdeefe; }
-.cap-canopy .cc-name { background: repeating-linear-gradient(60deg, #4ade80 0 2px, #16a34a 2px 3.4px, #86efac 3.4px 4.4px); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 1px 0 #052e16); }
-.cap-canopy .cc-sub { color: #bbf7d0; }
-.cap-stars .cc-name { color: #f5f3ff; text-shadow: 0 0 4px #a78bfa, 0 0 8px rgba(167, 139, 250, .6); }
-.cap-stars .cc-sub { color: #ddd6fe; }
-.cap-storm .cc-name { color: #e2e8f0; text-shadow: 0 1px 0 #0b0f14, 0 -1px 0 rgba(255, 255, 255, .12); }
-.cap-storm .cc-sub { color: #b8c8dc; }
-.cap-crown .cc-name { background: linear-gradient(180deg, #fef3c7, #fbbf24 55%, #b45309); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 1px 0 #451a03); }
-.cap-crown .cc-sub { color: #fde68a; }
+
+/* the climbing walls: a tight palette per mountain (s1 the face, s2-s4 its structure, hi the rim and
+   highlights, lo the ledges, panel/ink/ink2 the caption) */
+svg.th-pine, .cap-pine { --s1: #2f6b45; --s2: #285c3b; --s3: #1f4b30; --s4: #173a25; --hi: #7fd19b; --lo: #4a8a5e; --panel: #2a1e14; --ink: #8ee0a8; --ink2: #c9b896; }
+svg.th-canopy, .cap-canopy { --s1: #26704a; --s2: #1f5e3d; --s3: #184d32; --s4: #123c27; --hi: #74dca0; --lo: #3f9466; --panel: #2c2015; --ink: #8df0b4; --ink2: #cdbf9f; }
+svg.th-mesa, .cap-mesa { --s1: #b4643a; --s2: #c27449; --s3: #a3552f; --s4: #8e4627; --hi: #f3b68a; --lo: #d38b5c; --panel: #f1d2b2; --ink: #6b2c14; --ink2: #8a4a2a; }
+svg.th-ember, .cap-ember { --s1: #2b2121; --s2: #332727; --s3: #261d1d; --s4: #1d1616; --hi: #ff8a4c; --lo: #4a3a36; --panel: #120c0c; --ink: #ffb07a; --ink2: #e58c5c; }
+svg.th-frost, .cap-frost { --s1: #3c82b0; --s2: #4f93bf; --s3: #2f6f99; --s4: #5aa3cf; --hi: #e6f6ff; --lo: #a6dbf3; --panel: #0f3b58; --ink: #f2fbff; --ink2: #b9e3fb; }
+svg.th-stars, .cap-stars { --s1: #3b2470; --s2: #45297f; --s3: #321e60; --s4: #4f3290; --hi: #ddc8ff; --lo: #6d4fb0; --panel: #130a2c; --ink: #efe6ff; --ink2: #c4b2ec; }
+svg.th-storm, .cap-storm { --s1: #4a586c; --s2: #536276; --s3: #424f61; --s4: #3a4656; --hi: #c3d2e4; --lo: #6b7b91; --panel: #1c232d; --ink: #e5edf6; --ink2: #aebdcf; }
+svg.th-crown, .cap-crown { --s1: #8a6118; --s2: #a2741f; --s3: #946a1b; --s4: #7c5714; --hi: #fde68a; --lo: #c7962f; --panel: #3a2606; --ink: #fde68a; --ink2: #e8c56c; }
+.lg-wall .face, .lg-wall .s1 { fill: var(--s1); }
+.lg-wall .s2 { fill: var(--s2); } .lg-wall .s3 { fill: var(--s3); } .lg-wall .s4 { fill: var(--s4); }
+.lg-wall .rim { fill: none; stroke: color-mix(in srgb, var(--hi) 70%, transparent); stroke-width: 1.2; stroke-linejoin: round; }
+:is(.climb-art, .trail) .lg-shelf .rock { fill: var(--lo); stroke: color-mix(in srgb, var(--s4) 80%, #000); stroke-width: .5; }
+.lg-shelf .top { stroke: color-mix(in srgb, var(--hi) 80%, transparent); stroke-width: 1.6; stroke-linecap: round; }
+.lg-panel { fill: var(--panel); stroke: var(--panel); stroke-width: 8; stroke-linejoin: round; }
+/* the few placed details */
+.a-pine { fill: var(--s4); }
+.a-vine { fill: none; stroke: var(--hi); stroke-width: 1; stroke-linecap: round; }
+.a-leaf { fill: var(--hi); }
+.a-ice { fill: color-mix(in srgb, var(--hi) 85%, transparent); }
+.a-crystal { fill: var(--lo); stroke: var(--hi); stroke-width: .5; stroke-linejoin: round; }
+.a-star { fill: #fde68a; }
+.a-hoodoo { fill: var(--s4); }
+.a-lava { fill: #f97316; filter: drop-shadow(0 0 1.6px #f97316); }
+.a-seam { fill: none; stroke: #f97316; stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 1.8px #f97316); }
+.a-drip { stroke: #9cc8ec; stroke-width: 1; stroke-linecap: round; }
+.a-gem { fill: #ef4444; stroke: #fecaca; stroke-width: .4; }
+.a-coin { fill: #fbbf24; stroke: #fef3c7; stroke-width: .5; }
+/* the caption, set neatly in its panel */
+.climb-caption .cc-name { font-weight: 800; }
+.climb-caption[class*="cap-"] .cc-name { color: var(--ink); }
+.climb-caption[class*="cap-"] .cc-sub { color: var(--ink2); }
