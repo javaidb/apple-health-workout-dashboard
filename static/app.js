@@ -570,7 +570,8 @@
     };
     // the base rises off the card's bottom towards the right, and runs down into it at the seam
     const foot = (x) => (14 + 6 * Math.sin(x / W * 4.4 + k * 2.3) + 3 * Math.sin(x / W * 11 + k)) * Math.min(1, x / (W * .3));
-    return { side, foot };
+    const left = (y) => Math.max(1.5, 4.5 + 2.6 * Math.sin(y / H * 6.4 + k * 2.1) + 1.6 * Math.sin(y / H * 15 + k));
+    return { side, foot, left };
   }
 
   function ledgeScene(m, n, W, H, capB) {
@@ -679,13 +680,14 @@
     const gap = { pine: 1, canopy: 1, frost: 1, stars: 1.8, ember: 1.6, storm: 1.6, mesa: 2, crown: 2.4 }[key];
     for (let x = 6; x < W - prof.side(0) - 4; x += (9 + rnd() * 8) * gap) edge.push([x, .5, 0, false]);
     for (let y = 8; y < H - prof.foot(W - prof.side(H)) - 10; y += (7 + rnd() * 7) * gap) edge.push([W - prof.side(y) - 1, y, 90, false]);
+    for (let y = 10; y < H - 12; y += (9 + rnd() * 9) * gap) edge.push([-prof.left(y) + 1, y, -90, false]);
     for (let x = W - prof.side(H) - 8; x > W * .28; x -= (6 + rnd() * 7) * gap) edge.push([x, H - prof.foot(x) - 1, 180, true]);
     return `<defs><clipPath id="${clipId}"><path d="${ol.svg}"/></clipPath></defs>
-      <g class="lg-wall"><path class="face" d="${ol.svg}"/><g clip-path="url(#${clipId})">${tex}</g><path class="rim" d="M0,0${ol.path(0)}"/><g class="lg-juts">${juts(key, edge, rnd, f)}</g></g>${holds}`;
+      <g class="lg-wall"><path class="face" d="${ol.svg}"/><g clip-path="url(#${clipId})">${tex}</g><path class="rim" d="${ol.path(0)}Z"/><g class="lg-juts">${juts(key, edge, rnd, f)}</g></g>${holds}`;
   }
 
   function wallOutline(key, W, H, rnd) {
-    const f = (v) => v.toFixed(1), { side, foot } = wallProfile(key, W, H);
+    const f = (v) => v.toFixed(1), { side, foot, left } = wallProfile(key, W, H);
     const spiky = key === "frost" || key === "stars";
     const nick = { frost: 4, stars: 4, storm: 3, mesa: 2.4, ember: 2, crown: 1.6, pine: 2.2, canopy: 2.6 }[key];
     const right = [], bottom = [];
@@ -696,21 +698,25 @@
     right.push([cx + 3, (yEnd + cy) / 2 - 2]);
     for (let x = cx - 3, i = 0; x > 0; x -= (spiky ? 6 : 13) * (.8 + rnd() * .4), i++)
       bottom.push([x, H - foot(x) - (spiky ? (i % 2 ? nick + rnd() * 2 : 0) : rnd() * nick)]);
-    bottom.push([0, H]);
-    const pts = [[right[0][0], 0], ...right, ...bottom];
+    bottom.push([-left(H), H]);
+    // and back up the side facing the card
+    const leftSide = [];
+    for (let y = H - 10, i = 0; y > 6; y -= (spiky ? 7 : 13) * (.8 + rnd() * .4), i++)
+      leftSide.push([-left(y) - (spiky ? (i % 2 ? nick * .6 + rnd() : 0) : rnd() * nick * .6), y]);
+    const pts = [[-left(0), 0], [right[0][0], 0], ...right, ...bottom, ...leftSide];
     // smooth (Catmull-Rom as cubic Béziers) for rock, turf and leaves; straight for ice and crystal
     const path = (ox) => {
       const P = (x, y) => `${f(x + ox)},${f(y)}`;
       let d = "";
       pts.forEach(([x, y], k) => {
-        if (!k) { d += `L${P(x, y)}`; return; }
+        if (!k) { d += `M${P(x, y)}`; return; }
         if (spiky) { d += `L${P(x, y)}`; return; }
         const p0 = pts[Math.max(0, k - 2)], p1 = pts[k - 1], p3 = pts[Math.min(pts.length - 1, k + 1)];
         d += `C${P(p1[0] + (x - p0[0]) / 6, p1[1] + (y - p0[1]) / 6)} ${P(x - (p3[0] - p1[0]) / 6, y - (p3[1] - p1[1]) / 6)} ${P(x, y)}`;
       });
       return d;
     };
-    return { svg: `M0,0${path(0)}Z`, path };
+    return { svg: `${path(0)}Z`, path };
   }
 
   // Bits of the material jutting out past an edge: tufts, twigs and roots out of turf; icicles and
