@@ -50,8 +50,8 @@ weekly streak becomes Carl, a little climber working his way up a new mountain e
   mountains that get longer through the year:
   - a month each: Pine Ridge (turf and pines), Red Rock Mesa (sandstone and a cactus) and Ember Peak
     (basalt dripping lava)
-  - six weeks each: Frost Spire (ice, snow and icicles) and Canopy Crag (leaves and hanging vines)
-  - two months each: Summit of Stars (crystals and stars), Thunderhead (wet slate and a raincloud) and
+  - six weeks each: Frost Spire (ice, snow and icicles) and Coral Crag (a sea cliff with coral, shells and seaweed)
+  - two months each: Summit of Stars (crystals and stars), Glowcap Peak (glowing mushrooms and spores) and
     Gilded Crown (gold, gems and a crown)
 
   After a full year the cycle repeats as a higher tier. Each summit brings home a souvenir. At night Carl

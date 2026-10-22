@@ -441,12 +441,12 @@
     { key: "mesa", name: "Red Rock Mesa", top: 78, width: 60, seed: 2 },
     { key: "ember", name: "Ember Peak", top: 70, width: 42, seed: 3, crater: true },
     { key: "frost", name: "Frost Spire", top: 56, width: 34, seed: 4, snow: 42 },
-    { key: "canopy", name: "Canopy Crag", top: 68, width: 44, seed: 5 },
+    { key: "coral", name: "Coral Crag", top: 68, width: 44, seed: 5 },
     { key: "stars", name: "Summit of Stars", top: 60, width: 44, seed: 6 },
-    { key: "storm", name: "Thunderhead", top: 62, width: 36, seed: 7 },
+    { key: "glow", name: "Glowcap Peak", top: 62, width: 36, seed: 7 },
     { key: "crown", name: "Gilded Crown", top: 54, width: 32, seed: 8 },
   ];
-  const MOUNTAIN_WEEKS = { pine: 4, mesa: 4, ember: 4, frost: 6, canopy: 6, stars: 8, storm: 8, crown: 8 };
+  const MOUNTAIN_WEEKS = { pine: 4, mesa: 4, ember: 4, frost: 6, coral: 6, stars: 8, glow: 8, crown: 8 };
   const RANGE_WEEKS = MOUNTAINS.reduce((n, m) => n + MOUNTAIN_WEEKS[m.key], 0);
   const weeksOf = (index) => MOUNTAIN_WEEKS[MOUNTAINS[index % MOUNTAINS.length].key];
   const ledgeOf = (index) => weeksOf(index) / 2;
@@ -600,8 +600,8 @@
   // The themed edge: a band of the mountain's material along the outline, and its own details:
   // tufts and pines (Pine Ridge), snow and icicles (Frost Spire), strata, chips and a cactus (Red
   // Rock Mesa), basalt with glowing cracks and lava drips (Ember Peak), leaves and hanging vines
-  // (Canopy Crag), crystals and stars (Summit of Stars), wet slate, drips and a raincloud
-  // (Thunderhead), gold with gems and a crown (Gilded Crown). Nothing moves.
+  // coral, shells, seaweed and a palm (Coral Crag), crystals and stars (Summit of Stars), glowing
+  // mushrooms and spores (Glowcap Peak), gold with gems and a crown (Gilded Crown). Nothing moves.
   function edgeArt(key, g) {
     const { E, cw, fy, H, edgeX: ex, bottomY: by } = g, f = (v) => v.toFixed(1), x0 = E - cw;
     let seed = key.length * 131 + Math.round(H) * 7;
@@ -632,18 +632,20 @@
           return `<path class="e-lava" d="M${f(ex(y) - 1)},${f(y)}q3 1 3.4 ${6 + i * 2}q.4 3 -.6 6"/><circle class="e-drop" cx="${f(ex(y) + 1.8)}" cy="${f(y + 15 + i * 2)}" r="1.3"/>`; }).join("")
         + [.25, .6].map((t) => { const x = E - g.wrap * t; return `<path class="e-lava" d="M${f(x)},${f(by(x) - 1)}q.6 4 .2 7"/><circle class="e-drop" cx="${f(x + .2)}" cy="${f(by(x) + 9.5)}" r="1.2"/>`; }).join("")
         + `<path class="e-glow" d="M${f(x0 + 8)},${fy + 1}H${f(E - 1)}"/><path class="e-smoke" d="M${f(x0 + 20)},${fy - 3}q-3 -5 1 -9q3 -4 -1 -8"/>`,
-      canopy: down(12).map((y) => `<path class="e-leaf" d="M${f(ex(y))},${f(y)}q4.6 -2.6 6 1q-4 2.4 -6 -1Z"/>`).join("")
-        + under(11).map((x, i) => i % 3 ? `<path class="e-leaf" d="M${f(x)},${f(by(x))}q-2.4 4.4 1 6q2.4 -4 -1 -6Z"/>` : `<path class="e-vine" d="M${f(x)},${f(by(x))}q-3 6 1 12"/>`).join("")
-        + [.18, .5].map((t, i) => { const y = fy + (H - fy) * t; return `<path class="e-vine" d="M${f(ex(y))},${f(y)}q5 ${10 + i * 4} 1 ${22 + i * 6}"/><path class="e-leaf" d="M${f(ex(y) + 2)},${f(y + 12 + i * 3)}q4 -2 5 1q-3.4 2 -5 -1Z"/>`; }).join("")
-        + `<path class="e-fern" d="M${f(x0 + 10)},${fy}q-3 -6 1 -11M${f(x0 + 10)},${fy}q4 -5 7 -6"/>`,
+      coral: down(15).map((y, i) => i % 3 === 2
+          ? `<path class="e-shell" d="M${f(ex(y))},${f(y + 2)}q4 -5 7 0q-3.5 1.6 -7 0ZM${f(ex(y) + 1.6)},${f(y + 1.4)}l.8 -2.2M${f(ex(y) + 3.5)},${f(y + 1)}v-2.6M${f(ex(y) + 5.4)},${f(y + 1.4)}l-.8 -2.2"/>`
+          : `<path class="e-coral" d="M${f(ex(y))},${f(y)}l4 -1.6l2.6 -3M${f(ex(y) + 4)},${f(y - 1.6)}l2.2 1.4M${f(ex(y))},${f(y + 2)}l5 1.2l2 2.6"/>`).join("")
+        + under(10).map((x, i) => i % 2 ? `<path class="e-weed" d="M${f(x)},${f(by(x))}q-2.4 4 .4 7q2.4 3 -.4 6"/>` : `<circle class="e-bubble" cx="${f(x)}" cy="${f(by(x) + 5 + (i % 3) * 3)}" r="${1 + (i % 2) * .5}"/>`).join("")
+        + `<path class="e-palm-trunk" d="M${f(x0 + 12)},${fy}q-1 -8 2 -15"/><path class="e-palm" d="M${f(x0 + 14)},${fy - 15}q-6 -2 -9 3M${f(x0 + 14)},${fy - 15}q5 -3 9 1M${f(x0 + 14)},${fy - 15}q-2 -5 -7 -6M${f(x0 + 14)},${fy - 15}q3 -5 8 -4"/>`
+        + `<path class="e-starfish" d="M${f(x0 + 26)},${fy - 4.4}l.9 2.2l2.4 .3l-1.8 1.6l.5 2.4l-2 -1.2l-2 1.2l.5 -2.4l-1.8 -1.6l2.4 -.3Z"/>`,
       stars: down(17).map((y) => `<path class="e-crystal" d="M${f(ex(y))},${f(y - 2)}L${f(ex(y) + 5 + rnd() * 3)},${f(y - 1)}L${f(ex(y))},${f(y + 2)}Z"/>`).join("")
         + under(15).map((x) => `<path class="e-crystal" d="M${f(x - 2)},${f(by(x))}L${f(x - .8)},${f(by(x) + 5 + rnd() * 3)}L${f(x + 2)},${f(by(x))}Z"/>`).join("")
         + [[x0 + 10, fy - 9], [x0 + 26, fy - 14], [E - 14, fy - 18]].map(([x, y]) => `<path class="e-star" d="M${f(x)},${f(y - 2)}l.5 1.5l1.5 .5l-1.5 .5l-.5 1.5l-.5 -1.5l-1.5 -.5l1.5 -.5Z"/>`).join("")
         + [x0 + 14, x0 + 18].map((x, i) => `<path class="e-crystal" d="M${f(x - 2)},${fy}L${f(x - .6)},${fy - 8 - i * 4}L${f(x + 1)},${fy - 9 - i * 4}L${f(x + 2)},${fy}Z"/>`).join(""),
-      storm: down(14).map((y) => `<path class="e-drip" d="M${f(ex(y) + 1)},${f(y)}v4"/>`).join("")
-        + under(12).map((x) => `<path class="e-drip" d="M${f(x)},${f(by(x) + 1.5)}v4"/>`).join("")
-        + `<g class="e-cloud"><path d="M${f(x0 + 14)},${fy - 15}q0 -5 5 -5q2 -4 6 -2q4 -1 5 3q4 0 4 4Z"/></g><path class="e-drip" d="M${f(x0 + 18)},${fy - 12}l-1 4M${f(x0 + 23)},${fy - 12}l-1 4M${f(x0 + 28)},${fy - 12}l-1 4"/>`
-        + `<ellipse class="e-puddle" cx="${f(x0 + cw * .5)}" cy="${fy + .5}" rx="${f(cw * .18)}" ry="1"/>`,
+      glow: down(13).map((y, i) => `<path class="e-stem" d="M${f(ex(y))},${f(y + 1)}h${f(3 + (i % 2) * 1.5)}"/><path class="e-cap${i % 2 ? " b" : ""}" d="M${f(ex(y) + 1.6 + (i % 2) * 1.5)},${f(y + 1)}a${f(2.6 + (i % 3) * .6)} ${f(2.6 + (i % 3) * .6)} 0 0 1 0 -${f(5.2 + (i % 3) * 1.2)}Z"/>`).join("")
+        + under(9).map((x, i) => i % 2 ? `<path class="e-groot" d="M${f(x)},${f(by(x))}q-2 4 .6 8"/>` : `<circle class="e-spore" cx="${f(x)}" cy="${f(by(x) + 4 + (i % 3) * 3)}" r=".9"/>`).join("")
+        + `<path class="e-stem big" d="M${f(x0 + 16)},${fy}V${fy - 9}"/><path class="e-cap big" d="M${f(x0 + 8)},${fy - 9}a8 6 0 0 1 16 0Z"/>`
+        + [[x0 + 30, fy - 10], [x0 + 6, fy - 17], [x0 + 26, fy - 20]].map(([x, y]) => `<circle class="e-spore" cx="${f(x)}" cy="${f(y)}" r="1"/>`).join(""),
       crown: down(20).map((y) => `<path class="e-gem" d="M${f(ex(y) - 4)},${f(y - 2.6)}l2.4 2.6l-2.4 2.6l-2.4 -2.6Z"/>`).join("")
         + under(20).map((x) => `<path class="e-gem" d="M${f(x)},${f(by(x) - 6.4)}l2.4 2.6l-2.4 2.6l-2.4 -2.6Z"/>`).join("")
         + `<g transform="translate(${f(E - 9)},${fy})"><path class="e-crown" d="M-4 0V-5.6L-2 -3.6L0 -7.2L2 -3.6L4 -5.6V0Z"/></g>`
@@ -684,17 +686,19 @@
   // Something pours off the clearing's floor and down over the card's own face and the edge's band,
   // just inside the edge, then on over the base and behind the railing and the This week card below
   // (which are drawn over it): a creek (Pine Ridge), snow and meltwater (Frost
-  // Spire), a sandfall (Red Rock Mesa), a lava fall (Ember Peak), a waterfall (Canopy Crag), a
-  // stream of stardust (Summit of Stars), runoff (Thunderhead), a cascade of coins (Gilded Crown).
+  // Spire), a sandfall (Red Rock Mesa), a lava fall (Ember Peak), sea water with foam (Coral Crag),
+  // a stream of stardust (Summit of Stars), glowing water with drifting spores (Glowcap Peak), a
+  // cascade of coins (Gilded Crown).
   function fallArt(key, g) {
     const f = (v) => v.toFixed(1), { E, fy, H } = g, fx = E - 20, len = H - fy + 90;
     const path = `M${f(fx - 6)},${f(fy + 2)}Q${f(fx)},${f(fy + 2)} ${f(fx)},${f(fy + 10)}V${f(H + 90)}`;
-    const kind = { pine: "water", canopy: "water wide", storm: "water grey", frost: "frozen", ember: "lava", mesa: "sand", stars: "dust", crown: "coins" }[key];
+    const kind = { pine: "water", coral: "water sea", glow: "water glowing", frost: "frozen", ember: "lava", mesa: "sand", stars: "dust", crown: "coins" }[key];
     const stream = `<path class="f-base" d="${path}"/>` + [[-5, ""], [0, " b"], [4.5, " c"]].map(([dx, c]) => `<path class="f-flow${c}" transform="translate(${dx},0)" d="${path}"/>`).join("");
     // falling bits: snowflakes, sand grains, stardust, coins
     const bits = (n, cls, r) => Array.from({ length: n }, (_, i) => `<circle class="f-bit ${cls}" cx="${f(fx + (i % 5 - 2) * 3.4)}" cy="${f(fy + 8)}" r="${r}" style="--len:${f(len)}px;animation-delay:${(-i * 6.4 / n).toFixed(2)}s"/>`).join("");
     const icicles = [-6, -2, 3, 7].map((dx, i) => `<path class="f-icicle" d="M${f(fx + dx - 1.6)},${f(fy + 3)}L${f(fx + dx)},${f(fy + 3 + [7, 11, 6, 9][i])}L${f(fx + dx + 1.6)},${f(fy + 3)}Z"/>`).join("");
-    const extra = { frozen: icicles, sand: bits(12, "grain", .6), dust: bits(10, "spark", .8), coins: bits(7, "coin", 1.8) }[kind.split(" ")[0]] || "";
+    const extra = { frozen: icicles, sand: bits(12, "grain", .6), dust: bits(10, "spark", .8), coins: bits(7, "coin", 1.8) }[kind.split(" ")[0]]
+      || (kind === "water glowing" ? bits(8, "spore", .9) : kind === "water sea" ? bits(6, "foam", 1.1) : "");
     return `<g class="fall ${kind}">${kind === "coins" ? `<path class="f-base" d="${path}"/>` : stream}${extra}<ellipse class="f-splash" cx="${f(fx)}" cy="${f(fy + 9)}" rx="9" ry="1.8"/></g>`;
   }
 
@@ -718,9 +722,9 @@
     mesa: ["Desert bloom", `${[0, 72, 144, 216, 288].map((a) => `<circle cx="${(6 + 2.7 * Math.sin(a * Math.PI / 180)).toFixed(2)}" cy="${(6 - 2.7 * Math.cos(a * Math.PI / 180)).toFixed(2)}" r="2" fill="#f472b6"/>`).join("")}<circle cx="6" cy="6" r="1.4" fill="#fde047"/>`],
     ember: ["Obsidian shard", `<path d="M6 .8L10.4 4.4L8.8 11H3.2L1.6 4.4Z" fill="#7c3aed"/><path d="M6 .8L6.9 6.1L8.8 11M1.6 4.4L6.9 6.1L10.4 4.4" stroke="#ddd6fe" stroke-width=".55" fill="none" stroke-linejoin="round"/>`],
     frost: ["Ice crystal", `<path d="M6 .8v10.4M1.5 3.4l9 5.2M1.5 8.6l9-5.2M4.6 1.8L6 3.2l1.4-1.4M4.6 10.2L6 8.8l1.4 1.4" stroke="#bae6fd" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`],
-    canopy: ["Jungle leaf", `<path d="M1.8 10.2C1.6 4.6 5.6 1.4 10.6 1.6C10.8 6.8 7.4 10.6 1.8 10.2Z" fill="#4ade80"/><path d="M1.8 10.2L8.4 3.6M4.4 7.6l-.4-2.2M6.2 5.8l1.9.3" stroke="#166534" stroke-width=".6" fill="none" stroke-linecap="round"/>`],
+    coral: ["Seashell", `<path d="M6 11C2.4 11 1 8.2 1.6 5.4C2.2 2.6 4.4 1 6 1C7.6 1 9.8 2.6 10.4 5.4C11 8.2 9.6 11 6 11Z" fill="#fda4af"/><path d="M6 11V2M6 11L3.2 3.2M6 11L8.8 3.2M6 11L1.8 6M6 11L10.2 6" stroke="#be123c" stroke-width=".55" fill="none" stroke-linecap="round"/>`],
     stars: ["Fallen star", `<path d="M6 .8L7.5 4.3L11.2 4.6L8.4 7.1L9.3 10.8L6 8.8L2.7 10.8L3.6 7.1L.8 4.6L4.5 4.3Z" fill="#fde047" stroke="#fef9c3" stroke-width=".4" stroke-linejoin="round"/>`],
-    storm: ["Fulgurite", `<path d="M7.4 .6L3 6.6H6L4.2 11.4L9.4 4.8H6.4Z" fill="#a5f3fc" stroke="#ecfeff" stroke-width=".45" stroke-linejoin="round"/>`],
+    glow: ["Glowcap", `<path d="M1.4 6.4A4.6 4.6 0 0 1 10.6 6.4Z" fill="#f472b6"/><circle cx="4" cy="4.4" r=".8" fill="#fbcfe8"/><circle cx="7.6" cy="3.8" r=".6" fill="#fbcfe8"/><path d="M5 6.4H7L7.4 11H4.6Z" fill="#5eead4"/>`],
     crown: ["Golden crown", `<path d="M1.4 9.6V4L4 6.4L6 2.4L8 6.4L10.6 4V9.6Z" fill="#fbbf24" stroke="#fef3c7" stroke-width=".45" stroke-linejoin="round"/><circle cx="6" cy="7.6" r=".9" fill="#ef4444"/><rect x="1.4" y="9.6" width="9.2" height="1.3" rx=".4" fill="#f59e0b"/>`],
   };
   const souvenir = (key, cls = "", size = "") => `<svg class="souv ${cls}" viewBox="0 0 12 12"${size}><title>${SOUVENIRS[key][0]} from ${MOUNTAINS.find((m) => m.key === key).name}</title>${SOUVENIRS[key][1]}</svg>`;
