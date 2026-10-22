@@ -606,7 +606,7 @@
     const { E, cw, fy, H, edgeX: ex, bottomY: by } = g, f = (v) => v.toFixed(1), x0 = E - cw;
     let seed = key.length * 131 + Math.round(H) * 7;
     const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed % 10000) / 10000; };
-    const inner = edgeCurve(insetPts(g.pts, 4));
+    const inner = edgeCurve(insetPts(g.pts, 5.5));
     const band = `<path class="e-band" d="${inner}"/><path class="e-tex" d="${inner}"/><path class="e-lip" d="${edgeCurve(g.pts)}"/>`;
     // spots along the base, for details hanging down from it
     const under = (step) => { const out = []; for (let x = E - 14; x > E - g.wrap + 8; x -= step * (.8 + rnd() * .4)) out.push(x); return out; };
@@ -681,20 +681,20 @@
       <g class="sky" clip-path="url(#sky-c-${id})"><path d="${outside}" fill="url(#sky-g-${id})"/>${deco}</g>`;
   }
 
-  // Something pours off the clearing's floor and down over the card's own face, just inside the
-  // edge, then on past the base and behind the railing and the This week card below (which are
-  // drawn over it): a creek (Pine Ridge), snow and meltwater (Frost
+  // Something pours off the clearing's floor and down over the card's own face and the edge's band,
+  // just inside the edge, then on over the base and behind the railing and the This week card below
+  // (which are drawn over it): a creek (Pine Ridge), snow and meltwater (Frost
   // Spire), a sandfall (Red Rock Mesa), a lava fall (Ember Peak), a waterfall (Canopy Crag), a
   // stream of stardust (Summit of Stars), runoff (Thunderhead), a cascade of coins (Gilded Crown).
   function fallArt(key, g) {
-    const f = (v) => v.toFixed(1), { E, fy, H } = g, fx = E - 17, len = H - fy + 90;
-    const path = `M${f(fx - 7)},${f(fy + .5)}Q${f(fx)},${f(fy)} ${f(fx)},${f(fy + 8)}V${f(H + 90)}`;
+    const f = (v) => v.toFixed(1), { E, fy, H } = g, fx = E - 15, len = H - fy + 90;
+    const path = `M${f(fx - 6)},${f(fy + 2)}Q${f(fx)},${f(fy + 2)} ${f(fx)},${f(fy + 10)}V${f(H + 90)}`;
     const kind = { pine: "water", canopy: "water wide", storm: "water grey", frost: "ice", ember: "lava", mesa: "sand", stars: "dust", crown: "coins" }[key];
-    const stream = `<path class="f-base" d="${path}"/><path class="f-flow" d="${path}"/><path class="f-flow b" d="${path}"/>`;
+    const stream = `<path class="f-base" d="${path}"/>` + [[-5, ""], [0, " b"], [4.5, " c"]].map(([dx, c]) => `<path class="f-flow${c}" transform="translate(${dx},0)" d="${path}"/>`).join("");
     // falling bits: snowflakes, sand grains, stardust, coins
-    const bits = (n, cls, r) => Array.from({ length: n }, (_, i) => `<circle class="f-bit ${cls}" cx="${f(fx + (i % 3 - 1) * 1.6)}" cy="${f(fy + 8)}" r="${r}" style="--len:${f(len)}px;animation-delay:${(-i * 3.2 / n).toFixed(2)}s"/>`).join("");
+    const bits = (n, cls, r) => Array.from({ length: n }, (_, i) => `<circle class="f-bit ${cls}" cx="${f(fx + (i % 5 - 2) * 3.4)}" cy="${f(fy + 8)}" r="${r}" style="--len:${f(len)}px;animation-delay:${(-i * 3.2 / n).toFixed(2)}s"/>`).join("");
     const extra = { ice: bits(9, "snow", 1), sand: bits(12, "grain", .6), dust: bits(10, "spark", .8), coins: bits(7, "coin", 1.8) }[kind.split(" ")[0]] || "";
-    return `<g class="fall ${kind}">${kind === "coins" ? "" : stream}${extra}<ellipse class="f-splash" cx="${f(fx)}" cy="${f(fy + 9)}" rx="2.6" ry="1"/></g>`;
+    return `<g class="fall ${kind}">${kind === "coins" ? `<path class="f-base" d="${path}"/>` : stream}${extra}<ellipse class="f-splash" cx="${f(fx)}" cy="${f(fy + 9)}" rx="9" ry="1.8"/></g>`;
   }
 
   // The summit clearing's bell, on a little post at the back.
@@ -789,8 +789,8 @@
     // the rope: tied at the clearing's lip, hanging down the gutter to the base camp rope
     const [rx] = pt(0), tie = g.tie;
     const rope = `<path class="e-rope" d="M${f(g.E + 2)},${g.fy + 1}C${f(rx + 2)},${f(g.fy + 30)} ${f(rx - 2)},${f(H * .6)} ${f(rx)},${f(H - 4)}Q${f(rx - 1)},${f(H + 4)} ${f(g.E - 8)},${f(H + 4.5)}Q${f((g.E + tie[0]) / 2)},${f(H + 6)} ${f(tie[0])},${f(tie[1])}"/>`;
-    const holds = Array.from({ length: N - 1 }, (_, i) => i + 1).map((k) => edgeHold(g, pt(k)[1] + 3, stateOf(k), k === LEDGE)
-      + (k === LEDGE ? `<text class="cl-label" x="${f(g.E - 24)}" y="${f(pt(k)[1] + 4)}" text-anchor="end">${LEDGE === 4 ? "1 mo" : `${LEDGE} wks`}</text>` : "")).join("");
+    const holds = Array.from({ length: N - 1 }, (_, i) => i + 1).map((k) => edgeHold(g, pt(k)[1] + 3, stateOf(k), k === LEDGE || (k === step && !atSummit))
+      + (k === LEDGE ? `<text class="cl-label" x="${f(g.E - 34)}" y="${f(pt(k)[1] + 4)}" text-anchor="end">${LEDGE === 4 ? "1 mo" : `${LEDGE} wks`}</text>` : "")).join("");
     const bolt = `<g class="cl-anchor"><circle cx="${f(tie[0])}" cy="${f(tie[1])}" r="1.5"/><circle class="eye" cx="${f(tie[0])}" cy="${f(tie[1])}" r=".6"/></g>`;
     const flag = `<g class="cl-summit${atSummit ? " won" : ""}" transform="translate(${f(g.flagAt[0])},${f(g.flagAt[1])})"><path d="M0 0V-12"/><path class="flag" d="M0 -12L7 -9.6L0 -7.2Z"/></g>`;
     const camp = campName(index);
@@ -798,20 +798,15 @@
     let figure = "", extra = "", sub;
     const cs = 1.2, HANG = 11.4 * cs;
     if (step > 0 && !atSummit) {
-      const [x, y] = pt(step), hang = pending;
-      if (hang) {
-        figure = climber("hang", x, y + HANG, true, cs);
-        extra = `<text class="cl-alert" x="${f(x + 8)}" y="${f(y + 9)}" text-anchor="middle">!</text>`;
-        sub = `Hang on, ${plural(N - step, "wk")} to the summit`;  // this week counts as one of them
-      } else if ((state.overview?.last_workout?.days_ago ?? 0) >= 5 || step === LEDGE) {
-        // on the halfway ledge, or a while since a workout: he sits on his hold for a rest
-        const yawn = step !== LEDGE || (state.overview?.last_workout?.days_ago ?? 0) >= 5;
-        figure = climber("rest", g.E + 4, y + 3, false, cs) + (yawn ? `<text class="cl-yawn" x="${f(g.E + 12)}" y="${f(y - 9)}" text-anchor="middle">yawn</text>` : "");
-        sub = yawn && step !== LEDGE ? `${plural(N - step, "wk")} to the summit · Carl's getting comfy` : `${plural(N - step, "wk")} to the summit`;
-      } else {
-        figure = climber("climb", x, y, true, cs);
-        sub = `${plural(N - step, "wk")} to the summit`;
-      }
+      // By night he rests, sitting on the ledge at this week's hold; by day he dangles from the
+      // rope just above it, swaying gently.
+      const [x, y] = pt(step), sleepy = (state.overview?.last_workout?.days_ago ?? 0) >= 5;
+      figure = night
+        ? climber("rest", g.edgeX(y + 3) + 4, y + 3, false, cs) + (sleepy ? `<text class="cl-yawn" x="${f(g.E + 13)}" y="${f(y - 9)}" text-anchor="middle">yawn</text>` : "")
+        : climber("hang", x, y - 4 + HANG - 13, true, cs);
+      if (pending) extra = `<text class="cl-alert" x="${f(x + 8)}" y="${f(y - 8)}" text-anchor="middle">!</text>`;
+      sub = pending ? `Hang on, ${plural(N - step, "wk")} to the summit`   // this week counts as one of them
+        : sleepy ? `${plural(N - step, "wk")} to the summit · Carl's getting comfy` : `${plural(N - step, "wk")} to the summit`;
     } else if (atSummit) {
       figure = tent(g.tentAt[0], g.tentAt[1], "", 1.2) + climber("cheer", summit[0], summit[1], false, cs)
         + `<g class="cl-confetti">${[[-12, -14, "a"], [-4, -19, "b"], [7, -16, "c"], [12, -9, "a"], [-15, -6, "c"], [2, -24, "b"]]
@@ -838,7 +833,7 @@
     const label = step > 0
       ? `Carl on ${info.name}, ${atSummit ? "at the summit" : `${plural(step, "week")} up, ${plural(N - step, "week")} to the summit`}`
       : fell ? `Carl fell ${fell.down ? "down" : "on"} ${info.name} and is back at ${camp}` : `Carl at ${camp}, ready to climb ${info.name}`;
-    const art = `${skyArt(g, phase)}${fallArt(info.key, g)}${edgeArt(info.key, g)}${rope}${holds}${bellArt(g, atSummit)}${bolt}${flag}${extra}${figure}`;
+    const art = `${skyArt(g, phase)}${edgeArt(info.key, g)}${fallArt(info.key, g)}${rope}${holds}${bellArt(g, atSummit)}${bolt}${flag}${extra}${figure}`;
     return { sub, label, art, key: info.key, night, tie, g };
   }
 
@@ -859,7 +854,7 @@
     // the caption keeps beside the clearing at the top, and clear of the themed edge
     el.style.setProperty("--clear-w", `${Math.max(0, W - (g0.E - g0.cw) + 6 - padR)}px`);
     el.style.setProperty("--clear-h", `${Math.max(0, g0.fy + 10 - padT)}px`);
-    el.style.setProperty("--edge-in", `${Math.max(0, W - g0.E + 24 - padR)}px`);
+    el.style.setProperty("--edge-in", `${Math.max(0, W - g0.E + 36 - padR)}px`);
     const key = `${climbRender}|${W}x${H}|${skyPhase()}`;
     if (onlyIfMoved && key === climbKey) return;
     climbKey = key;
