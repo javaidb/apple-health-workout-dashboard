@@ -660,6 +660,43 @@
       <path class="cap" d="M${f(E)},${f(y)}H${f(E + w - .4)}"/></g>`;
   }
 
+  // The sky in the open space above the clearing and beside the edge, following the viewer's clock:
+  // soft blue with a sun and clouds by day, peach at dawn, violet into orange at dusk, deep blue
+  // with a moon and stars at night.
+  function skyArt(g, phase) {
+    const f = (v) => v.toFixed(1), { W, H, pts, E, cw, fy } = g, id = ++climbId, x0 = E - cw;
+    const stops = { day: ["#8ccbf2", "#d6eefc"], dawn: ["#7f8fd8", "#f6b48c"], dusk: ["#3a2a6e", "#ee8a5c"], night: ["#060a1c", "#18224d"] }[phase];
+    const outside = `M${f(W + 1)},-1H${f(pts[0][0])}${edgeCurve(pts).replace(/^M[^C]*/, "")}L${f(W + 1)},${f(H + 1)}Z`;
+    const deco = {
+      day: `<circle class="sky-sun" cx="${f(W - 12)}" cy="11" r="5"/>`
+        + [[x0 + cw * .3, 9, 1], [W - 6, fy + 40, .8]].map(([x, y, k]) => `<path class="sky-cloud" d="M${f(x - 8 * k)},${f(y)}q0 -${f(4 * k)} ${f(4 * k)} -${f(4 * k)}q${f(2 * k)} -${f(3 * k)} ${f(5 * k)} -${f(1.5 * k)}q${f(3 * k)} -${f(.5 * k)} ${f(4 * k)} ${f(2.5 * k)}q${f(3 * k)} 0 ${f(3 * k)} ${f(3 * k)}Z"/>`).join(""),
+      dawn: `<circle class="sky-sun low" cx="${f(W - 10)}" cy="${f(fy - 4)}" r="5.5"/>`,
+      dusk: `<circle class="sky-sun low" cx="${f(x0 + 10)}" cy="${f(fy - 4)}" r="5.5"/>`,
+      night: `<circle class="sky-moon" cx="${f(W - 12)}" cy="11" r="4.6"/><circle class="sky-moon-cut" cx="${f(W - 10)}" cy="9.4" r="4"/>`
+        + [[x0 + 8, 6], [x0 + 22, 14], [x0 + 36, 5], [W - 22, 20], [W - 6, fy + 18], [W - 10, H * .4], [W - 5, H * .62], [W - 9, H * .82]]
+          .map(([x, y], i) => `<circle class="sky-star" cx="${f(x)}" cy="${f(y)}" r="${i % 3 ? .55 : .85}" style="animation-delay:${(i * .43).toFixed(2)}s"/>`).join(""),
+    }[phase];
+    return `<defs><linearGradient id="sky-g-${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${stops[0]}"/><stop offset="1" stop-color="${stops[1]}"/></linearGradient>
+        <clipPath id="sky-c-${id}"><rect x="-40" y="0" width="${W + 40}" height="${H}" rx="15"/></clipPath></defs>
+      <g class="sky" clip-path="url(#sky-c-${id})"><path d="${outside}" fill="url(#sky-g-${id})"/>${deco}</g>`;
+  }
+
+  // Something pours off the clearing's floor and down over the card's own face, just inside the
+  // edge, then on past the base and behind the railing and the This week card below (which are
+  // drawn over it): a creek (Pine Ridge), snow and meltwater (Frost
+  // Spire), a sandfall (Red Rock Mesa), a lava fall (Ember Peak), a waterfall (Canopy Crag), a
+  // stream of stardust (Summit of Stars), runoff (Thunderhead), a cascade of coins (Gilded Crown).
+  function fallArt(key, g) {
+    const f = (v) => v.toFixed(1), { E, fy, H } = g, fx = E - 17, len = H - fy + 90;
+    const path = `M${f(fx - 7)},${f(fy + .5)}Q${f(fx)},${f(fy)} ${f(fx)},${f(fy + 8)}V${f(H + 90)}`;
+    const kind = { pine: "water", canopy: "water wide", storm: "water grey", frost: "ice", ember: "lava", mesa: "sand", stars: "dust", crown: "coins" }[key];
+    const stream = `<path class="f-base" d="${path}"/><path class="f-flow" d="${path}"/><path class="f-flow b" d="${path}"/>`;
+    // falling bits: snowflakes, sand grains, stardust, coins
+    const bits = (n, cls, r) => Array.from({ length: n }, (_, i) => `<circle class="f-bit ${cls}" cx="${f(fx + (i % 3 - 1) * 1.6)}" cy="${f(fy + 8)}" r="${r}" style="--len:${f(len)}px;animation-delay:${(-i * 3.2 / n).toFixed(2)}s"/>`).join("");
+    const extra = { ice: bits(9, "snow", 1), sand: bits(12, "grain", .6), dust: bits(10, "spark", .8), coins: bits(7, "coin", 1.8) }[kind.split(" ")[0]] || "";
+    return `<g class="fall ${kind}">${kind === "coins" ? "" : stream}${extra}<ellipse class="f-splash" cx="${f(fx)}" cy="${f(fy + 9)}" rx="2.6" ry="1"/></g>`;
+  }
+
   // The summit clearing's bell, on a little post at the back.
   function bellArt(g, ring) {
     const f = (v) => v.toFixed(1), [bx, by] = g.bellAt;
@@ -746,14 +783,14 @@
     const N = weeksOf(index), LEDGE = N / 2;
     const g = edgeScene(N, W, H, info.key);
     const { pt, summit } = routeGeom(g);
-    const night = skyPhase() === "night", atSummit = step === N;
+    const phase = skyPhase(), night = phase === "night", atSummit = step === N;
     const reached = step, fellFrom = fell ? fell.from : 0, f = (v) => v.toFixed(1);
     const stateOf = (k) => (golds[k - 1] && k <= reached ? "gold" : k <= reached ? "done" : k <= fellFrom ? "old" : "ahead");
     // the rope: tied at the clearing's lip, hanging down the gutter to the base camp rope
     const [rx] = pt(0), tie = g.tie;
     const rope = `<path class="e-rope" d="M${f(g.E + 2)},${g.fy + 1}C${f(rx + 2)},${f(g.fy + 30)} ${f(rx - 2)},${f(H * .6)} ${f(rx)},${f(H - 4)}Q${f(rx - 1)},${f(H + 4)} ${f(g.E - 8)},${f(H + 4.5)}Q${f((g.E + tie[0]) / 2)},${f(H + 6)} ${f(tie[0])},${f(tie[1])}"/>`;
     const holds = Array.from({ length: N - 1 }, (_, i) => i + 1).map((k) => edgeHold(g, pt(k)[1] + 3, stateOf(k), k === LEDGE)
-      + (k === LEDGE ? `<text class="cl-label" x="${f(g.E - 5)}" y="${f(pt(k)[1] + 4)}" text-anchor="end">${LEDGE === 4 ? "1 mo" : `${LEDGE} wks`}</text>` : "")).join("");
+      + (k === LEDGE ? `<text class="cl-label" x="${f(g.E - 24)}" y="${f(pt(k)[1] + 4)}" text-anchor="end">${LEDGE === 4 ? "1 mo" : `${LEDGE} wks`}</text>` : "")).join("");
     const bolt = `<g class="cl-anchor"><circle cx="${f(tie[0])}" cy="${f(tie[1])}" r="1.5"/><circle class="eye" cx="${f(tie[0])}" cy="${f(tie[1])}" r=".6"/></g>`;
     const flag = `<g class="cl-summit${atSummit ? " won" : ""}" transform="translate(${f(g.flagAt[0])},${f(g.flagAt[1])})"><path d="M0 0V-12"/><path class="flag" d="M0 -12L7 -9.6L0 -7.2Z"/></g>`;
     const camp = campName(index);
@@ -801,7 +838,7 @@
     const label = step > 0
       ? `Carl on ${info.name}, ${atSummit ? "at the summit" : `${plural(step, "week")} up, ${plural(N - step, "week")} to the summit`}`
       : fell ? `Carl fell ${fell.down ? "down" : "on"} ${info.name} and is back at ${camp}` : `Carl at ${camp}, ready to climb ${info.name}`;
-    const art = `${edgeArt(info.key, g)}${rope}${holds}${bellArt(g, atSummit)}${bolt}${flag}${extra}${figure}`;
+    const art = `${skyArt(g, phase)}${fallArt(info.key, g)}${edgeArt(info.key, g)}${rope}${holds}${bellArt(g, atSummit)}${bolt}${flag}${extra}${figure}`;
     return { sub, label, art, key: info.key, night, tie, g };
   }
 
@@ -822,7 +859,7 @@
     // the caption keeps beside the clearing at the top, and clear of the themed edge
     el.style.setProperty("--clear-w", `${Math.max(0, W - (g0.E - g0.cw) + 6 - padR)}px`);
     el.style.setProperty("--clear-h", `${Math.max(0, g0.fy + 10 - padT)}px`);
-    el.style.setProperty("--edge-in", `${Math.max(0, W - g0.E + 10 - padR)}px`);
+    el.style.setProperty("--edge-in", `${Math.max(0, W - g0.E + 24 - padR)}px`);
     const key = `${climbRender}|${W}x${H}|${skyPhase()}`;
     if (onlyIfMoved && key === climbKey) return;
     climbKey = key;

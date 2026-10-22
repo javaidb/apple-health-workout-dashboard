@@ -1416,3 +1416,31 @@ svg.th-crown, .cap-crown { --s1: #8a6118; --s2: #a2741f; --s3: #946a1b; --s4: #7
 .e-hold.gold .cap { stroke: #fbbf24; }
 .e-hold.old .cap { stroke: var(--faint); }
 .trail-card { fill: var(--surface-2, var(--surface)); stroke: var(--border); }
+
+/* the sky beside Carl's edge */
+.sky-sun { fill: #fde68a; filter: drop-shadow(0 0 4px #fde68a); }
+.sky-sun.low { fill: #fdba74; filter: drop-shadow(0 0 5px #fb923c); }
+.sky-cloud { fill: rgba(255, 255, 255, .85); }
+.sky-moon { fill: #f1f5f9; filter: drop-shadow(0 0 3px rgba(241, 245, 249, .6)); }
+.sky-moon-cut { fill: #060a1c; }
+.sky-star { fill: #f8fafc; animation: th-twinkle 2.8s ease-in-out infinite; }
+/* the fall off the clearing, flowing down behind the railing and the This week card */
+.fall .f-base { fill: none; stroke-width: 3.4; stroke-linecap: round; }
+.fall .f-flow { fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-dasharray: 5 9; animation: f-flow .9s linear infinite; }
+.fall .f-flow.b { stroke-width: 1; stroke-dasharray: 2 12; animation-duration: .7s; opacity: .8; }
+@keyframes f-flow { to { stroke-dashoffset: -14; } }
+.fall.water .f-base { stroke: #3b82c4; opacity: .85; } .fall.water .f-flow { stroke: #dbeafe; }
+.fall.water.wide .f-base { stroke-width: 5; } .fall.water.grey .f-base { stroke: #64748b; } .fall.water.grey .f-flow { stroke: #cbd5e1; }
+.fall.lava .f-base { stroke: #ea580c; stroke-width: 4; filter: drop-shadow(0 0 3px #f97316); } .fall.lava .f-flow { stroke: #fde047; animation-duration: 2.4s; } .fall.lava .f-flow.b { animation-duration: 1.8s; }
+.fall.ice .f-base { stroke: #bae6fd; stroke-width: 1.6; opacity: .7; } .fall.ice .f-flow { stroke: #ffffff; animation-duration: 1.4s; }
+.fall.sand .f-base { stroke: #d6a06a; stroke-width: 2.4; opacity: .7; } .fall.sand .f-flow { stroke: #f3d2a8; stroke-dasharray: 1 4; animation-duration: 1.1s; }
+.fall.dust .f-base { stroke: #8b5cf6; stroke-width: 2; opacity: .5; filter: drop-shadow(0 0 2px #a78bfa); } .fall.dust .f-flow { stroke: #ede9fe; stroke-dasharray: 1 7; }
+.f-splash { fill: rgba(255, 255, 255, .35); }
+.fall.lava .f-splash { fill: #fdba74; } .fall.coins .f-splash { fill: #fbbf24; opacity: .6; }
+.f-bit { animation: f-drop 3.2s linear infinite; }
+@keyframes f-drop { from { transform: translate(0, 0); opacity: 0; } 8% { opacity: 1; } to { transform: translate(var(--sway, 0px), var(--len)); opacity: 1; } }
+.f-bit.snow { fill: #ffffff; --sway: -3px; }
+.f-bit.grain { fill: #f3d2a8; animation-duration: 2.2s; }
+.f-bit.spark { fill: #fef9c3; filter: drop-shadow(0 0 1.5px #fde68a); animation-duration: 3.8s; }
+.f-bit.coin { fill: #fbbf24; stroke: #fef3c7; stroke-width: .4; animation-duration: 2.6s; }
+@media (prefers-reduced-motion: reduce) { .fall .f-flow, .f-bit, .sky-star { animation: none; } }
