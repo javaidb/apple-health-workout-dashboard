@@ -1229,6 +1229,7 @@
       <path class="light-wire" d="${d}"/>${bulbs.map(bulb).join("")}${tacks}${bird}</g>${shoes}${transformer}${elec}`;
   }
 
+  let trainBoxes = null, trainLit = false;   // the day boxes, lit as a train passes inside (see drawTrain)
   function renderWeekCard(w) {
     const r = 34, c = 2 * Math.PI * r;
     const pct = Math.min(1, w.this_week_workouts / w.goal);
@@ -1244,6 +1245,7 @@
     }).join("");
     const msg = w.this_week_met ? "Weekly goal hit"
       : `${plural(w.remaining, "more workout")} · ${plural(w.days_left, "day")} left`;
+    trainBoxes = null; trainLit = false;
     $("week-card").innerHTML = `<div class="week-head">
         <div class="eyebrow">This week</div>
         <div class="week-head-right">
@@ -1743,6 +1745,35 @@
     // the nose with the headlight leads: mirrored when it's heading right
     if (x != null) tr.setAttribute("transform", v.dir < 0 ? `translate(${f(x)},${f(floor)})` : `translate(${f(x + L)},${f(floor)}) scale(-1,1)`);
     tr.classList.toggle("open", open);
+    // Inside the This week card's tunnel: as a train runs through, its lit windows show through the
+    // week's day boxes, a band of light sweeping across them right to left as one heads in, or left
+    // to right as one comes out. Inside the tunnel the train runs at a steady TUNNEL_SPEED.
+    const TUNNEL_SPEED = 240;
+    let seg = null;   // the train's [left, right] in the tunnel, in page x
+    if (!reduce) {
+      if (v.dir < 0 && t >= tDep && t < T.period - 6) {
+        // its nose passes the tunnel mouth (x0) partway through pulling away
+        const pIn = Math.pow(Math.max(0, (x0 - stopX) / (endX - stopX)), 1 / 2.2), tIn = tDep + pIn * T.depart;
+        if (t >= tIn) { const nose = x0 - TUNNEL_SPEED * (t - tIn); seg = [nose, nose + L]; }
+      } else if (v.dir > 0 && t < 2) {
+        // a train heading right, its tail still coming out of the tunnel
+        const nose = x0 - 6 + TUNNEL_SPEED * t; seg = [nose - L, nose];
+      } else if (t >= T.period - 6) {
+        // the next train out, if it's heading right: it runs through the tunnel before it appears
+        const nv = trainRun(run + 1), nL = T.car * nv.cars, tt = t - T.period;
+        if (nv.dir > 0) { const nose = x0 - 6 + TUNNEL_SPEED * tt; seg = [nose - nL, nose]; }
+      }
+    }
+    const boxes = trainBoxes ||= [...document.querySelectorAll("#week-card .week-dots .wd")];
+    if (seg && seg[1] > (boxes[0]?.getBoundingClientRect().left ?? Infinity) - 4 && seg[0] < x0) {
+      boxes.forEach((b) => {
+        const r = b.querySelector("i")?.getBoundingClientRect(), c = r ? (r.left + r.right) / 2 : -1e9;
+        // lit while a car's windows are over it (dark for a moment at the joins between cars)
+        const lit = c > seg[0] + 3 && c < seg[1] - 3 && ((c - seg[0]) % T.car) > 5;
+        b.classList.toggle("tr-lit", lit);
+      });
+      trainLit = true;
+    } else if (trainLit) { boxes.forEach((b) => b.classList.remove("tr-lit")); trainLit = false; }
     // the platform signal turns red 5 seconds before the train pulls in, and back to green as it leaves
     // The crossing by the left-hand tunnel: the signal turns red 5 seconds before the train pulls in
     // and the barrier comes down with it. Both go back up once the train has left the station and is

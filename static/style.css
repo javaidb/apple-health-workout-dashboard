@@ -1487,3 +1487,7 @@ svg.th-crown, .cap-crown { --s1: #8a6118; --s2: #a2741f; --s3: #946a1b; --s4: #7
 .e-win.warm { fill: #fde68a; filter: drop-shadow(0 0 1.2px #fbbf24); }
 .e-floor { stroke: #64748b; stroke-width: 1.2; }
 .e-parapet { stroke: #94a3b8; stroke-width: 1.6; stroke-linecap: square; }
+/* the This week card's day boxes, lit up like train windows as a train runs through the tunnel inside */
+.wd i { transition: background-color .35s ease, box-shadow .35s ease, border-color .35s ease; }
+.wd.tr-lit i { background: #fde68a; border-color: #fbbf24; box-shadow: 0 0 12px rgba(251, 191, 36, .75), inset 0 0 6px rgba(255, 255, 255, .6); transition-duration: .06s; }
+.wd.tr-lit i * { opacity: .35; }
