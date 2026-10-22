@@ -626,13 +626,24 @@
       const tops = [H * .34, H * .66];
       body = tops.map((y, i) => `<path class="s${i + 2}" d="${key === "canopy" ? scallop(y, 5, i) : below(across(y, 7, k + i * 2))}"/>`).join("");
     } else if (key === "mesa") {
-      // clean strata, alternating three tones
-      body = Array.from({ length: 7 }, (_, i) => `<path class="s${2 + (i % 3)}" d="${below(across(H * (i + 1) / 8, 3, k + i))}"/>`).join("");
+      // strata, alternating three tones, their edges broken into straight, slightly tilted runs
+      const ragged = (y) => { let d = `M-6,${f(y)}`; for (let x = 0; x <= W + 12; x += 12 + rnd() * 14) d += `L${f(x)},${f(y + (rnd() - .5) * 5)}`; return `${d}V${H + 6}H-6Z`; };
+      body = Array.from({ length: 7 }, (_, i) => `<path class="s${2 + (i % 3)}" d="${ragged(H * (i + 1) / 8)}"/>`).join("");
     } else if (key === "ember") {
-      // basalt columns, with a bevel at each column's top
-      const cw = 12;
-      body = Array.from({ length: Math.ceil(W / cw) + 1 }, (_, i) => { const x = i * cw - 2, t = (i % 3) * 7 + 4;
-        return `<path class="s${2 + (i % 2)}" d="M${f(x)},${f(t + 3)}L${f(x + cw / 2)},${f(t)}L${f(x + cw)},${f(t + 3)}V${H + 6}H${f(x)}Z"/>`; }).join("");
+      // columnar basalt: each column a lit face and a shadowed face, an angled top at its own
+      // height, and cracked joints across it at uneven intervals
+      const cw = 11;
+      body = Array.from({ length: Math.ceil(W / cw) + 1 }, (_, i) => {
+        const x = i * cw - 3, m = x + cw * .55, t = 2 + ((i * 5) % 4) * 4 + rnd() * 3, slope = rnd() < .5 ? -2.4 : 2.4;
+        let col = `<path class="s3" d="M${f(x)},${f(t + 2 + slope)}L${f(m)},${f(t + 2)}V${H + 6}H${f(x)}Z"/>`
+          + `<path class="s4" d="M${f(m)},${f(t + 2)}L${f(x + cw)},${f(t + 2 - slope * .6)}V${H + 6}H${f(m)}Z"/>`
+          + `<path class="s2" d="M${f(x)},${f(t + 2 + slope)}L${f(x + cw * .3)},${f(t + slope * .5)}L${f(x + cw)},${f(t + 2 - slope * .6)}L${f(m)},${f(t + 2)}Z"/>`;
+        for (let y = t + 14 + rnd() * 10; y < H; y += 16 + rnd() * 22) {
+          const dy = (rnd() - .5) * 4;
+          col += `<path class="joint" d="M${f(x)},${f(y + dy)}L${f(m)},${f(y)}L${f(x + cw)},${f(y - dy * .6)}"/>`;
+        }
+        return col;
+      }).join("");
     } else if (key === "frost" || key === "stars") {
       // low-poly facets: a jittered grid split into triangles, each one of four tones
       const sz = 30, cols = Math.ceil(W / sz) + 2, rows = Math.ceil(H / sz) + 2, P = [];
@@ -680,29 +691,30 @@
 
   function wallOutline(key, W, H, rnd) {
     const f = (v) => v.toFixed(1), { side, foot, left } = wallProfile(key, W, H);
-    const spiky = key === "frost" || key === "stars";
-    const nick = spiky ? 6 : 0;
+    const spiky = key === "frost" || key === "stars", rocky = key === "mesa" || key === "ember";
+    const nick = spiky ? 6 : rocky ? 5 : 0;
     const right = [], bottom = [];
     const yEnd = H - foot(W - side(H)) - 8;
-    for (let y = 0, i = 0; y < yEnd; y += (spiky ? 20 : 26) * (.8 + rnd() * .4), i++)
+    for (let y = 0, i = 0; y < yEnd; y += (spiky ? 20 : rocky ? 15 : 26) * (.8 + rnd() * .4), i++)
       right.push([W - side(y) - (spiky ? (i % 2 ? nick + rnd() * 2 : 0) : rnd() * nick), y]);
     const [cx, cy] = [W - side(yEnd) - 6, H - foot(W - side(yEnd))];
     right.push([cx + 3, (yEnd + cy) / 2 - 2]);
-    for (let x = cx - 3, i = 0; x > 0; x -= (spiky ? 18 : 24) * (.8 + rnd() * .4), i++)
+    for (let x = cx - 3, i = 0; x > 0; x -= (spiky ? 18 : rocky ? 14 : 24) * (.8 + rnd() * .4), i++)
       bottom.push([x, H - foot(x) - (spiky ? (i % 2 ? nick + rnd() * 2 : 0) : rnd() * nick)]);
     bottom.push([-left(H), H]);
     // and back up the side facing the card
     const leftSide = [];
-    for (let y = H - 10, i = 0; y > 6; y -= (spiky ? 20 : 26) * (.8 + rnd() * .4), i++)
+    for (let y = H - 10, i = 0; y > 6; y -= (spiky ? 20 : rocky ? 15 : 26) * (.8 + rnd() * .4), i++)
       leftSide.push([-left(y) - (spiky ? (i % 2 ? nick * .6 + rnd() : 0) : rnd() * nick * .6), y]);
     const pts = [[-left(0), 0], ...right, ...bottom, ...leftSide];   // right[0] is already on the top edge
-    // smooth (Catmull-Rom as cubic Béziers) for rock, turf and leaves; straight for ice and crystal
+    // smooth (Catmull-Rom as cubic Béziers) for turf, leaves, slate and gold; straight, angular runs for
+    // the rock walls (sandstone, basalt) and for ice and crystal
     const path = (ox) => {
       const P = (x, y) => `${f(x + ox)},${f(y)}`;
       let d = "";
       pts.forEach(([x, y], k) => {
         if (!k) { d += `M${P(x, y)}`; return; }
-        if (spiky) { d += `L${P(x, y)}`; return; }
+        if (spiky || rocky) { d += `L${P(x, y)}`; return; }
         const p0 = pts[Math.max(0, k - 2)], p1 = pts[k - 1], p3 = pts[Math.min(pts.length - 1, k + 1)];
         d += `C${P(p1[0] + (x - p0[0]) / 6, p1[1] + (y - p0[1]) / 6)} ${P(x - (p3[0] - p1[0]) / 6, y - (p3[1] - p1[1]) / 6)} ${P(x, y)}`;
       });
