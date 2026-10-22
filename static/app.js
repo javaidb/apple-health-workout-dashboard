@@ -565,7 +565,7 @@
     // weeks 0..n-1 evenly up the rope, the summit on the clearing's floor
     const spots = Array.from({ length: n + 1 }, (_, i) => i === n ? [E - cw * .4, fy] : [rx, base - (base - topY) * i / (n - 1)]);
     return { n, W, H, E, gut, cw, fy, rx, wrap, spots, base, pts, edgeX, floorY, bottomY, summit: spots[n],
-      tie: [E - wrap + 6, H + 4], tentAt: [x0 + 13, fy], flagAt: [E - 5, fy], bellAt: [E - 15, fy] };
+      tie: [rx, H - 2], railTo: [E - wrap + 6, H + 4], tentAt: [x0 + 13, fy], flagAt: [E - 5, fy], bellAt: [E - 15, fy] };
   }
 
   // A smooth curve through points (Catmull-Rom as cubic Béziers), shifted right by ox.
@@ -787,9 +787,10 @@
     const phase = skyPhase(), night = phase === "night", atSummit = step === N;
     const reached = step, fellFrom = fell ? fell.from : 0, f = (v) => v.toFixed(1);
     const stateOf = (k) => (golds[k - 1] && k <= reached ? "gold" : k <= reached ? "done" : k <= fellFrom ? "old" : "ahead");
-    // the rope: tied at the clearing's lip, hanging down the gutter to the base camp rope
+    // the rope: tied at the clearing's lip, hanging down the gutter to an anchor at the foot of the
+    // edge, where the rope up from the railing meets it
     const [rx] = pt(0), tie = g.tie;
-    const rope = `<path class="e-rope" d="M${f(g.E + 2)},${g.fy + 1}C${f(rx + 2)},${f(g.fy + 30)} ${f(rx - 2)},${f(H * .6)} ${f(rx)},${f(H - 4)}Q${f(rx - 1)},${f(H + 4)} ${f(g.E - 8)},${f(H + 4.5)}Q${f((g.E + tie[0]) / 2)},${f(H + 6)} ${f(tie[0])},${f(tie[1])}"/>`;
+    const rope = `<path class="e-rope" d="M${f(g.E + 2)},${g.fy + 1}C${f(rx + 2)},${f(g.fy + 30)} ${f(rx - 2)},${f(H * .6)} ${f(tie[0])},${f(tie[1])}"/>`;
     const holds = Array.from({ length: N - 1 }, (_, i) => i + 1).map((k) => edgeHold(g, pt(k)[1] + 3, stateOf(k), k === LEDGE || (k === step && !atSummit))
       + (k === LEDGE ? `<text class="cl-label" x="${f(g.E - 40)}" y="${f(pt(k)[1] + 4)}" text-anchor="end">${LEDGE === 4 ? "1 mo" : `${LEDGE} wks`}</text>` : "")).join("");
     const bolt = `<g class="cl-anchor"><circle cx="${f(tie[0])}" cy="${f(tie[1])}" r="1.5"/><circle class="eye" cx="${f(tie[0])}" cy="${f(tie[1])}" r=".6"/></g>`;
@@ -835,7 +836,7 @@
       ? `Carl on ${info.name}, ${atSummit ? "at the summit" : `${plural(step, "week")} up, ${plural(N - step, "week")} to the summit`}`
       : fell ? `Carl fell ${fell.down ? "down" : "on"} ${info.name} and is back at ${camp}` : `Carl at ${camp}, ready to climb ${info.name}`;
     const art = `${skyArt(g, phase)}${edgeArt(info.key, g)}${fallArt(info.key, g)}${rope}${holds}${bellArt(g, atSummit)}${bolt}${flag}${extra}${figure}`;
-    return { sub, label, art, key: info.key, night, tie, g };
+    return { sub, label, art, key: info.key, night, tie, g, railTo: g.railTo };
   }
 
   // Draws the climb to the size it has on the card. The drawing spans the climb column from the
@@ -860,8 +861,8 @@
     if (onlyIfMoved && key === climbKey) return;
     climbKey = key;
     if (W < 40 || H < 80) { box.innerHTML = ""; card.style.removeProperty("--edge-x"); card.style.removeProperty("--edge-clip"); return; }
-    const { label, art, key: theme, night, tie, g } = climbScene(W, H);
-    box.innerHTML = `<svg class="th-${theme}${night ? " night" : ""}" data-anchor="${tie.map((v) => v.toFixed(1)).join(",")}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(label)}">${art}</svg>`;
+    const { label, art, key: theme, night, tie, g, railTo } = climbScene(W, H);
+    box.innerHTML = `<svg class="th-${theme}${night ? " night" : ""}" data-anchor="${tie.map((v) => v.toFixed(1)).join(",")}" data-rail="${railTo.map((v) => v.toFixed(1)).join(",")}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(label)}">${art}</svg>`;
     // the card's surface: up to the edge, with the clearing cut out of its top-right corner
     const ox = col.left - c.left, ch = c.height, f = (v) => v.toFixed(1), last = g.pts[g.pts.length - 1];
     card.style.setProperty("--edge-x", `${f(ox + g.E + 6)}px`);
@@ -1001,7 +1002,8 @@
     const L = box.left + sx, R = box.right + sx, T = box.top + sy;
     const floor = map(from, 39, 186)[1];                 // the camp's ground line
     const lx = R - 6;                                    // where the way up meets the right edge
-    const topX = Math.min(R - 34, Math.max(L + 24, b[0]));
+    const railTo = to.dataset.rail ? map(to, ...to.dataset.rail.split(",").map(Number)) : b;
+    const topX = Math.min(R - 34, Math.max(L + 24, railTo[0]));
     const f = (n) => n.toFixed(1);
     const posts = (x0, x1, y, h, step) => {
       const n = Math.max(1, Math.round(Math.abs(x1 - x0) / step));
@@ -1022,9 +1024,9 @@
       <g class="trail-sway" style="transform-origin:${f(hangTop[0])}px ${f(hangTop[1])}px">
         <path class="trail-hookrope" d="M${f(hangTop[0])},${f(hangTop[1])}C${f(R + 5)},${f(T + (floor - T) * .4)} ${f(R + 1)},${f(T + (floor - T) * .7)} ${f(hangEnd[0])},${f(hangEnd[1])}q1.6 3.4 -1.4 4.6"/>
         <path class="trail-hookrope-tex" d="M${f(hangTop[0])},${f(hangTop[1])}C${f(R + 5)},${f(T + (floor - T) * .4)} ${f(R + 1)},${f(T + (floor - T) * .7)} ${f(hangEnd[0])},${f(hangEnd[1])}"/></g>`;
-    // a rope hung free between the top of the railing's end post and the bolt on the climb's base
-    // ledge, sagging under its own weight (but never below the card's top edge)
-    const corner = b, post = [topX + 11, T - 9];
+    // a rope from the top of the railing's right-hand end post up to the anchor at the foot of the
+    // climbing edge, sagging a little (but never below the card's top edge)
+    const corner = b, post = [hx - 18, T - 9];
     const sagY = Math.min((post[1] + corner[1]) / 2 + 22, (4 * (T - 3) - post[1] - corner[1]) / 2);
     const ropePath = `M${f(post[0])},${f(post[1])}Q${f((post[0] + corner[0]) / 2)},${f(sagY)} ${f(corner[0])},${f(corner[1])}`;
     const rope = `<path class="trail-hookrope" d="${ropePath}"/><path class="trail-hookrope-tex" d="${ropePath}"/>
