@@ -766,10 +766,6 @@ code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; font-
 .climber .cl-harness { stroke: var(--warn); stroke-width: 1; stroke-linecap: round; }
 .climber .cl-stars { fill: var(--warn); }
 .cl-rope { fill: none; stroke: var(--warn); stroke-width: .7; stroke-opacity: .85; stroke-linecap: round; }
-.cl-rock path:first-child { fill: color-mix(in srgb, var(--text) 13%, var(--surface)); stroke: color-mix(in srgb, var(--text) 22%, transparent); stroke-width: .5; stroke-linejoin: round; }
-.cl-rock .cl-rock-top { fill: none; stroke: color-mix(in srgb, var(--text) 35%, transparent); stroke-width: .9; stroke-linecap: round; stroke-linejoin: round; }
-.cl-rock .cl-rock-crack { fill: none; stroke: color-mix(in srgb, var(--text) 18%, transparent); stroke-width: .5; stroke-linecap: round; }
-.cl-rock.done .cl-rock-top { stroke: color-mix(in srgb, var(--accent) 80%, transparent); }
 .climber.hang { animation: cl-sway 3.6s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 0; }
 .cl-alert { fill: var(--warn); font-size: 9px; font-weight: 800; animation: cl-blink 1.6s ease-in-out infinite; }
 @keyframes cl-sway { 0%, 100% { rotate: -1.2deg; } 50% { rotate: 1.2deg; } }
@@ -1406,6 +1402,9 @@ svg.th-crown  { --wall: color-mix(in srgb, #b07c1c 58%, var(--surface)); --wall-
 .lg-wall .rim { fill: none; stroke: color-mix(in srgb, var(--wall-hi) 55%, var(--wall-lo)); stroke-width: 1; stroke-linejoin: round; }
 .lg-hold { fill: var(--wall-lo); stroke: color-mix(in srgb, var(--wall-hi) 45%, transparent); stroke-width: .4; stroke-linejoin: round; }
 
+.lg-shelf .top-face { fill: color-mix(in srgb, var(--wall-hi) 38%, var(--wall-lo)); }
+.lg-shelf .shade { fill: color-mix(in srgb, var(--wall-lo) 60%, #000); }
+.lg-shelf .under { fill: none; stroke: color-mix(in srgb, #000 35%, transparent); stroke-width: .7; stroke-linejoin: round; }
 :is(.climb-art, .trail) .lg-shelf .rock { fill: var(--wall-lo); stroke: color-mix(in srgb, var(--wall-hi) 40%, transparent); }
 .climb-art .lg-clear, .trail .lg-clear { fill: color-mix(in srgb, var(--surface) 70%, #000); }
 .t-shard { fill: color-mix(in srgb, var(--wall-lo) 35%, transparent); }

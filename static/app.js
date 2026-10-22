@@ -538,17 +538,6 @@
     return `<g class="climber ${pose}" transform="translate(${x.toFixed(1)},${y.toFixed(1)}) scale(${flip},${scale})">${parts[pose]}</g>`;
   }
 
-  // Irregular rock slab for a month ledge, centred on (x, y) with its flat top at y.
-  function rockLedge(x, y, done, sc = 1) {
-    const p = (dx, dy) => `${(x + dx * sc).toFixed(1)},${(y + dy * sc).toFixed(1)}`;
-    return `<g class="cl-rock${done ? " done" : ""}">
-      <path d="M${p(-12, .4)} L${p(-9, -.6)} L${p(-3, -.2)} L${p(4, -.7)} L${p(10, -.3)} L${p(12.5, .9)} L${p(10.5, 3)} L${p(6, 3.6)}
-        L${p(3.5, 5.6)} L${p(-.5, 4.2)} L${p(-4, 6.2)} L${p(-7.5, 4)} L${p(-11, 3.4)} Z"/>
-      <path class="cl-rock-top" d="M${p(-11.4, .2)} L${p(-9, -.6)} L${p(-3, -.2)} L${p(4, -.7)} L${p(10, -.3)} L${p(12, .7)}"/>
-      <path class="cl-rock-crack" d="M${p(-2, 1.6)} l1.4 1.8 M${p(6, 1)} l-1 1.6"/>
-    </g>`;
-  }
-
   // The climb is drawn flat on the Weekly streak card itself, in the drawing's own pixels (W x H,
   // y = 0 at the card's top edge), like the rest of the page's cast. The card is the rock face:
   // small ledges stick out of it in a zig-zag, one a week, with a wider one halfway, up to a
@@ -576,7 +565,7 @@
 
   function ledgeScene(m, n, W, H, capB) {
     const { fy, x0: cx0, x1: cx1 } = clearingBox(W, H);
-    const shelfW = Math.max(20, Math.min(30, W * .21)), sideW = Math.max(6, Math.min(10, W * .06));
+    const shelfW = Math.max(24, Math.min(38, W * .27)), sideW = Math.max(6, Math.min(10, W * .06));
     const prof = wallProfile(m.key, W, H), base = H - prof.foot(W * .22) - 16, h = n / 2, wander = routeWander(n);
     // the chimney ledge sits a fixed way below the clearing; ledges 0..n-2 are spaced evenly from
     // the base up to just below the caption (and the chimney ledge)
@@ -596,12 +585,19 @@
       tentAt: [cx0 + 18, fy], flagAt: [cx0 + 6, fy], bellAt: [cx0 + (cx1 - cx0) * .5, 2] };
   }
 
-  // A ledge sticking out of the card: a flat top with a rough underside.
+  // A ledge jutting out of the wall, with some depth: a lit top surface receding back into the wall,
+  // a rough rock underside hanging well below the lip (deepest near the wall), and a shaded end.
+  // Carl stands on the front lip at (x, y).
   function ledgeShelf(x, y, w, cls) {
-    const f = (v) => v.toFixed(1);
-    return `<g class="lg-shelf ${cls}"><path class="rock" d="M${f(x - w / 2)},${f(y)}L${f(x - w * .2)},${f(y - .5)}L${f(x + w * .25)},${f(y - .2)}L${f(x + w / 2)},${f(y + .3)}L${f(x + w / 2 - 1.4)},${f(y + 3)}L${f(x + w * .3)},${f(y + 4.4)}L${f(x + w * .08)},${f(y + 7)}L${f(x - w * .14)},${f(y + 5.2)}L${f(x - w * .34)},${f(y + 5.8)}L${f(x - w / 2 + 1)},${f(y + 2.6)}Z"/>
-      <path class="crack" d="M${f(x + w * .1)},${f(y + 1.6)}l-1 2.4l.8 1.4M${f(x - w * .3)},${f(y + 1.8)}l.8 1.8"/>
-      <path class="top" d="M${f(x - w / 2 + .5)},${f(y + .1)}L${f(x - w * .2)},${f(y - .4)}L${f(x + w * .25)},${f(y - .1)}L${f(x + w / 2 - .5)},${f(y + .4)}"/></g>`;
+    const f = (v) => v.toFixed(1), d = Math.min(13, 6 + w * .2), back = 3.2;
+    const L = x - w / 2, R = x + w / 2;
+    return `<g class="lg-shelf ${cls}">
+      <path class="rock" d="M${f(L)},${f(y)}H${f(R)}L${f(R - 1.2)},${f(y + d * .32)}L${f(x + w * .3)},${f(y + d * .5)}L${f(x + w * .14)},${f(y + d * .78)}L${f(x - w * .02)},${f(y + d)}L${f(x - w * .16)},${f(y + d * .7)}L${f(x - w * .32)},${f(y + d * .84)}L${f(L + 1.6)},${f(y + d * .4)}Z"/>
+      <path class="under" d="M${f(x - w * .3)},${f(y + d * .4)}L${f(x - w * .02)},${f(y + d * .92)}L${f(x + w * .2)},${f(y + d * .5)}"/>
+      <path class="shade" d="M${f(R)},${f(y)}L${f(R + 1.6)},${f(y - back)}L${f(R + 1)},${f(y + d * .2)}L${f(R - 1.2)},${f(y + d * .32)}Z"/>
+      <path class="top-face" d="M${f(L)},${f(y)}L${f(L + 2.4)},${f(y - back)}H${f(R + 1.6)}L${f(R)},${f(y)}Z"/>
+      <path class="crack" d="M${f(x + w * .12)},${f(y + 1.4)}l-1 2.6l.8 1.6M${f(x - w * .28)},${f(y + 1.6)}l.9 2.2"/>
+      <path class="top" d="M${f(L + .4)},${f(y)}H${f(R - .4)}"/></g>`;
   }
 
   // The clearing carved under the card's top edge: a hollow with a rock floor, and a bell hanging
@@ -924,8 +920,8 @@
     const shelves = ledgeShelf(bx, by, g.baseW, reached > 0 ? "done" : "")
       + Array.from({ length: N - 1 }, (_, i) => i + 1).map((k) => {
         const [x, y] = pt(k);
-        return k === LEDGE ? rockLedge(x, y, Math.max(reached, fellFrom) >= LEDGE, Math.min(1.1, W / 140))
-          + `<text class="cl-label" x="${f(x)}" y="${f(y + 11)}" text-anchor="middle">${LEDGE === 4 ? "1 mo" : `${LEDGE} wks`}</text>`
+        return k === LEDGE ? ledgeShelf(x, y, g.shelfW * 1.45, Math.max(reached, fellFrom) >= LEDGE ? (golds[k - 1] ? "gold" : "done") : stateOf(k))
+          + `<text class="cl-label" x="${f(x)}" y="${f(y + 19)}" text-anchor="middle">${LEDGE === 4 ? "1 mo" : `${LEDGE} wks`}</text>`
           : ledgeShelf(x, y, g.shelfW, stateOf(k));
       }).join("");
     // the rope from the This week card ties on at the base ledge's left end
@@ -1052,7 +1048,7 @@
       const flag = `<g class="cl-summit${summited ? " won" : ""}" transform="translate(${g.flagAt[0]},${g.flagAt[1]})"><path d="M0 0V-10"/><path class="flag" d="M0 -10L6 -8L0 -6Z"/></g>`;
       const camp = summited ? tent(g.tentAt[0], g.tentAt[1], "", 1.2) + medalBadge(medalOf(st.medals[idx] ?? 0, idx), summit[0] + 6, summit[1] - 12, 1.4) : "";
       const shelves = ledgeShelf(g.base[0], g.base[1], g.baseW, done ? "done" : "")
-        + Array.from({ length: n - 1 }, (_, k) => k + 1).map((k) => k === n / 2 ? rockLedge(...pt(k), done >= k, .9) : ledgeShelf(...pt(k), g.shelfW, k <= done ? "done" : "")).join("");
+        + Array.from({ length: n - 1 }, (_, k) => k + 1).map((k) => ledgeShelf(...pt(k), g.shelfW * (k === n / 2 ? 1.45 : 1), k <= done ? "done" : "")).join("");
       const goldSteps = idx === st.index ? st.golds.map((g, k) => (g ? `<path class="cl-route gold" d="${line(k, k + 1)}"/>` : "")).join("") : "";
       let carl = "";
       if (idx === st.index) {
