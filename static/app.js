@@ -557,10 +557,25 @@
   // ledges and clearing its own way.
   // where the clearing goes in a W x H drawing: its floor, and its left and right walls
   const clearingBox = (W, H) => ({ fy: Math.round(Math.max(22, Math.min(36, H * .15))), x0: Math.round(W * .5), x1: Math.round(W - Math.max(14, W * .1)) });
+  // How far in from the drawing's right edge the wall's side is at height y, and how far up from
+  // the bottom its base is at x. Smooth swells unique to each mountain; near the top the side stays
+  // out by the clearing, which is cut into the wall.
+  function wallProfile(key, W, H) {
+    const k = MOUNTAINS.findIndex((m) => m.key === key) + 1, { fy, x1 } = clearingBox(W, H);
+    const topIn = Math.max(4, W - x1 - 4);
+    const side = (y) => {
+      const swell = 12 + 7 * Math.sin(y / H * 5.1 + k * 1.7) + 4 * Math.sin(y / H * 12.3 + k);
+      const t = Math.min(1, Math.max(0, (y - fy - 8) / 30));   // ease out from the clearing's width
+      return topIn + (Math.max(6, swell) - topIn) * t;
+    };
+    const foot = (x) => 12 + 5 * Math.sin(x / W * 4.4 + k * 2.3) + 3 * Math.sin(x / W * 11 + k);
+    return { side, foot };
+  }
+
   function ledgeScene(m, n, W, H, capB) {
     const { fy, x0: cx0, x1: cx1 } = clearingBox(W, H);
     const shelfW = Math.max(20, Math.min(30, W * .21)), sideW = Math.max(6, Math.min(10, W * .06));
-    const base = H - 14, h = n / 2, wander = routeWander(n);
+    const prof = wallProfile(m.key, W, H), base = H - prof.foot(W * .22) - 16, h = n / 2, wander = routeWander(n);
     // the chimney ledge sits a fixed way below the clearing; ledges 0..n-2 are spaced evenly from
     // the base up to just below the caption (and the chimney ledge)
     const chimY = fy + (H - fy) * .2, top = Math.max(chimY + 16, capB + 18);
@@ -569,10 +584,11 @@
       if (k === n - 1) return null;
       const y = base - (base - top) * k / (n - 2);
       const x = k === 0 ? W * .22 : k === h ? W * .42 : k % 2 ? W * .7 : W * .28;
-      return [Math.max(12, Math.min(W - sideW - shelfW / 2, x + wander[k] * W / 100)), y];
+      // right-hand ledges stick out of the wall's side, never past it
+      return [Math.max(12, Math.min(W - prof.side(y) - shelfW / 2 + 5, x + wander[k] * W / 100)), y];
     });
     // the chimney ledge, out of the right-hand side under the clearing
-    spots[n - 1] = [W - sideW - shelfW / 2 + 3, chimY];
+    spots[n - 1] = [W - prof.side(chimY) - shelfW / 2 + 5, chimY];
     return { spots, n, W, H, shelfW, sideW, baseW: Math.max(24, Math.min(38, W * .28)), capB,
       clear: { x0: cx0, x1: cx1, fy }, G: base, base: spots[0], ledge: spots[h], summit: spots[n],
       tentAt: [cx0 + 18, fy], flagAt: [cx0 + 6, fy], bellAt: [cx0 + (cx1 - cx0) * .5, 2] };
@@ -607,7 +623,7 @@
     const { W, H, spots } = g, n = spots.length - 1, f = (v) => v.toFixed(1);
     let seed = key.length * 97 + n * 13 + Math.round(W) * 7 + Math.round(H);
     const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed % 10000) / 10000; };
-    const clipId = `lg-clip-${++climbId}`;
+    const clipId = `lg-clip-${++climbId}`, B = H - wallProfile(key, W, H).foot(W / 2) + 2;
     // scatter over the whole wall, on a jittered grid so it reads as even texture
     const scatter = (step, fn) => {
       let out = "";
@@ -621,34 +637,34 @@
     const tex = {
       frost: scatter(16, (x, y, r) => `<path class="t-shard${r < .5 ? " lite" : ""}" d="M${f(x)},${f(y - 6 - r * 4)}L${f(x + 5 + r * 3)},${f(y + 1)}L${f(x - 1)},${f(y + 6)}L${f(x - 5)},${f(y)}Z"/>`)
         + scatter(22, (x, y, r) => `<path class="t-crack" d="M${f(x)},${f(y)}l${f(3 + r * 3)} ${f(4 + r * 2)}l-2 4M${f(x + 3)},${f(y + 4)}l4 -1"/>`)
-        + `<path class="t-base ice" d="${(() => { let d = `M0,${H}`; for (let x = 0; x <= W; x += 6) d += `L${f(x)},${f(H - (x / 6 % 2 ? 5 + rnd() * 9 : 1 + rnd() * 3))}`; return `${d}L${W},${H}Z`; })()}"/>`,
+        + `<path class="t-base ice" d="${(() => { let d = `M0,${B}`; for (let x = 0; x <= W; x += 6) d += `L${f(x)},${f(B - (x / 6 % 2 ? 5 + rnd() * 9 : 1 + rnd() * 3))}`; return `${d}L${W},${B}Z`; })()}"/>`,
       pine: scatter(9, (x, y, r) => `<path class="t-grass${r < .3 ? " dark" : ""}" d="M${f(x - 2)},${f(y + 2)}l1.2 -3.4M${f(x)},${f(y + 2)}v-4M${f(x + 2)},${f(y + 2)}l-1.2 -3.4"/>`)
         + scatter(26, (x, y, r) => r < .4 ? `<ellipse class="t-dirt" cx="${f(x)}" cy="${f(y)}" rx="${f(3 + r * 4)}" ry="${f(2 + r * 2)}"/>` : r < .7 ? `<circle class="t-flower" cx="${f(x)}" cy="${f(y)}" r="1"/>` : `<path class="t-stone" d="M${f(x - 3)},${f(y + 1.5)}q0 -3 3 -3q3 0 3 3Z"/>`)
         + Array.from({ length: Math.round(W / 22) }, (_, i) => { const x = 8 + i * 22 + rnd() * 6, k = .7 + rnd() * .35;
-          return `<path class="t-tree" d="M${f(x)},${f(H - 3 - 14 * k)}L${f(x + 4.4 * k)},${f(H - 3 - 6 * k)}H${f(x + 2.4 * k)}L${f(x + 5.6 * k)},${f(H - 3)}H${f(x - 5.6 * k)}L${f(x - 2.4 * k)},${f(H - 3 - 6 * k)}H${f(x - 4.4 * k)}Z"/>`; }).join(""),
+          return `<path class="t-tree" d="M${f(x)},${f(B - 3 - 14 * k)}L${f(x + 4.4 * k)},${f(B - 3 - 6 * k)}H${f(x + 2.4 * k)}L${f(x + 5.6 * k)},${f(B - 3)}H${f(x - 5.6 * k)}L${f(x - 2.4 * k)},${f(B - 3 - 6 * k)}H${f(x - 4.4 * k)}Z"/>`; }).join(""),
       mesa: bands(Math.round(H / 14), (y, i) => `<path class="t-strata${i % 2 ? " lite" : ""}" d="${wave(y, 3)}L${W + 8},${f(y + 7)}L-2,${f(y + 7)}Z"/>`)
         + scatter(20, (x, y, r) => `<circle class="t-pebble" cx="${f(x)}" cy="${f(y)}" r="${f(.6 + r)}"/>`)
         + Array.from({ length: Math.round(W / 30) }, (_, i) => { const x = 10 + i * 30 + rnd() * 8, h2 = 10 + rnd() * 8;
-          return `<path class="t-hoodoo" d="M${f(x - 3)},${H}V${f(H - h2)}h-1.6v-2.6h9.2v2.6h-1.6V${H}Z"/>`; }).join(""),
-      ember: Array.from({ length: Math.ceil(W / 9) + 1 }, (_, i) => `<path class="t-column" d="M${f(i * 9)},0V${H}"/>`).join("")
+          return `<path class="t-hoodoo" d="M${f(x - 3)},${B}V${f(B - h2)}h-1.6v-2.6h9.2v2.6h-1.6V${B}Z"/>`; }).join(""),
+      ember: Array.from({ length: Math.ceil(W / 9) + 1 }, (_, i) => `<path class="t-column" d="M${f(i * 9)},0V${B}"/>`).join("")
         + bands(Math.round(H / 18), (y, i) => `<path class="t-joint" d="M${f(i % 2 ? 4.5 : 0)},${f(y)}${Array.from({ length: Math.ceil(W / 18) }, (_, j) => `M${f(j * 18 + (i % 2) * 9)},${f(y)}h9`).join("")}"/>`)
         + scatter(30, (x, y, r) => `<path class="t-lava" d="M${f(x)},${f(y)}l${f(2 + r * 3)} ${f(4 + r * 3)}l-1.6 ${f(3 + r * 2)}l3 ${f(2 + r)}"/>`)
-        + `<path class="t-lava pool" d="M0,${H - 2}H${W}"/>`,
+        + `<path class="t-lava pool" d="M0,${B - 2}H${W}"/>`,
       canopy: scatter(10, (x, y, r) => `<path class="t-leaf${r < .35 ? " dark" : r > .8 ? " lite" : ""}" transform="rotate(${Math.round(r * 360)} ${f(x)} ${f(y)})" d="M${f(x - 4)},${f(y)}q4 -3.4 8 0q-4 3.4 -8 0Z"/>`)
         + Array.from({ length: Math.round(W / 26) }, (_, i) => { const x = 12 + i * 26 + rnd() * 6;
           return `<path class="t-vine" d="M${f(x)},0q-4 ${f(H * .2)} 1 ${f(H * .4)}q4 ${f(H * .2)} -1 ${f(H * .4)}"/>`; }).join("")
-        + Array.from({ length: Math.round(W / 9) }, (_, i) => `<path class="t-fern" d="M${f(4 + i * 9)},${H}q${i % 2 ? -4 : 4} -6 ${i % 2 ? -1 : 1} -12"/>`).join(""),
+        + Array.from({ length: Math.round(W / 9) }, (_, i) => `<path class="t-fern" d="M${f(4 + i * 9)},${B}q${i % 2 ? -4 : 4} -6 ${i % 2 ? -1 : 1} -12"/>`).join(""),
       stars: scatter(18, (x, y, r) => r < .45 ? `<path class="t-star" d="M${f(x)},${f(y - 1.8)}l.5 1.3l1.3 .5l-1.3 .5l-.5 1.3l-.5 -1.3l-1.3 -.5l1.3 -.5Z"/>` : `<circle class="t-speck" cx="${f(x)}" cy="${f(y)}" r=".6"/>`)
         + scatter(34, (x, y, r) => `<path class="t-vein" d="M${f(x - 8)},${f(y + 4)}l5 -3l3 2l6 -5"/>`)
         + Array.from({ length: Math.round(W / 12) }, (_, i) => { const x = 6 + i * 12 + rnd() * 3, h2 = 8 + rnd() * 9;
-          return `<path class="t-crystal" d="M${f(x - 3.4)},${H}L${f(x - 1.4)},${f(H - h2)}L${f(x + 1.6)},${f(H - h2 - 3)}L${f(x + 3.4)},${H}Z"/>`; }).join(""),
+          return `<path class="t-crystal" d="M${f(x - 3.4)},${B}L${f(x - 1.4)},${f(B - h2)}L${f(x + 1.6)},${f(B - h2 - 3)}L${f(x + 3.4)},${B}Z"/>`; }).join(""),
       storm: scatter(12, (x, y, r) => `<path class="t-streak" d="M${f(x)},${f(y - 4)}l${f(-.8 - r)} ${f(6 + r * 4)}"/>`)
         + scatter(28, (x, y, r) => `<path class="t-crack" d="M${f(x - 4)},${f(y - 3)}l3 3l-1.4 3l4 2"/>`)
         + Array.from({ length: Math.round(W / 14) }, (_, i) => { const x = 7 + i * 14 + rnd() * 4, h2 = 6 + rnd() * 5;
-          return `<path class="t-boulder" d="M${f(x - 6)},${H}Q${f(x - 6)},${f(H - h2)} ${f(x)},${f(H - h2 - 1)}Q${f(x + 6)},${f(H - h2)} ${f(x + 6)},${H}Z"/>`; }).join(""),
+          return `<path class="t-boulder" d="M${f(x - 6)},${B}Q${f(x - 6)},${f(B - h2)} ${f(x)},${f(B - h2 - 1)}Q${f(x + 6)},${f(B - h2)} ${f(x + 6)},${B}Z"/>`; }).join(""),
       crown: Array.from({ length: Math.ceil(H / 7) }, (_, r) => `<path class="t-brick" d="M0,${f(r * 7)}H${W}${Array.from({ length: Math.ceil(W / 14) + 1 }, (_, j) => `M${f(j * 14 + (r % 2) * 7)},${f(r * 7)}v7`).join("")}"/>`).join("")
         + scatter(24, (x, y, r) => `<circle class="t-gleam" cx="${f(x)}" cy="${f(y)}" r="${f(.6 + r * .6)}"/>`)
-        + Array.from({ length: Math.round(W / 10) }, (_, i) => `<circle class="t-coin" cx="${f(6 + i * 10 + rnd() * 3)}" cy="${f(H - 3 - rnd() * 4)}" r="2.2"/>`).join(""),
+        + Array.from({ length: Math.round(W / 10) }, (_, i) => `<circle class="t-coin" cx="${f(6 + i * 10 + rnd() * 3)}" cy="${f(B - 3 - rnd() * 4)}" r="2.2"/>`).join(""),
     }[key];
     // holds between ledges: two small knobs on each hop
     const holds = spots.slice(0, n).map(([ax, ay], k) => {
@@ -658,8 +674,41 @@
         return `<path class="lg-hold" d="M${f(x - 2.4)},${f(y + .8)}L${f(x - 1.2)},${f(y - 1.2)}L${f(x + 1.6)},${f(y - 1)}L${f(x + 2.4)},${f(y + 1)}L${f(x)},${f(y + 2)}Z"/>`;
       }).join("");
     }).join("");
-    return `<defs><clipPath id="${clipId}"><rect x="-40" y="0" width="${W + 40}" height="${H}" rx="${rounded ? 15 : 0}"/></clipPath></defs>
-      <g class="lg-wall" clip-path="url(#${clipId})"><rect class="face" x="0" y="0" width="${W + 2}" height="${H + 2}"/>${tex}<path class="seam" d="M.5,0V${H}"/></g>${holds}`;
+    const outline = wallOutline(key, W, H, rnd, rounded);
+    return `<defs><clipPath id="${clipId}"><path d="${outline}"/></clipPath></defs>
+      <g class="lg-wall"><path class="shadow" d="${outline}"/><path class="face" d="${outline}"/><g clip-path="url(#${clipId})">${tex}</g><path class="rim" d="${outline}"/></g>${holds}`;
+  }
+
+  function wallOutline(key, W, H, rnd, rounded) {
+    const f = (v) => v.toFixed(1), { side, foot } = wallProfile(key, W, H);
+    const style = { frost: "zig", stars: "zig", pine: "bump", canopy: "bump", mesa: "step", ember: "step", crown: "step", storm: "crag" }[key];
+    // the material's edge: spikes, bulges, terraces or crags, a few pixels either side of the profile
+    const nick = (i) => style === "zig" ? (i % 2 ? 5 + rnd() * 3 : -2 - rnd()) : style === "crag" ? (rnd() - .4) * 6 : style === "step" ? (i % 2) * 3 : rnd() * 3;
+    const sStep = { zig: 8, bump: 18, step: 20, crag: 10 }[style], bStep = { zig: 7, bump: 15, step: 16, crag: 9 }[style];
+    const top = rounded ? 12 : 0;
+    const right = [], bottom = [];
+    const yEnd = H - foot(W - side(H)) - 6;
+    for (let y = top, i = 0; y < yEnd; y += sStep * (.8 + rnd() * .4), i++) right.push([W - side(y) - Math.max(0, nick(i)), y]);
+    // round the corner where the side meets the base
+    const [cx, cy] = [W - side(yEnd) - 4, H - foot(W - side(yEnd))];
+    right.push([cx + 2, (yEnd + cy) / 2]);
+    for (let x = cx - 4, i = 0; x > 0; x -= bStep * (.8 + rnd() * .4), i++) bottom.push([x, H - foot(x) - Math.max(0, nick(i + 1))]);
+    bottom.push([0, H - foot(0)]);
+    let d = `M0,0H${f(right[0][0])}`;
+    const pts = [...right, ...bottom];
+    if (style === "bump") {
+      pts.forEach(([x, y], k) => {
+        if (!k) { d += `L${f(x)},${f(y)}`; return; }
+        const [px, py] = pts[k - 1], down = k < right.length;
+        d += `Q${f(down ? Math.max(px, x) + 4 : (px + x) / 2)},${f(down ? (py + y) / 2 : Math.max(py, y) + 4)} ${f(x)},${f(y)}`;
+      });
+    } else if (style === "step") {
+      right.forEach(([x, y], k) => { d += k ? `V${f(y)}H${f(x)}` : `L${f(x)},${f(y)}`; });
+      bottom.forEach(([x, y]) => { d += `V${f(y)}H${f(x)}`; });
+    } else {
+      pts.forEach(([x, y]) => { d += `L${f(x)},${f(y)}`; });
+    }
+    return `${d}Z`;
   }
 
   // Each mountain's own touches, on its ledges and around the clearing.
