@@ -1403,7 +1403,6 @@ svg.th-stars  { --wall: color-mix(in srgb, #432574 65%, var(--surface)); --wall-
 svg.th-storm  { --wall: color-mix(in srgb, #4a586c 65%, var(--surface)); --wall-hi: #b8c8dc; --wall-lo: #232b36; }
 svg.th-crown  { --wall: color-mix(in srgb, #b07c1c 58%, var(--surface)); --wall-hi: #fde68a; --wall-lo: #5a3c08; }
 .lg-wall .face { fill: var(--wall); }
-.lg-wall .shadow { fill: rgba(0, 0, 0, .35); transform: translate(2px, 2.5px); }
 .lg-wall .rim { fill: none; stroke: color-mix(in srgb, var(--wall-hi) 55%, var(--wall-lo)); stroke-width: 1; stroke-linejoin: round; }
 .lg-hold { fill: var(--wall-lo); stroke: color-mix(in srgb, var(--wall-hi) 45%, transparent); stroke-width: .4; stroke-linejoin: round; }
 .lg-plaque { fill: color-mix(in srgb, var(--surface) 84%, transparent); stroke: color-mix(in srgb, var(--surface) 84%, transparent); stroke-width: 6; stroke-linejoin: round; }

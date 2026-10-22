@@ -564,11 +564,12 @@
     const k = MOUNTAINS.findIndex((m) => m.key === key) + 1, { fy, x1 } = clearingBox(W, H);
     const topIn = Math.max(4, W - x1 - 4);
     const side = (y) => {
-      const swell = 12 + 7 * Math.sin(y / H * 5.1 + k * 1.7) + 4 * Math.sin(y / H * 12.3 + k);
+      const swell = 15 + 10 * Math.sin(y / H * 4.6 + k * 1.7) + 4 * Math.sin(y / H * 10.3 + k);
       const t = Math.min(1, Math.max(0, (y - fy - 8) / 30));   // ease out from the clearing's width
-      return topIn + (Math.max(6, swell) - topIn) * t;
+      return topIn + (Math.max(5, swell) - topIn) * t;
     };
-    const foot = (x) => 12 + 5 * Math.sin(x / W * 4.4 + k * 2.3) + 3 * Math.sin(x / W * 11 + k);
+    // the base rises off the card's bottom towards the right, and runs down into it at the seam
+    const foot = (x) => (14 + 6 * Math.sin(x / W * 4.4 + k * 2.3) + 3 * Math.sin(x / W * 11 + k)) * Math.min(1, x / (W * .3));
     return { side, foot };
   }
 
@@ -585,10 +586,10 @@
       const y = base - (base - top) * k / (n - 2);
       const x = k === 0 ? W * .22 : k === h ? W * .42 : k % 2 ? W * .7 : W * .28;
       // right-hand ledges stick out of the wall's side, never past it
-      return [Math.max(12, Math.min(W - prof.side(y) - shelfW / 2 + 5, x + wander[k] * W / 100)), y];
+      return [Math.max(12, Math.min(W - prof.side(y) - shelfW / 2 - 6, x + wander[k] * W / 100)), y];
     });
     // the chimney ledge, out of the right-hand side under the clearing
-    spots[n - 1] = [W - prof.side(chimY) - shelfW / 2 + 5, chimY];
+    spots[n - 1] = [W - prof.side(chimY) - shelfW / 2 - 6, chimY];
     return { spots, n, W, H, shelfW, sideW, baseW: Math.max(24, Math.min(38, W * .28)), capB,
       clear: { x0: cx0, x1: cx1, fy }, G: base, base: spots[0], ledge: spots[h], summit: spots[n],
       tentAt: [cx0 + 18, fy], flagAt: [cx0 + 6, fy], bellAt: [cx0 + (cx1 - cx0) * .5, 2] };
@@ -619,7 +620,7 @@
   // material (ice, grassy turf, sandstone, basalt, jungle, crystal rock, wet slate, gold brick),
   // flat on the left where it meets the rest of the card and running out to the card's right edge,
   // base and top. The texture is drawn into it, holds sit between the ledges, and nothing on it moves.
-  function wallArt(key, g, rounded = true) {
+  function wallArt(key, g) {
     const { W, H, spots } = g, n = spots.length - 1, f = (v) => v.toFixed(1);
     let seed = key.length * 97 + n * 13 + Math.round(W) * 7 + Math.round(H);
     const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed % 10000) / 10000; };
@@ -674,41 +675,39 @@
         return `<path class="lg-hold" d="M${f(x - 2.4)},${f(y + .8)}L${f(x - 1.2)},${f(y - 1.2)}L${f(x + 1.6)},${f(y - 1)}L${f(x + 2.4)},${f(y + 1)}L${f(x)},${f(y + 2)}Z"/>`;
       }).join("");
     }).join("");
-    const outline = wallOutline(key, W, H, rnd, rounded);
-    return `<defs><clipPath id="${clipId}"><path d="${outline}"/></clipPath></defs>
-      <g class="lg-wall"><path class="shadow" d="${outline}"/><path class="face" d="${outline}"/><g clip-path="url(#${clipId})">${tex}</g><path class="rim" d="${outline}"/></g>${holds}`;
+    const ol = wallOutline(key, W, H, rnd);
+    g.outline = ol.path;   // for clipping the card itself to the wall (see drawClimb)
+    return `<defs><clipPath id="${clipId}"><path d="${ol.svg}"/></clipPath></defs>
+      <g class="lg-wall"><path class="face" d="${ol.svg}"/><g clip-path="url(#${clipId})">${tex}</g><path class="rim" d="M0,0${ol.path(0)}"/></g>${holds}`;
   }
 
-  function wallOutline(key, W, H, rnd, rounded) {
+  function wallOutline(key, W, H, rnd) {
     const f = (v) => v.toFixed(1), { side, foot } = wallProfile(key, W, H);
-    const style = { frost: "zig", stars: "zig", pine: "bump", canopy: "bump", mesa: "step", ember: "step", crown: "step", storm: "crag" }[key];
-    // the material's edge: spikes, bulges, terraces or crags, a few pixels either side of the profile
-    const nick = (i) => style === "zig" ? (i % 2 ? 5 + rnd() * 3 : -2 - rnd()) : style === "crag" ? (rnd() - .4) * 6 : style === "step" ? (i % 2) * 3 : rnd() * 3;
-    const sStep = { zig: 8, bump: 18, step: 20, crag: 10 }[style], bStep = { zig: 7, bump: 15, step: 16, crag: 9 }[style];
-    const top = rounded ? 12 : 0;
+    const spiky = key === "frost" || key === "stars";
+    const nick = { frost: 4, stars: 4, storm: 3, mesa: 2.4, ember: 2, crown: 1.6, pine: 2.2, canopy: 2.6 }[key];
     const right = [], bottom = [];
-    const yEnd = H - foot(W - side(H)) - 6;
-    for (let y = top, i = 0; y < yEnd; y += sStep * (.8 + rnd() * .4), i++) right.push([W - side(y) - Math.max(0, nick(i)), y]);
-    // round the corner where the side meets the base
-    const [cx, cy] = [W - side(yEnd) - 4, H - foot(W - side(yEnd))];
-    right.push([cx + 2, (yEnd + cy) / 2]);
-    for (let x = cx - 4, i = 0; x > 0; x -= bStep * (.8 + rnd() * .4), i++) bottom.push([x, H - foot(x) - Math.max(0, nick(i + 1))]);
-    bottom.push([0, H - foot(0)]);
-    let d = `M0,0H${f(right[0][0])}`;
-    const pts = [...right, ...bottom];
-    if (style === "bump") {
+    const yEnd = H - foot(W - side(H)) - 8;
+    for (let y = 0, i = 0; y < yEnd; y += (spiky ? 7 : 14) * (.8 + rnd() * .4), i++)
+      right.push([W - side(y) - (spiky ? (i % 2 ? nick + rnd() * 2 : 0) : rnd() * nick), y]);
+    const [cx, cy] = [W - side(yEnd) - 6, H - foot(W - side(yEnd))];
+    right.push([cx + 3, (yEnd + cy) / 2 - 2]);
+    for (let x = cx - 3, i = 0; x > 0; x -= (spiky ? 6 : 13) * (.8 + rnd() * .4), i++)
+      bottom.push([x, H - foot(x) - (spiky ? (i % 2 ? nick + rnd() * 2 : 0) : rnd() * nick)]);
+    bottom.push([0, H]);
+    const pts = [[right[0][0], 0], ...right, ...bottom];
+    // smooth (Catmull-Rom as cubic Béziers) for rock, turf and leaves; straight for ice and crystal
+    const path = (ox) => {
+      const P = (x, y) => `${f(x + ox)},${f(y)}`;
+      let d = "";
       pts.forEach(([x, y], k) => {
-        if (!k) { d += `L${f(x)},${f(y)}`; return; }
-        const [px, py] = pts[k - 1], down = k < right.length;
-        d += `Q${f(down ? Math.max(px, x) + 4 : (px + x) / 2)},${f(down ? (py + y) / 2 : Math.max(py, y) + 4)} ${f(x)},${f(y)}`;
+        if (!k) { d += `L${P(x, y)}`; return; }
+        if (spiky) { d += `L${P(x, y)}`; return; }
+        const p0 = pts[Math.max(0, k - 2)], p1 = pts[k - 1], p3 = pts[Math.min(pts.length - 1, k + 1)];
+        d += `C${P(p1[0] + (x - p0[0]) / 6, p1[1] + (y - p0[1]) / 6)} ${P(x - (p3[0] - p1[0]) / 6, y - (p3[1] - p1[1]) / 6)} ${P(x, y)}`;
       });
-    } else if (style === "step") {
-      right.forEach(([x, y], k) => { d += k ? `V${f(y)}H${f(x)}` : `L${f(x)},${f(y)}`; });
-      bottom.forEach(([x, y]) => { d += `V${f(y)}H${f(x)}`; });
-    } else {
-      pts.forEach(([x, y]) => { d += `L${f(x)},${f(y)}`; });
-    }
-    return `${d}Z`;
+      return d;
+    };
+    return { svg: `M0,0${path(0)}Z`, path };
   }
 
   // Each mountain's own touches, on its ledges and around the clearing.
@@ -921,7 +920,7 @@
     const { x0: px0, fy: pfy } = g.clear, plaque = capB > capT
       ? `<path class="lg-plaque" d="M3,${f(capT)}H${f(px0 - 7)}V${f(Math.min(capB, pfy + 6))}H${f(g.spots[n0(g)][0] - g.shelfW / 2 - 7)}V${f(capB)}H3Z"/>` : "";
     const art = `${wallArt(info.key, g)}${plaque}${clearingArt(g, atSummit)}${route}${shelves}${ledgeDeco(info.key, g)}${bolt}${flag}${extra}${figure}`;
-    return { sub, label, art, key: info.key, night, tie };
+    return { sub, label, art, key: info.key, night, tie, outline: g.outline };
   }
 
   const n0 = (g) => g.spots.length - 2;   // the chimney ledge
@@ -951,10 +950,16 @@
     const key = `${climbRender}|${W}x${H}|${capB}|${skyPhase()}`;
     if (onlyIfMoved && key === climbKey) return;
     climbKey = key;
-    if (W < 40 || H < 80) { box.innerHTML = ""; return; }
-    const { label, art, key: theme, night, tie } = climbScene(W, H, capB, capT);
+    if (W < 40 || H < 80) { box.innerHTML = ""; card.style.clipPath = ""; return; }
+    const { label, art, key: theme, night, tie, outline } = climbScene(W, H, capB, capT);
     box.innerHTML = `<svg class="th-${theme}${night ? " night" : ""}" data-anchor="${tie.map((v) => v.toFixed(1)).join(",")}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(label)}">${art}</svg>`;
+    const ox = col.left - c.left, r = 16, ch = c.height;
+    card.style.clipPath = `path("M${r},0H${ox.toFixed(1)}${outline(ox)}H${r}Q0,${ch} 0,${ch - r}V${r}Q0,0 ${r},0Z")`;
   }
+
+  // the card is clipped to the wall, so redraw the moment the card changes size (fonts settling,
+  // the layout fitting itself), not just on the next timer
+  if (window.ResizeObserver) new ResizeObserver(() => drawClimb(true)).observe($("streak-card"));
 
   // Carl's trail map: this tier's six mountains as one range, with the route climbed so far, a camp
   // on every summit reached, his best-ever point, and the souvenirs collected.
@@ -984,7 +989,7 @@
         ? (() => { const [x, y] = pt(bestAbove.step); return `<g class="trail-best" transform="translate(${x.toFixed(1)},${y.toFixed(1)})"><path d="M0 0V-9"/><path class="flag" d="M0 -9L5.5 -7.2L0 -5.4Z"/></g>`; })()
         : "";
       return `<svg class="th-${m.key}" x="${i * 100}" y="0" width="100" height="200" viewBox="0 0 100 200">
-          ${wallArt(m.key, g, false)}${clearingArt(g, summited)}${shelves}${ledgeDeco(m.key, g)}
+          ${wallArt(m.key, g)}${clearingArt(g, summited)}${shelves}${ledgeDeco(m.key, g)}
           <path class="cl-ground" d="M0,${G}H100"/>${i === 0 ? tent(11, G, "", 1.4) + campUpgrades(st.goalWeeks, G) : ""}${route}${goldSteps}${flag}${camp}${best}${carl}
         </svg>
         <text class="trail-name${idx === st.index ? " now" : ""}" x="${i * 100 + 50}" y="214" text-anchor="middle">${esc(m.name)}</text>
