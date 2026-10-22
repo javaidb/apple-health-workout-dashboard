@@ -679,7 +679,16 @@
       stars: crystals(baseAt(.2)) + crystals(baseAt(.62)) + `<circle class="a-star" cx="${f(sideAt(.45)[0] - 10)}" cy="${f(H * .45)}" r="1.2"/>`,
       mesa: [baseAt(.25), baseAt(.7)].map(([x, y], i) => `<path class="a-hoodoo" d="M${f(x - 3)},${f(y + 1)}V${f(y - 12 - i * 4)}h-1.8v-2.8h9.6v2.8h-1.8V${f(y + 1)}Z"/>`).join(""),
       ember: [baseAt(.3), baseAt(.78)].map(([x, y], i) => `<path class="a-lava" d="M${f(x - 1.4)},${f(y - 1)}q1 ${7 + i * 3} 1.4 ${11 + i * 3}q.4 -4 1.4 -${11 + i * 3}Z"/>`).join("")
-        + `<path class="a-seam" d="M${f(W * .34)},${f(H * .22)}l3 9l-2 7l4 10M${f(W * .66)},${f(H * .58)}l-3 8l3 6l-2 9"/>`,
+        + `<path class="a-seam" d="M${f(W * .34)},${f(H * .22)}l3 9l-2 7l4 10M${f(W * .66)},${f(H * .58)}l-3 8l3 6l-2 9"/>`
+        // flows down the sides: following the edge, then spilling off it in a drip
+        + [[.16, .42, 1], [.5, .78, 1], [.3, .62, -1]].map(([a, b, dir]) => {
+          const at = (y) => dir > 0 ? W - prof.side(y) - 1.4 : -prof.left(y) + 1.4;
+          let d = "";
+          for (let y = H * a; y <= H * b; y += 6) d += `${d ? "L" : "M"}${f(at(y) - dir * Math.sin(y * .3) * .8)},${f(y)}`;
+          const [ex, ey] = [at(H * b), H * b];
+          d += `Q${f(ex + dir * 3)},${f(ey + 4)} ${f(ex + dir * 3.4)},${f(ey + 10)}`;
+          return `<path class="a-flow" d="${d}"/><path class="a-flow-core" d="${d}"/><circle class="a-lava-drop" cx="${f(ex + dir * 3.4)}" cy="${f(ey + 12.5)}" r="1.4"/>`;
+        }).join(""),
       storm: [baseAt(.3), baseAt(.7)].map(([x, y]) => `<path class="a-drip" d="M${f(x)},${f(y)}v6"/>`).join(""),
       crown: [.3, .55, .8].map((t) => { const [x, y] = sideAt(t); return `<path class="a-gem" d="M${f(x)},${f(y - 3)}l2.6 3l-2.6 3l-2.6 -3Z"/>`; }).join("")
         + [[0, 0], [5, 0], [2.5, -3.6]].map(([dx, dy]) => `<circle class="a-coin" cx="${f(baseAt(.5)[0] + dx)}" cy="${f(baseAt(.5)[1] - 2 + dy)}" r="2.6"/>`).join(""),
@@ -895,11 +904,22 @@
       ? `Carl on ${info.name}, ${atSummit ? "at the summit" : `${plural(step, "week")} up, ${plural(N - step, "week")} to the summit`}`
       : fell ? `Carl fell ${fell.down ? "down" : "on"} ${info.name} and is back at ${camp}` : `Carl at ${camp}, ready to climb ${info.name}`;
     const plaque = lines.length ? capPatch(info.key, lines, f) : "";
-    const art = `${wallArt(info.key, g)}${plaque}${clearingArt(g, atSummit)}${route}${shelves}${bolt}${flag}${extra}${figure}`;
+    const art = `${wallArt(info.key, g)}${plaque}${clearingArt(g, atSummit)}${route}${shelves}${ledgeLava(info.key, g, f)}${bolt}${flag}${extra}${figure}`;
     return { sub, label, art, key: info.key, night, tie };
   }
 
   const n0 = (g) => g.spots.length - 2;   // the chimney ledge
+
+  // Ember Peak: lava pooled on every other ledge, running off its outer end.
+  function ledgeLava(key, g, f) {
+    if (key !== "ember") return "";
+    return g.spots.slice(1, -1).filter((_, i) => i % 2 === 0).map(([x, y]) => {
+      const w = g.shelfW, out = x > g.W / 2 ? 1 : -1, ex = x + out * (w / 2 - 1.5);
+      const pool = `M${f(x - out * w * .2)},${f(y - 1)}H${f(ex)}`;
+      return `<path class="a-flow" d="${pool}"/><path class="a-flow-core" d="${pool}"/>`
+        + `<path class="a-flow" d="M${f(ex)},${f(y)}q${out * 2.4} 1 ${out * 2.6} ${f(5)}t${out * .4} ${f(6)}"/><circle class="a-lava-drop" cx="${f(ex + out * 3)}" cy="${f(y + 13)}" r="1.3"/>`;
+    }).join("");
+  }
 
   // Draws the climb to the size it has on the card. The drawing spans the climb column from the
   // card's top edge (so the clearing can be carved just under it) out to the card's right edge.
@@ -976,7 +996,7 @@
         ? (() => { const [x, y] = pt(bestAbove.step); return `<g class="trail-best" transform="translate(${x.toFixed(1)},${y.toFixed(1)})"><path d="M0 0V-9"/><path class="flag" d="M0 -9L5.5 -7.2L0 -5.4Z"/></g>`; })()
         : "";
       return `<svg class="th-${m.key}" x="${i * 100}" y="0" width="100" height="200" viewBox="0 0 100 200">
-          ${wallArt(m.key, g)}${clearingArt(g, summited)}${shelves}
+          ${wallArt(m.key, g)}${clearingArt(g, summited)}${shelves}${ledgeLava(m.key, g, (v) => v.toFixed(1))}
           <path class="cl-ground" d="M0,${G}H100"/>${i === 0 ? tent(11, G, "", 1.4) + campUpgrades(st.goalWeeks, G) : ""}${route}${goldSteps}${flag}${camp}${best}${carl}
         </svg>
         <text class="trail-name${idx === st.index ? " now" : ""}" x="${i * 100 + 50}" y="214" text-anchor="middle">${esc(m.name)}</text>

@@ -1411,6 +1411,9 @@ svg.th-crown, .cap-crown { --s1: #8a6118; --s2: #a2741f; --s3: #946a1b; --s4: #7
 .a-star { fill: #fde68a; }
 .a-hoodoo { fill: var(--s4); }
 .a-lava { fill: #f97316; filter: drop-shadow(0 0 1.6px #f97316); }
+.a-flow { fill: none; stroke: #ea580c; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 2px #f97316); }
+.a-flow-core { fill: none; stroke: #fde047; stroke-width: .9; stroke-linecap: round; stroke-linejoin: round; }
+.a-lava-drop { fill: #f97316; filter: drop-shadow(0 0 1.6px #f97316); }
 .a-seam { fill: none; stroke: #f97316; stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 1.8px #f97316); }
 .a-drip { stroke: #9cc8ec; stroke-width: 1; stroke-linecap: round; }
 .a-gem { fill: #ef4444; stroke: #fecaca; stroke-width: .4; }
