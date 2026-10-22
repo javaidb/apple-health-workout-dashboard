@@ -664,8 +664,7 @@
         + Array.from({ length: Math.round(W / 14) }, (_, i) => { const x = 7 + i * 14 + rnd() * 4, h2 = 6 + rnd() * 5;
           return `<path class="t-boulder" d="M${f(x - 6)},${B}Q${f(x - 6)},${f(B - h2)} ${f(x)},${f(B - h2 - 1)}Q${f(x + 6)},${f(B - h2)} ${f(x + 6)},${B}Z"/>`; }).join(""),
       crown: Array.from({ length: Math.ceil(H / 7) }, (_, r) => `<path class="t-brick" d="M0,${f(r * 7)}H${W}${Array.from({ length: Math.ceil(W / 14) + 1 }, (_, j) => `M${f(j * 14 + (r % 2) * 7)},${f(r * 7)}v7`).join("")}"/>`).join("")
-        + scatter(24, (x, y, r) => `<circle class="t-gleam" cx="${f(x)}" cy="${f(y)}" r="${f(.6 + r * .6)}"/>`)
-        + Array.from({ length: Math.round(W / 10) }, (_, i) => `<circle class="t-coin" cx="${f(6 + i * 10 + rnd() * 3)}" cy="${f(B - 3 - rnd() * 4)}" r="2.2"/>`).join(""),
+        + scatter(24, (x, y, r) => `<circle class="t-gleam" cx="${f(x)}" cy="${f(y)}" r="${f(.6 + r * .6)}"/>`),
     }[key];
     // holds between ledges: two small knobs on each hop
     const holds = spots.slice(0, n).map(([ax, ay], k) => {
@@ -676,9 +675,13 @@
       }).join("");
     }).join("");
     const ol = wallOutline(key, W, H, rnd);
-    g.outline = ol.path;   // for clipping the card itself to the wall (see drawClimb)
+    const prof = wallProfile(key, W, H), edge = [];
+    const gap = { pine: 1, canopy: 1, frost: 1, stars: 1.8, ember: 1.6, storm: 1.6, mesa: 2, crown: 2.4 }[key];
+    for (let x = 6; x < W - prof.side(0) - 4; x += (9 + rnd() * 8) * gap) edge.push([x, .5, 0, false]);
+    for (let y = 8; y < H - prof.foot(W - prof.side(H)) - 10; y += (7 + rnd() * 7) * gap) edge.push([W - prof.side(y) - 1, y, 90, false]);
+    for (let x = W - prof.side(H) - 8; x > W * .28; x -= (6 + rnd() * 7) * gap) edge.push([x, H - prof.foot(x) - 1, 180, true]);
     return `<defs><clipPath id="${clipId}"><path d="${ol.svg}"/></clipPath></defs>
-      <g class="lg-wall"><path class="face" d="${ol.svg}"/><g clip-path="url(#${clipId})">${tex}</g><path class="rim" d="M0,0${ol.path(0)}"/></g>${holds}`;
+      <g class="lg-wall"><path class="face" d="${ol.svg}"/><g clip-path="url(#${clipId})">${tex}</g><path class="rim" d="M0,0${ol.path(0)}"/><g class="lg-juts">${juts(key, edge, rnd, f)}</g></g>${holds}`;
   }
 
   function wallOutline(key, W, H, rnd) {
@@ -708,6 +711,61 @@
       return d;
     };
     return { svg: `M0,0${path(0)}Z`, path };
+  }
+
+  // Bits of the material jutting out past an edge: tufts, twigs and roots out of turf; icicles and
+  // shards off ice; chips off rock; leaves and vines off jungle; crystals; coins and gems. Each is
+  // drawn pointing up from (0,0) and turned to face out along the edge's normal.
+  function juts(key, edge, rnd, f) {
+    const glyph = (r, down) => ({
+      pine: down && r < .3 ? `<path class="j-root" d="M0,0q2.4 4 -.6 8q-1.6 3 .8 5"/>`
+        : r > .82 ? `<path class="j-twig" d="M0,0l1.6 -8M.6 -3.4l-2.4 -1.6M1.1 -5.6l2.4 -1.4M1.4 -7l-1.8 -1.6"/>`
+        : `<path class="j-grass" d="M-2.2,0l-1.2 -${f(4 + r * 3)}M-.4,0l.2 -${f(5 + r * 3)}M1.6,0l1.6 -${f(4 + r * 2)}M.6,0l-.4 -${f(3 + r * 2)}"/>`,
+      frost: down ? `<path class="j-ice" d="M-1.8,0L0,-${f(6 + r * 9)}L1.8,0Z"/>` : `<path class="j-ice" d="M-2.2,0L${f(r * 2 - 1)},-${f(4 + r * 5)}L2.2,0Z"/>`,
+      stars: `<path class="j-crystal" d="M-1.8,0L-.8,-${f(5 + r * 5)}L1,-${f(6 + r * 5)}L2,0Z"/>`,
+      mesa: down && r < .25 ? `<path class="j-root dry" d="M0,0q-2 4 1 7q1 2 -1 4"/>`
+        : r > .75 ? `<path class="j-scrub" d="M-3,0l-1.6 -4M-1,0l-.4 -5.4M1,0l.8 -5M3,0l1.8 -3.6"/>`
+        : `<path class="j-rock" d="M-4.4,0l1 -${f(3 + r * 3)}l3.4 -1.6l3.2 1.2l1.2 ${f(2.6 + r * 2)}Z"/>`,
+      ember: down && r < .4 ? `<path class="j-lava" d="M-1.1,0q.8 ${f(4 + r * 6)} 1.1 ${f(7 + r * 6)}q.4 -3 1.1 -${f(7 + r * 6)}Z"/>` : `<path class="j-basalt" d="M-2.4,0V-${f(3 + r * 3)}h4.8V0Z"/>`,
+      canopy: down && r < .45 ? `<path class="j-vine" d="M0,0q-3 ${f(5 + r * 4)} 1 ${f(10 + r * 6)}q2 4 -1 ${f(6 + r * 3)}"/><path class="j-leaf" d="M0,${f(9 + r * 6)}q-3 -2 -4 1q3 1.4 4 -1Z"/>`
+        : `<path class="j-leaf" transform="rotate(${Math.round((r - .5) * 70)})" d="M0,0q-3.2 -4 0 -${f(7 + r * 3)}q3.2 4 0 ${f(7 + r * 3)}Z"/>`,
+      storm: down && r < .35 ? `<path class="j-drip" d="M0,0v${f(3 + r * 5)}"/>` : r > .6 ? `<path class="j-moss" d="M-2,0l-1 -3M0,0v-3.6M2,0l1 -3"/>` : `<path class="j-rock" d="M-2.4,0l.6 -${f(2 + r * 2)}l2.8 -.6l1.6 ${f(2 + r)}Z"/>`,
+      crown: r < .7 ? `<path class="j-gold" d="M-4,0l.6 -${f(3 + r * 4)}l2.8 -1.6l3.4 1l1.2 ${f(3 + r * 3)}Z"/><circle class="j-glint" cx="${f(r * 2 - 1)}" cy="-${f(2 + r * 2)}" r=".6"/>`
+        : `<path class="j-gem" d="M0,-6l2.6 3l-2.6 3l-2.6 -3Z"/>`,
+    }[key]);
+    return edge.map(([x, y, ang, down]) => {
+      const r = rnd();
+      return `<g transform="translate(${f(x)},${f(y)}) rotate(${f(ang + (rnd() - .5) * 40)})">${glyph(r, down)}</g>`;
+    }).join("");
+  }
+
+  // A cleared patch in the wall for the caption, in the wall's own way (a dirt clearing in turf, a
+  // pane of clear ice, smooth sandstone, cooled obsidian, bare earth under the leaves, a dark
+  // crystal window, dry slate, a gold plaque), with a ragged, natural edge.
+  function capPatch(key, lines, rnd, f) {
+    // a left edge on the wall's seam, then out round each line of text in turn
+    const pad = 7, top = lines[0][1] - pad + 2, bot = lines[lines.length - 1][3] + pad - 2;
+    const poly = [[1, top]];
+    lines.forEach(([, t, r, b]) => { poly.push([r + pad, t - (t === lines[0][1] ? pad : 0)], [r + pad, b + pad * .4]); });
+    poly.push([1, bot]);
+    const pts = [];
+    poly.forEach(([x, y], i) => {
+      const [nx, ny] = poly[(i + 1) % poly.length], len = Math.hypot(nx - x, ny - y), steps = Math.max(1, Math.round(len / 9));
+      for (let k = 0; k < steps; k++) pts.push([x + (nx - x) * k / steps + (rnd() - .5) * 2.4, y + (ny - y) * k / steps + (rnd() - .5) * 2.4]);
+    });
+    const n = pts.length;
+    let d = `M${f(pts[0][0])},${f(pts[0][1])}`;
+    for (let i = 0; i < n; i++) {
+      const p0 = pts[(i - 1 + n) % n], p1 = pts[i], p2 = pts[(i + 1) % n], p3 = pts[(i + 2) % n];
+      d += `C${f(p1[0] + (p2[0] - p0[0]) / 6)},${f(p1[1] + (p2[1] - p0[1]) / 6)} ${f(p2[0] - (p3[0] - p1[0]) / 6)},${f(p2[1] - (p3[1] - p1[1]) / 6)} ${f(p2[0])},${f(p2[1])}`;
+    }
+    // its rim: the wall's material poking in over the patch's edge
+    const rim = pts.filter((_, i) => i % 2 === 0).map(([x, y], i) => {
+      const [qx, qy] = pts[(i * 2 + 1) % n], ang = Math.atan2(qy - y, qx - x) * 180 / Math.PI - 90;
+      return [x, y, ang, false];
+    });
+    // a fringe of the material only where it grows over the edge (turf, leaves, frost)
+    return `<path class="lg-patch" d="${d}Z"/>${["pine", "canopy", "frost"].includes(key) ? `<g class="lg-patch-rim">${juts(key, rim.filter((_, i) => i % 2 === 0), rnd, f)}</g>` : ""}`;
   }
 
   // Each mountain's own touches, on its ledges and around the clearing.
@@ -816,7 +874,7 @@
   // Caption above the drawing: mountain name, progress and the year's six souvenirs.
   function climbCaption(info, sub, doneInYear, medals, tierStart) {
     const peaks = MOUNTAINS.map((m, i) => souvenir(m.key, i < doneInYear ? `done m-${medalOf(medals[tierStart + i] ?? 0, tierStart + i)}` : i === doneInYear ? "now" : "todo")).join("");
-    return `<div class="climb-caption">
+    return `<div class="climb-caption cap-${info.key}">
       <div class="cc-name">${esc(info.name)}${info.tier > 1 ? ` <span class="cc-tier">Tier ${ROMAN[info.tier - 1] || info.tier}</span>` : ""}</div>
       <div class="cc-sub">${esc(sub)}</div>
       <div class="cc-peaks">${peaks}</div>
@@ -842,7 +900,7 @@
 
   // Carl on this week's ledge (or hanging from it, resting, yawning, fallen, or celebrating in the
   // clearing), in a W x H drawing. Returns the caption's line, the aria label and the SVG's insides.
-  function climbScene(W, H, capB, capT = 0) {
+  function climbScene(W, H, capB, capT = 0, lines = []) {
     const { index, step, fell, pending, golds, medals } = climbState();
     const info = mountainInfo(index), next = mountainInfo(index + 1);
     const N = weeksOf(index), LEDGE = N / 2;
@@ -917,10 +975,11 @@
     const label = step > 0
       ? `Carl on ${info.name}, ${atSummit ? "at the summit" : `${plural(step, "week")} up, ${plural(N - step, "week")} to the summit`}`
       : fell ? `Carl fell ${fell.down ? "down" : "on"} ${info.name} and is back at ${camp}` : `Carl at ${camp}, ready to climb ${info.name}`;
-    const { x0: px0, fy: pfy } = g.clear, plaque = capB > capT
-      ? `<path class="lg-plaque" d="M3,${f(capT)}H${f(px0 - 7)}V${f(Math.min(capB, pfy + 6))}H${f(g.spots[n0(g)][0] - g.shelfW / 2 - 7)}V${f(capB)}H3Z"/>` : "";
+    let ps = Math.round(W * 13 + H);
+    const prnd = () => { ps = (ps * 16807) % 2147483647; return (ps % 10000) / 10000; };
+    const plaque = lines.length ? capPatch(info.key, lines, prnd, f) : "";
     const art = `${wallArt(info.key, g)}${plaque}${clearingArt(g, atSummit)}${route}${shelves}${ledgeDeco(info.key, g)}${bolt}${flag}${extra}${figure}`;
-    return { sub, label, art, key: info.key, night, tie, outline: g.outline };
+    return { sub, label, art, key: info.key, night, tie };
   }
 
   const n0 = (g) => g.spots.length - 2;   // the chimney ledge
@@ -947,17 +1006,27 @@
     el.style.setProperty("--chim-h", `${Math.max(0, cy + 10 - padT)}px`);
     // (the caption is a flex item, so its own box grows to hold its floats: measure its lines instead)
     const capB = capEl ? Math.round(Math.max(...[...capEl.children].map((e) => e.getBoundingClientRect().bottom)) - c.top) : 0, capT = Math.round(padT);
-    const key = `${climbRender}|${W}x${H}|${capB}|${skyPhase()}`;
+    const lines = [];
+    if (capEl) for (const e of capEl.children) {
+      let rs;
+      if (e.classList.contains("cc-peaks")) rs = [[...e.children].reduce((a, k) => { const r = k.getBoundingClientRect(); return a ? { left: Math.min(a.left, r.left), top: Math.min(a.top, r.top), right: Math.max(a.right, r.right), bottom: Math.max(a.bottom, r.bottom) } : r; }, null)];
+      else { const rg = document.createRange(); rg.selectNodeContents(e); rs = [...rg.getClientRects()]; }
+      rs.filter((r) => r && r.right - r.left > 1).forEach((r) => {
+        const L = [r.left - col.left, r.top - c.top, r.right - col.left, r.bottom - c.top].map(Math.round), last = lines[lines.length - 1];
+        // merge pieces of the same line (inline spans)
+        if (last && Math.abs(last[1] - L[1]) < 4) { last[2] = Math.max(last[2], L[2]); last[3] = Math.max(last[3], L[3]); } else lines.push(L);
+      });
+    }
+    const key = `${climbRender}|${W}x${H}|${capB}|${skyPhase()}|${lines.map((l) => l.join(",")).join(";")}`;
     if (onlyIfMoved && key === climbKey) return;
     climbKey = key;
-    if (W < 40 || H < 80) { box.innerHTML = ""; card.style.clipPath = ""; return; }
-    const { label, art, key: theme, night, tie, outline } = climbScene(W, H, capB, capT);
+    if (W < 40 || H < 80) { box.innerHTML = ""; card.style.removeProperty("--wall-x"); return; }
+    const { label, art, key: theme, night, tie } = climbScene(W, H, capB, capT, lines);
     box.innerHTML = `<svg class="th-${theme}${night ? " night" : ""}" data-anchor="${tie.map((v) => v.toFixed(1)).join(",")}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(label)}">${art}</svg>`;
-    const ox = col.left - c.left, r = 16, ch = c.height;
-    card.style.clipPath = `path("M${r},0H${ox.toFixed(1)}${outline(ox)}H${r}Q0,${ch} 0,${ch - r}V${r}Q0,0 ${r},0Z")`;
+    card.style.setProperty("--wall-x", `${(col.left - c.left).toFixed(1)}px`);
   }
 
-  // the card is clipped to the wall, so redraw the moment the card changes size (fonts settling,
+  // the card's surface stops at the wall, so redraw the moment the card changes size (fonts settling,
   // the layout fitting itself), not just on the next timer
   if (window.ResizeObserver) new ResizeObserver(() => drawClimb(true)).observe($("streak-card"));
 
