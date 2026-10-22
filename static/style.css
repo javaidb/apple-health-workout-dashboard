@@ -732,10 +732,9 @@ code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; font-
 .climb { flex: 0 0 46%; min-width: 0; min-height: 190px; display: flex; flex-direction: column; position: relative; }
 .climb-art { position: absolute; left: 0; z-index: 0; }
 .climb-art svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.climb-caption { position: relative; z-index: 1; text-align: left; line-height: 1.25; padding: 3px 0 0 8px; }
+.climb-caption { position: relative; z-index: 1; text-align: left; line-height: 1.25; padding: 2px var(--edge-in, 0px) 0 0; }
 .climb-caption::before { content: ""; float: right; width: var(--clear-w, 50%); height: var(--clear-h, 28px); }
 .cc-name { clear: none; }
-.cc-sub::before { content: ""; float: right; clear: right; width: var(--chim-w, 0px); height: var(--chim-h, 0px); }
 .cc-name { font-size: 12.5px; font-weight: 700; color: var(--text); letter-spacing: -.01em; }
 .cc-tier { font-size: 10px; font-weight: 700; color: var(--warn); margin-left: 3px; }
 .cc-sub { font-size: 10.5px; color: var(--muted); }
@@ -765,7 +764,6 @@ code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; font-
 .climber .cl-pack { fill: color-mix(in srgb, var(--c-cycle) 70%, var(--surface-3)); }
 .climber .cl-harness { stroke: var(--warn); stroke-width: 1; stroke-linecap: round; }
 .climber .cl-stars { fill: var(--warn); }
-.cl-rope { fill: none; stroke: var(--warn); stroke-width: .7; stroke-opacity: .85; stroke-linecap: round; }
 .climber.hang { animation: cl-sway 3.6s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 0; }
 .cl-alert { fill: var(--warn); font-size: 9px; font-weight: 800; animation: cl-blink 1.6s ease-in-out infinite; }
 @keyframes cl-sway { 0%, 100% { rotate: -1.2deg; } 50% { rotate: 1.2deg; } }
@@ -1341,22 +1339,11 @@ svg.night .cl-campfire .flame { filter: drop-shadow(0 0 2.4px #f97316); }
 .tr-gate-hub { fill: #52525b; stroke: #a1a1aa; stroke-width: .4; }
 
 /* ---- Carl's ledges on the Weekly streak card ---- */
-.lg-shelf .rock { fill: var(--mtn); stroke: var(--mtn-edge); stroke-width: .6; stroke-linejoin: round; }
 /* on the card the route is a light chalk line between the ledges, not a glowing trail */
 .climb-art .cl-route.done { stroke-width: .9; opacity: .45; filter: none; stroke-dasharray: 3 2; }
 .climb-art .cl-route.gold { stroke-width: 1; opacity: .6; filter: none; stroke-dasharray: 3 2; }
 .climb-art .cl-route.ahead { stroke-width: .8; opacity: .45; }
 .climb-art .cl-route.old { stroke-width: .8; opacity: .4; }
-.lg-shelf .crack { fill: none; stroke: color-mix(in srgb, var(--mtn-edge) 70%, transparent); stroke-width: .5; stroke-linecap: round; }
-.lg-shelf .top { fill: none; stroke: color-mix(in srgb, var(--text) 30%, transparent); stroke-width: .9; stroke-linecap: round; }
-.lg-shelf.done .top { stroke: var(--accent); }
-.lg-shelf.gold .top { stroke: #fbbf24; filter: drop-shadow(0 0 1.6px #fbbf24); }
-.lg-shelf.old .top { stroke: var(--faint); }
-.lg-shelf.ahead { opacity: .75; }
-.lg-clear { fill: rgba(0, 0, 0, .4); }
-.lg-clear-rim { fill: none; stroke: color-mix(in srgb, var(--mtn-edge) 60%, transparent); stroke-width: .7; stroke-linejoin: round; }
-.lg-clear-drip { fill: color-mix(in srgb, var(--mtn) 80%, transparent); }
-.lg-clear-floor { fill: var(--mtn); stroke: var(--mtn-edge); stroke-width: .5; stroke-linejoin: round; }
 .lg-bell .chain { stroke: color-mix(in srgb, var(--text) 45%, transparent); stroke-width: .5; }
 .lg-bell .bell { fill: #d4a017; stroke: #fde68a; stroke-width: .4; }
 .lg-bell .clapper { fill: #92400e; }
@@ -1369,21 +1356,14 @@ svg.night .cl-campfire .flame { filter: drop-shadow(0 0 2.4px #f97316); }
 @media (prefers-reduced-motion: reduce) { .lg-bell .swing { animation: none; } }
 
 /* the wall: one solid face per mountain, its material drawn into it (static) */
-.lg-wall .face { fill: var(--wall); }
-.lg-wall .rim { fill: none; stroke: color-mix(in srgb, var(--wall-hi) 55%, var(--wall-lo)); stroke-width: 1; stroke-linejoin: round; }
 
-.lg-shelf .top-face { fill: color-mix(in srgb, var(--wall-hi) 38%, var(--wall-lo)); }
-.lg-shelf .shade { fill: color-mix(in srgb, var(--wall-lo) 60%, #000); }
-.lg-shelf .under { fill: none; stroke: color-mix(in srgb, #000 35%, transparent); stroke-width: .7; stroke-linejoin: round; }
-:is(.climb-art, .trail) .lg-shelf .rock { fill: var(--wall-lo); stroke: color-mix(in srgb, var(--wall-hi) 40%, transparent); }
-.climb-art .lg-clear, .trail .lg-clear { fill: color-mix(in srgb, var(--surface) 70%, #000); }
 
 
 /* the Weekly streak card's own surface only runs behind its left half; the climbing wall stands
    free beside it (drawClimb sets --wall-x), so its edges, and what juts out of them, are its own */
 .streak-card { background: transparent; border-color: transparent; box-shadow: none; overflow: visible !important; isolation: isolate; }
-.streak-card::before { content: ""; position: absolute; left: -1px; top: -1px; bottom: -1px; width: var(--wall-x, calc(100% + 2px));
-  background: var(--surface); border: 1px solid var(--border); border-right: 0; border-radius: var(--radius) 0 0 var(--radius); box-shadow: var(--shadow); z-index: -1; }
+.streak-card::before { content: ""; position: absolute; left: -1px; top: -1px; bottom: -1px; width: var(--edge-x, calc(100% + 2px));
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); z-index: -1; clip-path: var(--edge-clip, none); }
 
 /* the climbing walls: a tight palette per mountain (s1 the face, s2-s4 its structure, hi the rim and
    highlights, lo the ledges, panel/ink/ink2 the caption) */
@@ -1395,30 +1375,44 @@ svg.th-frost, .cap-frost { --s1: #3c82b0; --s2: #4f93bf; --s3: #2f6f99; --s4: #5
 svg.th-stars, .cap-stars { --s1: #3b2470; --s2: #45297f; --s3: #321e60; --s4: #4f3290; --hi: #ddc8ff; --lo: #6d4fb0; --panel: #130a2c; --ink: #efe6ff; --ink2: #c4b2ec; }
 svg.th-storm, .cap-storm { --s1: #4a586c; --s2: #536276; --s3: #424f61; --s4: #3a4656; --hi: #c3d2e4; --lo: #6b7b91; --panel: #1c232d; --ink: #e5edf6; --ink2: #aebdcf; }
 svg.th-crown, .cap-crown { --s1: #8a6118; --s2: #a2741f; --s3: #946a1b; --s4: #7c5714; --hi: #fde68a; --lo: #c7962f; --panel: #3a2606; --ink: #fde68a; --ink2: #e8c56c; }
-.lg-wall .face, .lg-wall .s1 { fill: var(--s1); }
-.lg-wall .s2 { fill: var(--s2); } .lg-wall .s3 { fill: var(--s3); } .lg-wall .s4 { fill: var(--s4); }
-.lg-wall .joint { fill: none; stroke: color-mix(in srgb, #000 55%, transparent); stroke-width: .8; stroke-linejoin: round; }
-.lg-wall .rim { fill: none; stroke: color-mix(in srgb, var(--hi) 70%, transparent); stroke-width: 1.2; stroke-linejoin: round; }
-:is(.climb-art, .trail) .lg-shelf .rock { fill: var(--lo); stroke: color-mix(in srgb, var(--s4) 80%, #000); stroke-width: .5; }
-.lg-shelf .top { stroke: color-mix(in srgb, var(--hi) 80%, transparent); stroke-width: 1.6; stroke-linecap: round; }
-.lg-panel { fill: var(--panel); stroke: var(--panel); stroke-width: 8; stroke-linejoin: round; }
-/* the few placed details */
-.a-pine { fill: var(--s4); }
-.a-vine { fill: none; stroke: var(--hi); stroke-width: 1; stroke-linecap: round; }
-.a-leaf { fill: var(--hi); }
-.a-ice { fill: color-mix(in srgb, var(--hi) 85%, transparent); }
-.a-crystal { fill: var(--lo); stroke: var(--hi); stroke-width: .5; stroke-linejoin: round; }
-.a-star { fill: #fde68a; }
-.a-hoodoo { fill: var(--s4); }
-.a-lava { fill: #f97316; filter: drop-shadow(0 0 1.6px #f97316); }
-.a-flow { fill: none; stroke: #ea580c; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 2px #f97316); }
-.a-flow-core { fill: none; stroke: #fde047; stroke-width: .9; stroke-linecap: round; stroke-linejoin: round; }
-.a-lava-drop { fill: #f97316; filter: drop-shadow(0 0 1.6px #f97316); }
-.a-seam { fill: none; stroke: #f97316; stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 1.8px #f97316); }
-.a-drip { stroke: #9cc8ec; stroke-width: 1; stroke-linecap: round; }
-.a-gem { fill: #ef4444; stroke: #fecaca; stroke-width: .4; }
-.a-coin { fill: #fbbf24; stroke: #fef3c7; stroke-width: .5; }
-/* the caption, set neatly in its panel */
-.climb-caption .cc-name { font-weight: 800; }
-.climb-caption[class*="cap-"] .cc-name { color: var(--ink); }
-.climb-caption[class*="cap-"] .cc-sub { color: var(--ink2); }
+
+/* Carl's themed edge on the Weekly streak card (colours from the mountain's palette) */
+.edge .e-band { fill: none; stroke: var(--s3); stroke-width: 8; stroke-linejoin: round; }
+.edge .e-lip { fill: none; stroke: var(--hi); stroke-width: 1.2; stroke-linejoin: round; }
+.edge .e-tex { fill: none; stroke-width: 8; stroke-linejoin: round; }
+.th-pine   .e-tex { stroke: var(--s1); stroke-dasharray: 1.2 2.6; }
+.th-frost  .e-tex { stroke: var(--hi); stroke-width: 2.4; stroke-dasharray: 5 4 1 4; opacity: .55; }
+.th-mesa   .e-tex { stroke: var(--s2); stroke-dasharray: 3 3 6 2; }
+.th-ember  .e-tex { stroke: #f97316; stroke-width: 1.2; stroke-dasharray: 2 10 5 7; filter: drop-shadow(0 0 1.6px #f97316); }
+.th-canopy .e-tex { stroke: var(--hi); stroke-width: 4; stroke-dasharray: 3 5; opacity: .6; }
+.th-stars  .e-tex { stroke: var(--hi); stroke-width: 1.6; stroke-dasharray: .1 7; stroke-linecap: round; }
+.th-storm  .e-tex { stroke: var(--s1); stroke-dasharray: 8 2 3 2; }
+.th-crown  .e-tex { stroke: var(--hi); stroke-width: 2; stroke-dasharray: 10 3; opacity: .7; }
+.e-pine { fill: var(--s4); }
+.e-grass, .e-fern { fill: none; stroke: var(--hi); stroke-width: .8; stroke-linecap: round; }
+.e-root { fill: none; stroke: #7a5634; stroke-width: .9; stroke-linecap: round; }
+.e-snow { fill: #f1f8fc; }
+.e-ice { fill: color-mix(in srgb, var(--hi) 85%, transparent); }
+.e-chip { fill: var(--s4); stroke: var(--hi); stroke-width: .4; stroke-linejoin: round; }
+.e-cactus { fill: none; stroke: #4d9a4a; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.e-lava { fill: none; stroke: #f97316; stroke-width: 1.8; stroke-linecap: round; filter: drop-shadow(0 0 1.6px #f97316); }
+.e-drop { fill: #f97316; filter: drop-shadow(0 0 1.4px #f97316); }
+.e-glow { stroke: #f97316; stroke-width: 1.6; stroke-linecap: round; filter: drop-shadow(0 0 2px #f97316); }
+.e-smoke { fill: none; stroke: color-mix(in srgb, var(--text) 30%, transparent); stroke-width: .8; stroke-linecap: round; }
+.e-leaf { fill: var(--hi); }
+.e-vine { fill: none; stroke: var(--hi); stroke-width: .9; stroke-linecap: round; }
+.e-crystal { fill: var(--lo); stroke: var(--hi); stroke-width: .5; stroke-linejoin: round; filter: drop-shadow(0 0 1.4px var(--lo)); }
+.e-star { fill: #fde68a; }
+.e-drip { stroke: #9cc8ec; stroke-width: .9; stroke-linecap: round; }
+.e-cloud path { fill: color-mix(in srgb, #94a3b8 60%, var(--surface)); }
+.e-puddle { fill: #9cc8ec; opacity: .4; }
+.e-gem { fill: #ef4444; stroke: #fecaca; stroke-width: .4; }
+.e-crown { fill: #fbbf24; stroke: #fef3c7; stroke-width: .4; stroke-linejoin: round; }
+.e-coin { fill: #fbbf24; stroke: #fef3c7; stroke-width: .4; }
+.e-rope { fill: none; stroke: #b0844f; stroke-width: 1.3; stroke-linecap: round; }
+.e-hold .knob { fill: var(--s3); stroke: var(--hi); stroke-width: .5; stroke-linejoin: round; }
+.e-hold .cap { stroke: color-mix(in srgb, var(--text) 30%, transparent); stroke-width: 1.4; stroke-linecap: round; }
+.e-hold.done .cap { stroke: var(--accent); }
+.e-hold.gold .cap { stroke: #fbbf24; }
+.e-hold.old .cap { stroke: var(--faint); }
+.trail-card { fill: var(--surface-2, var(--surface)); stroke: var(--border); }
