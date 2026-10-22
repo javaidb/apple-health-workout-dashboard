@@ -692,7 +692,7 @@
     const kind = { pine: "water", canopy: "water wide", storm: "water grey", frost: "ice", ember: "lava", mesa: "sand", stars: "dust", crown: "coins" }[key];
     const stream = `<path class="f-base" d="${path}"/>` + [[-5, ""], [0, " b"], [4.5, " c"]].map(([dx, c]) => `<path class="f-flow${c}" transform="translate(${dx},0)" d="${path}"/>`).join("");
     // falling bits: snowflakes, sand grains, stardust, coins
-    const bits = (n, cls, r) => Array.from({ length: n }, (_, i) => `<circle class="f-bit ${cls}" cx="${f(fx + (i % 5 - 2) * 3.4)}" cy="${f(fy + 8)}" r="${r}" style="--len:${f(len)}px;animation-delay:${(-i * 3.2 / n).toFixed(2)}s"/>`).join("");
+    const bits = (n, cls, r) => Array.from({ length: n }, (_, i) => `<circle class="f-bit ${cls}" cx="${f(fx + (i % 5 - 2) * 3.4)}" cy="${f(fy + 8)}" r="${r}" style="--len:${f(len)}px;animation-delay:${(-i * 6.4 / n).toFixed(2)}s"/>`).join("");
     const extra = { ice: bits(9, "snow", 1), sand: bits(12, "grain", .6), dust: bits(10, "spark", .8), coins: bits(7, "coin", 1.8) }[kind.split(" ")[0]] || "";
     return `<g class="fall ${kind}">${kind === "coins" ? `<path class="f-base" d="${path}"/>` : stream}${extra}<ellipse class="f-splash" cx="${f(fx)}" cy="${f(fy + 9)}" rx="9" ry="1.8"/></g>`;
   }
