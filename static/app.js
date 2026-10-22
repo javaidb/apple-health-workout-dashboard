@@ -441,12 +441,12 @@
     { key: "mesa", name: "Red Rock Mesa", top: 78, width: 60, seed: 2 },
     { key: "ember", name: "Ember Peak", top: 70, width: 42, seed: 3, crater: true },
     { key: "frost", name: "Frost Spire", top: 56, width: 34, seed: 4, snow: 42 },
-    { key: "coral", name: "Coral Crag", top: 68, width: 44, seed: 5 },
+    { key: "future", name: "Future City", top: 68, width: 44, seed: 5 },
     { key: "stars", name: "Summit of Stars", top: 60, width: 44, seed: 6 },
     { key: "glow", name: "Glowcap Peak", top: 62, width: 36, seed: 7 },
     { key: "crown", name: "Gilded Crown", top: 54, width: 32, seed: 8 },
   ];
-  const MOUNTAIN_WEEKS = { pine: 4, mesa: 4, ember: 4, frost: 6, coral: 6, stars: 8, glow: 8, crown: 8 };
+  const MOUNTAIN_WEEKS = { pine: 4, mesa: 4, ember: 4, frost: 6, future: 6, stars: 8, glow: 8, crown: 8 };
   const RANGE_WEEKS = MOUNTAINS.reduce((n, m) => n + MOUNTAIN_WEEKS[m.key], 0);
   const weeksOf = (index) => MOUNTAIN_WEEKS[MOUNTAINS[index % MOUNTAINS.length].key];
   const ledgeOf = (index) => weeksOf(index) / 2;
@@ -551,7 +551,7 @@
     const wrap = Math.min(W * .78, E - 16);                                       // how far it wraps along the base
     // the outline wobbles gently, its own way for each mountain
     const k = MOUNTAINS.findIndex((m) => m.key === key) + 1;
-    const wob = (t, a) => a * (.6 * Math.sin(t * .23 + k * 1.3) + .4 * Math.sin(t * .57 + k * 2.3));
+    const wob = (t, a) => key === "future" ? 0 : a * (.6 * Math.sin(t * .23 + k * 1.3) + .4 * Math.sin(t * .57 + k * 2.3));
     const x0 = E - cw, edgeX = (y) => E + wob(y, 2.6), floorY = (x) => fy + wob(x, 1.3), bottomY = (x) => H - 2.5 + wob(x, 1.4);
     // down the clearing's back wall, along its floor, down the edge, round the corner, along the base
     const pts = [];
@@ -600,7 +600,7 @@
   // The themed edge: a band of the mountain's material along the outline, and its own details:
   // tufts and pines (Pine Ridge), snow and icicles (Frost Spire), strata, chips and a cactus (Red
   // Rock Mesa), basalt with glowing cracks and lava drips (Ember Peak), leaves and hanging vines
-  // coral, shells, seaweed and a palm (Coral Crag), crystals and stars (Summit of Stars), glowing
+  // a lit tower with neon fins and a rooftop helipad (Future City), crystals and stars (Summit of Stars), glowing
   // mushrooms and spores (Glowcap Peak), gold with gems and a crown (Gilded Crown). Nothing moves.
   function edgeArt(key, g) {
     const { E, cw, fy, H, edgeX: ex, bottomY: by } = g, f = (v) => v.toFixed(1), x0 = E - cw;
@@ -632,12 +632,26 @@
           return `<path class="e-lava" d="M${f(ex(y) - 1)},${f(y)}q3 1 3.4 ${6 + i * 2}q.4 3 -.6 6"/><circle class="e-drop" cx="${f(ex(y) + 1.8)}" cy="${f(y + 15 + i * 2)}" r="1.3"/>`; }).join("")
         + [.25, .6].map((t) => { const x = E - g.wrap * t; return `<path class="e-lava" d="M${f(x)},${f(by(x) - 1)}q.6 4 .2 7"/><circle class="e-drop" cx="${f(x + .2)}" cy="${f(by(x) + 9.5)}" r="1.2"/>`; }).join("")
         + `<path class="e-glow" d="M${f(x0 + 8)},${fy + 1}H${f(E - 1)}"/><path class="e-smoke" d="M${f(x0 + 20)},${fy - 3}q-3 -5 1 -9q3 -4 -1 -8"/>`,
-      coral: down(15).map((y, i) => i % 3 === 2
-          ? `<path class="e-shell" d="M${f(ex(y))},${f(y + 2)}q4 -5 7 0q-3.5 1.6 -7 0ZM${f(ex(y) + 1.6)},${f(y + 1.4)}l.8 -2.2M${f(ex(y) + 3.5)},${f(y + 1)}v-2.6M${f(ex(y) + 5.4)},${f(y + 1.4)}l-.8 -2.2"/>`
-          : `<path class="e-coral" d="M${f(ex(y))},${f(y)}l4 -1.6l2.6 -3M${f(ex(y) + 4)},${f(y - 1.6)}l2.2 1.4M${f(ex(y))},${f(y + 2)}l5 1.2l2 2.6"/>`).join("")
-        + under(10).map((x, i) => i % 2 ? `<path class="e-weed" d="M${f(x)},${f(by(x))}q-2.4 4 .4 7q2.4 3 -.4 6"/>` : `<circle class="e-bubble" cx="${f(x)}" cy="${f(by(x) + 5 + (i % 3) * 3)}" r="${1 + (i % 2) * .5}"/>`).join("")
-        + `<path class="e-palm-trunk" d="M${f(x0 + 12)},${fy}q-1 -8 2 -15"/><path class="e-palm" d="M${f(x0 + 14)},${fy - 15}q-6 -2 -9 3M${f(x0 + 14)},${fy - 15}q5 -3 9 1M${f(x0 + 14)},${fy - 15}q-2 -5 -7 -6M${f(x0 + 14)},${fy - 15}q3 -5 8 -4"/>`
-        + `<path class="e-starfish" d="M${f(x0 + 26)},${fy - 4.4}l.9 2.2l2.4 .3l-1.8 1.6l.5 2.4l-2 -1.2l-2 1.2l.5 -2.4l-1.8 -1.6l2.4 -.3Z"/>`,
+      future: (() => {
+          let w = "";
+          for (let y = fy + 6, r = 0; y < H - 12; y += 6, r++) {
+            if (r % 5 === 4) { w += `<path class="e-floor" d="M${f(E - 11)},${f(y + 1.5)}H${f(E)}"/>`; continue; }
+            [E - 9.4, E - 4.6].forEach((x, c) => { const lit = ((r * 7 + c * 3) % 5) > 1;
+              w += `<rect class="e-win${lit ? ((r + c) % 4 === 0 ? " warm" : " lit") : ""}" x="${f(x)}" y="${f(y)}" width="3.2" height="3.6" rx=".3"/>`; });
+          }
+          for (let x = E - 16, i = 0; x > E - g.wrap + 10; x -= 6, i++) {
+            const lit = (i * 5 % 7) > 2;
+            w += `<rect class="e-win${lit ? " lit" : ""}" x="${f(x)}" y="${f(H - 8.6)}" width="3.6" height="3" rx=".3"/>`;
+          }
+          for (let x = x0 + 4, i = 0; x < E - 4; x += 6, i++) w += `<rect class="e-win${i % 3 ? " lit" : ""}" x="${f(x)}" y="${f(fy + 2.4)}" width="3.6" height="2.6" rx=".3"/>`;
+          return w + `<path class="e-parapet" d="M${f(x0 + 1)},${f(fy - 1.2)}H${f(E + 1)}"/>`;
+        })()
+        + down(14).map((y, i) => `<path class="e-fin${i % 3 === 1 ? " b" : ""}" d="M${f(ex(y))},${f(y)}h${f(3.5 + (i % 2) * 2)}"/>`).join("")
+        + under(14).map((x, i) => i % 2 ? `<path class="e-cable" d="M${f(x)},${f(by(x))}q3 ${f(5 + (i % 3) * 2)} 7 1"/>` : "").join("")
+        + `<path class="e-underglow" d="M${f(E - g.wrap + 10)},${f(H + 1.2)}H${f(E - 14)}"/>`
+        + `<ellipse class="e-pad" cx="${f(x0 + cw * .32)}" cy="${f(fy - .6)}" rx="9" ry="1.8"/><path class="e-pad-h" d="M${f(x0 + cw * .32 - 2)},${f(fy - 1.6)}v1.6M${f(x0 + cw * .32 + 2)},${f(fy - 1.6)}v1.6M${f(x0 + cw * .32 - 2)},${f(fy - .8)}h4"/>`
+        + `<path class="e-mast" d="M${f(x0 + 8)},${fy}V${fy - 16}M${f(x0 + 5)},${fy}L${f(x0 + 8)},${fy - 9}L${f(x0 + 11)},${fy}"/><circle class="e-beacon" cx="${f(x0 + 8)}" cy="${fy - 17}" r="1.3"/>`
+        + `<path class="e-dish" d="M${f(E - 26)},${fy - 1}q-1 -6 5 -7M${f(E - 23)},${fy - 4}l2.6 -2.4"/>`,
       stars: down(17).map((y) => `<path class="e-crystal" d="M${f(ex(y))},${f(y - 2)}L${f(ex(y) + 5 + rnd() * 3)},${f(y - 1)}L${f(ex(y))},${f(y + 2)}Z"/>`).join("")
         + under(15).map((x) => `<path class="e-crystal" d="M${f(x - 2)},${f(by(x))}L${f(x - .8)},${f(by(x) + 5 + rnd() * 3)}L${f(x + 2)},${f(by(x))}Z"/>`).join("")
         + [[x0 + 10, fy - 9], [x0 + 26, fy - 14], [E - 14, fy - 18]].map(([x, y]) => `<path class="e-star" d="M${f(x)},${f(y - 2)}l.5 1.5l1.5 .5l-1.5 .5l-.5 1.5l-.5 -1.5l-1.5 -.5l1.5 -.5Z"/>`).join("")
@@ -686,14 +700,14 @@
   // Something pours off the clearing's floor and down over the card's own face and the edge's band,
   // just inside the edge, then on over the base and behind the railing and the This week card below
   // (which are drawn over it): a creek (Pine Ridge), snow and meltwater (Frost
-  // Spire), a lava fall (Ember Peak), sea water with foam (Coral Crag), pixie dust (Summit of
+  // Spire), a lava fall (Ember Peak), electric pulses (Future City), pixie dust (Summit of
   // Stars), glowing water with drifting spores (Glowcap Peak), a stream of treasure (Gilded Crown).
   // Red Rock Mesa is barren, so nothing flows off it.
   function fallArt(key, g) {
     if (key === "mesa") return "";   // Red Rock Mesa is barren: nothing flows off it
     const f = (v) => v.toFixed(1), { E, fy, H } = g, fx = E - 20, len = H - fy + 90;
     const path = `M${f(fx - 6)},${f(fy + 2)}Q${f(fx)},${f(fy + 2)} ${f(fx)},${f(fy + 10)}V${f(H + 90)}`;
-    const kind = { pine: "water", coral: "water sea", glow: "water glowing", frost: "frozen", ember: "lava", stars: "pixie", crown: "treasure" }[key];
+    const kind = { pine: "water", future: "electric", glow: "water glowing", frost: "frozen", ember: "lava", stars: "pixie", crown: "treasure" }[key];
     const stream = `<path class="f-base" d="${path}"/>` + [[-5, ""], [0, " b"], [4.5, " c"]].map(([dx, c]) => `<path class="f-flow${c}" transform="translate(${dx},0)" d="${path}"/>`).join("");
     // falling bits, spread across the fall's width, each starting at its own point in the loop
     const at = (i, n) => `style="--len:${f(len)}px;animation-delay:${(-i * 6.4 / n).toFixed(2)}s"`;
@@ -711,9 +725,14 @@
     // pixie dust: a faint glowing trail and pastel sparkles drifting down, swaying and twinkling
     const pixie = `<path class="f-trail" d="${path}"/>` + Array.from({ length: 16 }, (_, i) =>
       `<path class="f-bit pixie p${i % 4}" d="${sparkle(bx(i) + (i % 3 - 1) * 2, by, i % 3 ? 1.6 : 2.4)}" style="--len:${f(len)}px;--sway:${i % 2 ? 4 : -4}px;animation-delay:${(-i * 8 / 16).toFixed(2)}s"/>`).join("");
-    const body = { frozen: stream + icicles, pixie, treasure: `<path class="f-base" d="${path}"/>` + [[-4, ""], [3, " b"]].map(([dx, c]) => `<path class="f-flow${c}" transform="translate(${dx},0)" d="${path}"/>`).join("") + treasure }[kind]
-      || stream + (kind === "water glowing" ? bits(8, "spore", .9) : kind === "water sea" ? bits(6, "foam", 1.1) : "");
-    return `<g class="fall ${kind}">${body}${kind === "pixie" ? "" : `<ellipse class="f-splash" cx="${f(fx)}" cy="${f(fy + 9)}" rx="9" ry="1.8"/>`}</g>`;
+    // electric: thin lines, each with a bright pulse that runs down it every few seconds
+    const electric = [-6.5, -2.2, 2.2, 6.5].map((dx, i) => {
+      const d = `M${f(fx + dx)},${f(fy + 3)}V${f(H + 90)}`;
+      return `<path class="f-wire" d="${d}"/><path class="f-pulse" d="${d}" style="--len:${f(len + 30)}px;animation-delay:${[0, 2.6, 1.1, 4.3][i]}s"/>`;
+    }).join("");
+    const body = { frozen: stream + icicles, pixie, electric, treasure: `<path class="f-base" d="${path}"/>` + [[-4, ""], [3, " b"]].map(([dx, c]) => `<path class="f-flow${c}" transform="translate(${dx},0)" d="${path}"/>`).join("") + treasure }[kind]
+      || stream + (kind === "water glowing" ? bits(8, "spore", .9) : "");
+    return `<g class="fall ${kind}">${body}${kind === "pixie" || kind === "electric" ? "" : `<ellipse class="f-splash" cx="${f(fx)}" cy="${f(fy + 9)}" rx="9" ry="1.8"/>`}</g>`;
   }
 
   // The summit clearing's bell, on a little post at the back.
@@ -736,7 +755,7 @@
     mesa: ["Desert bloom", `${[0, 72, 144, 216, 288].map((a) => `<circle cx="${(6 + 2.7 * Math.sin(a * Math.PI / 180)).toFixed(2)}" cy="${(6 - 2.7 * Math.cos(a * Math.PI / 180)).toFixed(2)}" r="2" fill="#f472b6"/>`).join("")}<circle cx="6" cy="6" r="1.4" fill="#fde047"/>`],
     ember: ["Obsidian shard", `<path d="M6 .8L10.4 4.4L8.8 11H3.2L1.6 4.4Z" fill="#7c3aed"/><path d="M6 .8L6.9 6.1L8.8 11M1.6 4.4L6.9 6.1L10.4 4.4" stroke="#ddd6fe" stroke-width=".55" fill="none" stroke-linejoin="round"/>`],
     frost: ["Ice crystal", `<path d="M6 .8v10.4M1.5 3.4l9 5.2M1.5 8.6l9-5.2M4.6 1.8L6 3.2l1.4-1.4M4.6 10.2L6 8.8l1.4 1.4" stroke="#bae6fd" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`],
-    coral: ["Seashell", `<path d="M6 11C2.4 11 1 8.2 1.6 5.4C2.2 2.6 4.4 1 6 1C7.6 1 9.8 2.6 10.4 5.4C11 8.2 9.6 11 6 11Z" fill="#fda4af"/><path d="M6 11V2M6 11L3.2 3.2M6 11L8.8 3.2M6 11L1.8 6M6 11L10.2 6" stroke="#be123c" stroke-width=".55" fill="none" stroke-linecap="round"/>`],
+    future: ["Microchip", `<rect x="3" y="3" width="6" height="6" rx=".8" fill="#334155" stroke="#38bdf8" stroke-width=".6"/><rect x="4.6" y="4.6" width="2.8" height="2.8" fill="#38bdf8"/><path d="M4.5 1v2M7.5 1v2M4.5 9v2M7.5 9v2M1 4.5h2M1 7.5h2M9 4.5h2M9 7.5h2" stroke="#94a3b8" stroke-width=".6" stroke-linecap="round"/>`],
     stars: ["Fallen star", `<path d="M6 .8L7.5 4.3L11.2 4.6L8.4 7.1L9.3 10.8L6 8.8L2.7 10.8L3.6 7.1L.8 4.6L4.5 4.3Z" fill="#fde047" stroke="#fef9c3" stroke-width=".4" stroke-linejoin="round"/>`],
     glow: ["Glowcap", `<path d="M1.4 6.4A4.6 4.6 0 0 1 10.6 6.4Z" fill="#f472b6"/><circle cx="4" cy="4.4" r=".8" fill="#fbcfe8"/><circle cx="7.6" cy="3.8" r=".6" fill="#fbcfe8"/><path d="M5 6.4H7L7.4 11H4.6Z" fill="#5eead4"/>`],
     crown: ["Golden crown", `<path d="M1.4 9.6V4L4 6.4L6 2.4L8 6.4L10.6 4V9.6Z" fill="#fbbf24" stroke="#fef3c7" stroke-width=".45" stroke-linejoin="round"/><circle cx="6" cy="7.6" r=".9" fill="#ef4444"/><rect x="1.4" y="9.6" width="9.2" height="1.3" rx=".4" fill="#f59e0b"/>`],

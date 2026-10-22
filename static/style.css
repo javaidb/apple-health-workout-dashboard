@@ -1356,7 +1356,7 @@ svg.night .cl-campfire .flame { filter: drop-shadow(0 0 2.4px #f97316); }
 /* the climbing walls: a tight palette per mountain (s1 the face, s2-s4 its structure, hi the rim and
    highlights, lo the ledges, panel/ink/ink2 the caption) */
 svg.th-pine, .cap-pine { --s1: #2f6b45; --s2: #285c3b; --s3: #1f4b30; --s4: #173a25; --hi: #7fd19b; --lo: #4a8a5e; --panel: #2a1e14; --ink: #8ee0a8; --ink2: #c9b896; }
-svg.th-coral, .cap-coral { --s1: #1d7f8f; --s2: #2896a8; --s3: #166876; --s4: #0f4f5a; --hi: #ffb3a0; --lo: #ff8a73; --panel: #0c3a42; --ink: #ffd2c6; --ink2: #9fe3ee; }
+svg.th-future, .cap-future { --s1: #263244; --s2: #2f3d52; --s3: #334155; --s4: #111827; --hi: #38bdf8; --lo: #a855f7; --panel: #0b1220; --ink: #bae6fd; --ink2: #c4b5fd; }
 svg.th-mesa, .cap-mesa { --s1: #b4643a; --s2: #c27449; --s3: #a3552f; --s4: #8e4627; --hi: #f3b68a; --lo: #d38b5c; --panel: #f1d2b2; --ink: #6b2c14; --ink2: #8a4a2a; }
 svg.th-ember, .cap-ember { --s1: #2b2121; --s2: #4a3b38; --s3: #352a28; --s4: #1e1716; --hi: #ff8a4c; --lo: #4a3a36; --panel: #120c0c; --ink: #ffb07a; --ink2: #e58c5c; }
 svg.th-frost, .cap-frost { --s1: #3c82b0; --s2: #4f93bf; --s3: #2f6f99; --s4: #5aa3cf; --hi: #e6f6ff; --lo: #a6dbf3; --panel: #0f3b58; --ink: #f2fbff; --ink2: #b9e3fb; }
@@ -1372,7 +1372,9 @@ svg.th-crown, .cap-crown { --s1: #8a6118; --s2: #a2741f; --s3: #946a1b; --s4: #7
 .th-frost  .e-tex { stroke: var(--hi); stroke-width: 2.4; stroke-dasharray: 5 4 1 4; opacity: .55; }
 .th-mesa   .e-tex { stroke: var(--s2); stroke-dasharray: 3 3 6 2; }
 .th-ember  .e-tex { stroke: #f97316; stroke-width: 1.2; stroke-dasharray: 2 10 5 7; filter: drop-shadow(0 0 1.6px #f97316); }
-.th-coral  .e-tex { stroke: #f5e3c3; stroke-width: 3; stroke-dasharray: 2 4 7 3; opacity: .6; }
+.th-future .e-tex { stroke: none; }
+.th-future .e-band { stroke-linejoin: miter; stroke-linecap: butt; }
+.th-future .e-lip { stroke-linejoin: miter; }
 .th-stars  .e-tex { stroke: var(--hi); stroke-width: 1.6; stroke-dasharray: .1 7; stroke-linecap: round; }
 .th-glow   .e-tex { stroke: var(--hi); stroke-width: 1.6; stroke-dasharray: .1 6; stroke-linecap: round; filter: drop-shadow(0 0 2px var(--hi)); }
 .th-crown  .e-tex { stroke: var(--hi); stroke-width: 2; stroke-dasharray: 10 3; opacity: .7; }
@@ -1434,14 +1436,7 @@ svg.th-crown, .cap-crown { --s1: #8a6118; --s2: #a2741f; --s3: #946a1b; --s4: #7
 .f-bit.snow { fill: #ffffff; --sway: -3px; }
 .f-bit.coin { fill: #fbbf24; stroke: #fef3c7; stroke-width: .4; animation-duration: 5.2s; }
 @media (prefers-reduced-motion: reduce) { .fall .f-flow, .f-bit, .f-bit.pixie, .sky-star { animation: none; } }
-/* Coral Crag and Glowcap Peak edge details */
-.e-coral { fill: none; stroke: var(--lo); stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; }
-.e-shell { fill: #fde2d8; stroke: #e8a090; stroke-width: .4; }
-.e-weed { fill: none; stroke: #2fbf9a; stroke-width: 1; stroke-linecap: round; }
-.e-bubble { fill: none; stroke: #bff4fb; stroke-width: .5; }
-.e-palm-trunk { fill: none; stroke: #9a6a3c; stroke-width: 1.4; stroke-linecap: round; }
-.e-palm { fill: none; stroke: #34c58a; stroke-width: 1.3; stroke-linecap: round; }
-.e-starfish { fill: #ff8a73; stroke: #ffd2c6; stroke-width: .3; }
+/* Future City and Glowcap Peak edge details */
 .e-stem { fill: none; stroke: #c7f9ee; stroke-width: 1; stroke-linecap: round; }
 .e-stem.big { stroke-width: 2.4; }
 .e-cap { fill: var(--hi); filter: drop-shadow(0 0 2px var(--hi)); }
@@ -1449,10 +1444,8 @@ svg.th-crown, .cap-crown { --s1: #8a6118; --s2: #a2741f; --s3: #946a1b; --s4: #7
 .e-cap.big { fill: var(--lo); filter: drop-shadow(0 0 3px var(--lo)); }
 .e-groot { fill: none; stroke: var(--hi); stroke-width: .8; stroke-linecap: round; opacity: .8; filter: drop-shadow(0 0 1.4px var(--hi)); }
 .e-spore { fill: #ccfbf1; filter: drop-shadow(0 0 1.6px var(--hi)); }
-.fall.water.sea .f-base { stroke: #1aa3b8; } .fall.water.sea .f-flow { stroke: #e0fbff; }
 .fall.water.glowing .f-base { stroke: #0f766e; filter: drop-shadow(0 0 3px #2dd4bf); } .fall.water.glowing .f-flow { stroke: #99f6e4; }
 .f-bit.spore { fill: #ccfbf1; filter: drop-shadow(0 0 1.6px #5eead4); animation-duration: 9s; --sway: 3px; }
-.f-bit.foam { fill: #ffffff; opacity: .8; animation-duration: 5s; }
 /* Gilded Crown's stream of treasure */
 .fall.treasure .f-base { stroke: #d4a017; opacity: .9; filter: drop-shadow(0 0 2.5px #fbbf24); }
 .fall.treasure .f-flow { stroke: #fef3c7; stroke-dasharray: 4 12; animation-duration: 3.2s; }
@@ -1474,3 +1467,23 @@ svg.th-crown, .cap-crown { --s1: #8a6118; --s2: #a2741f; --s3: #946a1b; --s4: #7
   75% { transform: translate(var(--sway), calc(var(--len) * .75)) scale(1); opacity: .45; }
   100% { transform: translate(0, var(--len)) scale(.6); opacity: .8; }
 }
+.e-fin { stroke: var(--hi); stroke-width: 1.4; stroke-linecap: round; filter: drop-shadow(0 0 2px var(--hi)); }
+.e-fin.b { stroke: var(--lo); filter: drop-shadow(0 0 2px var(--lo)); }
+.e-cable { fill: none; stroke: #0b1220; stroke-width: .9; stroke-linecap: round; }
+.e-underglow { stroke: var(--hi); stroke-width: 1.4; stroke-linecap: round; opacity: .7; filter: drop-shadow(0 0 3px var(--hi)); }
+.e-pad { fill: #1e293b; stroke: #fde68a; stroke-width: .5; }
+.e-pad-h { stroke: #fde68a; stroke-width: .7; stroke-linecap: round; }
+.e-mast, .e-dish { fill: none; stroke: #94a3b8; stroke-width: .9; stroke-linecap: round; stroke-linejoin: round; }
+.e-beacon { fill: #ef4444; animation: e-blink 2.4s steps(1) infinite; }
+@keyframes e-blink { 0%, 60% { fill: #ef4444; filter: drop-shadow(0 0 2px #ef4444); } 61%, 100% { fill: #7f1d1d; filter: none; } }
+/* Future City's electric fall: dim lines, and a bright pulse down each every now and then */
+.f-wire { fill: none; stroke: #38bdf8; stroke-width: 1.2; opacity: .5; filter: drop-shadow(0 0 1.5px #0ea5e9); }
+.f-pulse { fill: none; stroke: #e0f7ff; stroke-width: 1.6; stroke-linecap: round; stroke-dasharray: 22 4000; stroke-dashoffset: 24;
+  filter: drop-shadow(0 0 2px #38bdf8) drop-shadow(0 0 4px #0ea5e9); animation: f-pulse 6s cubic-bezier(.4, 0, .6, 1) infinite; }
+@keyframes f-pulse { 0% { stroke-dashoffset: 24; opacity: 1; } 40% { stroke-dashoffset: calc(-1 * var(--len)); opacity: 1; } 41%, 100% { stroke-dashoffset: calc(-1 * var(--len)); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .f-pulse, .e-beacon { animation: none; } .f-pulse { opacity: 0; } }
+.e-win { fill: #0b1220; }
+.e-win.lit { fill: #7dd3fc; filter: drop-shadow(0 0 1.2px #38bdf8); }
+.e-win.warm { fill: #fde68a; filter: drop-shadow(0 0 1.2px #fbbf24); }
+.e-floor { stroke: #64748b; stroke-width: 1.2; }
+.e-parapet { stroke: #94a3b8; stroke-width: 1.6; stroke-linecap: square; }
