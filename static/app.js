@@ -1747,21 +1747,22 @@
     tr.classList.toggle("open", open);
     // Inside the This week card's tunnel: as a train runs through, its lit windows show through the
     // week's day boxes, a band of light sweeping across them right to left as one heads in, or left
-    // to right as one comes out. Inside the tunnel the train runs at a steady TUNNEL_SPEED.
-    const TUNNEL_SPEED = 240;
+    // to right as one comes out. It moves exactly as the train does: one heading in keeps pulling
+    // away along its accelerating curve and then holds its final speed; one coming out runs in at the
+    // speed it brakes from as it appears.
     let seg = null;   // the train's [left, right] in the tunnel, in page x
     if (!reduce) {
       if (v.dir < 0 && t >= tDep && t < T.period - 6) {
-        // its nose passes the tunnel mouth (x0) partway through pulling away
-        const pIn = Math.pow(Math.max(0, (x0 - stopX) / (endX - stopX)), 1 / 2.2), tIn = tDep + pIn * T.depart;
-        if (t >= tIn) { const nose = x0 - TUNNEL_SPEED * (t - tIn); seg = [nose, nose + L]; }
-      } else if (v.dir > 0 && t < 2) {
-        // a train heading right, its tail still coming out of the tunnel
-        const nose = x0 - 6 + TUNNEL_SPEED * t; seg = [nose - L, nose];
+        const td = t - tDep, vEnd = 2.2 * (endX - stopX) / T.depart;
+        const left = td < T.depart ? stopX + (endX - stopX) * (td / T.depart) ** 2.2 : endX + vEnd * (td - T.depart);
+        seg = [left, left + L];
+      } else if (v.dir > 0 && t < T.arrive) {
+        seg = [x, x + L];   // its tail still coming out
       } else if (t >= T.period - 6) {
-        // the next train out, if it's heading right: it runs through the tunnel before it appears
-        const nv = trainRun(run + 1), nL = T.car * nv.cars, tt = t - T.period;
-        if (nv.dir > 0) { const nose = x0 - 6 + TUNNEL_SPEED * tt; seg = [nose - nL, nose]; }
+        // the next train out, if it's heading right, works through the tunnel before it appears
+        const nv = trainRun(run + 1), nL = T.car * nv.cars, nStart = x0 - nL - 6, nStop = mid - nL / 2;
+        const v0 = 2 * (nStop - nStart) / T.arrive, left = nStart + v0 * (t - T.period);
+        if (nv.dir > 0) seg = [left, left + nL];
       }
     }
     const boxes = trainBoxes ||= [...document.querySelectorAll("#week-card .week-dots .wd")];
