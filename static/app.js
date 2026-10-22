@@ -687,13 +687,14 @@
   // Spire), a sandfall (Red Rock Mesa), a lava fall (Ember Peak), a waterfall (Canopy Crag), a
   // stream of stardust (Summit of Stars), runoff (Thunderhead), a cascade of coins (Gilded Crown).
   function fallArt(key, g) {
-    const f = (v) => v.toFixed(1), { E, fy, H } = g, fx = E - 15, len = H - fy + 90;
+    const f = (v) => v.toFixed(1), { E, fy, H } = g, fx = E - 20, len = H - fy + 90;
     const path = `M${f(fx - 6)},${f(fy + 2)}Q${f(fx)},${f(fy + 2)} ${f(fx)},${f(fy + 10)}V${f(H + 90)}`;
-    const kind = { pine: "water", canopy: "water wide", storm: "water grey", frost: "ice", ember: "lava", mesa: "sand", stars: "dust", crown: "coins" }[key];
+    const kind = { pine: "water", canopy: "water wide", storm: "water grey", frost: "frozen", ember: "lava", mesa: "sand", stars: "dust", crown: "coins" }[key];
     const stream = `<path class="f-base" d="${path}"/>` + [[-5, ""], [0, " b"], [4.5, " c"]].map(([dx, c]) => `<path class="f-flow${c}" transform="translate(${dx},0)" d="${path}"/>`).join("");
     // falling bits: snowflakes, sand grains, stardust, coins
     const bits = (n, cls, r) => Array.from({ length: n }, (_, i) => `<circle class="f-bit ${cls}" cx="${f(fx + (i % 5 - 2) * 3.4)}" cy="${f(fy + 8)}" r="${r}" style="--len:${f(len)}px;animation-delay:${(-i * 6.4 / n).toFixed(2)}s"/>`).join("");
-    const extra = { ice: bits(9, "snow", 1), sand: bits(12, "grain", .6), dust: bits(10, "spark", .8), coins: bits(7, "coin", 1.8) }[kind.split(" ")[0]] || "";
+    const icicles = [-6, -2, 3, 7].map((dx, i) => `<path class="f-icicle" d="M${f(fx + dx - 1.6)},${f(fy + 3)}L${f(fx + dx)},${f(fy + 3 + [7, 11, 6, 9][i])}L${f(fx + dx + 1.6)},${f(fy + 3)}Z"/>`).join("");
+    const extra = { frozen: icicles, sand: bits(12, "grain", .6), dust: bits(10, "spark", .8), coins: bits(7, "coin", 1.8) }[kind.split(" ")[0]] || "";
     return `<g class="fall ${kind}">${kind === "coins" ? `<path class="f-base" d="${path}"/>` : stream}${extra}<ellipse class="f-splash" cx="${f(fx)}" cy="${f(fy + 9)}" rx="9" ry="1.8"/></g>`;
   }
 
@@ -790,7 +791,7 @@
     const [rx] = pt(0), tie = g.tie;
     const rope = `<path class="e-rope" d="M${f(g.E + 2)},${g.fy + 1}C${f(rx + 2)},${f(g.fy + 30)} ${f(rx - 2)},${f(H * .6)} ${f(rx)},${f(H - 4)}Q${f(rx - 1)},${f(H + 4)} ${f(g.E - 8)},${f(H + 4.5)}Q${f((g.E + tie[0]) / 2)},${f(H + 6)} ${f(tie[0])},${f(tie[1])}"/>`;
     const holds = Array.from({ length: N - 1 }, (_, i) => i + 1).map((k) => edgeHold(g, pt(k)[1] + 3, stateOf(k), k === LEDGE || (k === step && !atSummit))
-      + (k === LEDGE ? `<text class="cl-label" x="${f(g.E - 34)}" y="${f(pt(k)[1] + 4)}" text-anchor="end">${LEDGE === 4 ? "1 mo" : `${LEDGE} wks`}</text>` : "")).join("");
+      + (k === LEDGE ? `<text class="cl-label" x="${f(g.E - 40)}" y="${f(pt(k)[1] + 4)}" text-anchor="end">${LEDGE === 4 ? "1 mo" : `${LEDGE} wks`}</text>` : "")).join("");
     const bolt = `<g class="cl-anchor"><circle cx="${f(tie[0])}" cy="${f(tie[1])}" r="1.5"/><circle class="eye" cx="${f(tie[0])}" cy="${f(tie[1])}" r=".6"/></g>`;
     const flag = `<g class="cl-summit${atSummit ? " won" : ""}" transform="translate(${f(g.flagAt[0])},${f(g.flagAt[1])})"><path d="M0 0V-12"/><path class="flag" d="M0 -12L7 -9.6L0 -7.2Z"/></g>`;
     const camp = campName(index);
@@ -854,7 +855,7 @@
     // the caption keeps beside the clearing at the top, and clear of the themed edge
     el.style.setProperty("--clear-w", `${Math.max(0, W - (g0.E - g0.cw) + 6 - padR)}px`);
     el.style.setProperty("--clear-h", `${Math.max(0, g0.fy + 10 - padT)}px`);
-    el.style.setProperty("--edge-in", `${Math.max(0, W - g0.E + 36 - padR)}px`);
+    el.style.setProperty("--edge-in", `${Math.max(0, W - g0.E + 42 - padR)}px`);
     const key = `${climbRender}|${W}x${H}|${skyPhase()}`;
     if (onlyIfMoved && key === climbKey) return;
     climbKey = key;

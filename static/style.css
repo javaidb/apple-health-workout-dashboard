@@ -1433,7 +1433,12 @@ svg.th-crown, .cap-crown { --s1: #8a6118; --s2: #a2741f; --s3: #946a1b; --s4: #7
 .fall.water .f-base { stroke: #3b82c4; opacity: .85; } .fall.water .f-flow { stroke: #dbeafe; }
 .fall.water.wide .f-base { stroke-width: 18; } .fall.water.grey .f-base { stroke: #64748b; } .fall.water.grey .f-flow { stroke: #cbd5e1; }
 .fall.lava .f-base { stroke: #ea580c; stroke-width: 18; filter: drop-shadow(0 0 3px #f97316); } .fall.lava .f-flow { stroke: #fde047; animation-duration: 4.8s; } .fall.lava .f-flow.b { animation-duration: 3.6s; } .fall.lava .f-flow.c { animation-duration: 6s; }
-.fall.ice .f-base { stroke: #bae6fd; stroke-width: 18; opacity: .55; } .fall.ice .f-flow { stroke: #ffffff; animation-duration: 2.8s; }
+.fall.frozen .f-base { stroke: #cdeefc; stroke-width: 18; opacity: .9; }
+.fall.frozen .f-flow { stroke: #ffffff; animation: none; stroke-dasharray: 40 6 18 9; opacity: .55; }
+.fall.frozen .f-flow.b { stroke: #8fcbea; stroke-dasharray: 26 12; opacity: .6; }
+.fall.frozen .f-flow.c { stroke-dasharray: 12 5 30 8; opacity: .45; }
+.fall.frozen .f-splash { display: none; }
+.f-icicle { fill: #e6f6ff; stroke: #ffffff; stroke-width: .3; }
 .fall.sand .f-base { stroke: #d6a06a; stroke-width: 18; opacity: .8; } .fall.sand .f-flow { stroke: #f3d2a8; stroke-dasharray: 1 4; animation-duration: 2.2s; }
 .fall.dust .f-base { stroke: #8b5cf6; stroke-width: 18; opacity: .55; filter: drop-shadow(0 0 2px #a78bfa); } .fall.dust .f-flow { stroke: #ede9fe; stroke-dasharray: 1 7; }
 .f-splash { fill: rgba(255, 255, 255, .35); }
