@@ -686,20 +686,34 @@
   // Something pours off the clearing's floor and down over the card's own face and the edge's band,
   // just inside the edge, then on over the base and behind the railing and the This week card below
   // (which are drawn over it): a creek (Pine Ridge), snow and meltwater (Frost
-  // Spire), a sandfall (Red Rock Mesa), a lava fall (Ember Peak), sea water with foam (Coral Crag),
-  // a stream of stardust (Summit of Stars), glowing water with drifting spores (Glowcap Peak), a
-  // cascade of coins (Gilded Crown).
+  // Spire), a lava fall (Ember Peak), sea water with foam (Coral Crag), pixie dust (Summit of
+  // Stars), glowing water with drifting spores (Glowcap Peak), a stream of treasure (Gilded Crown).
+  // Red Rock Mesa is barren, so nothing flows off it.
   function fallArt(key, g) {
+    if (key === "mesa") return "";   // Red Rock Mesa is barren: nothing flows off it
     const f = (v) => v.toFixed(1), { E, fy, H } = g, fx = E - 20, len = H - fy + 90;
     const path = `M${f(fx - 6)},${f(fy + 2)}Q${f(fx)},${f(fy + 2)} ${f(fx)},${f(fy + 10)}V${f(H + 90)}`;
-    const kind = { pine: "water", coral: "water sea", glow: "water glowing", frost: "frozen", ember: "lava", mesa: "sand", stars: "dust", crown: "coins" }[key];
+    const kind = { pine: "water", coral: "water sea", glow: "water glowing", frost: "frozen", ember: "lava", stars: "pixie", crown: "treasure" }[key];
     const stream = `<path class="f-base" d="${path}"/>` + [[-5, ""], [0, " b"], [4.5, " c"]].map(([dx, c]) => `<path class="f-flow${c}" transform="translate(${dx},0)" d="${path}"/>`).join("");
-    // falling bits: snowflakes, sand grains, stardust, coins
-    const bits = (n, cls, r) => Array.from({ length: n }, (_, i) => `<circle class="f-bit ${cls}" cx="${f(fx + (i % 5 - 2) * 3.4)}" cy="${f(fy + 8)}" r="${r}" style="--len:${f(len)}px;animation-delay:${(-i * 6.4 / n).toFixed(2)}s"/>`).join("");
+    // falling bits, spread across the fall's width, each starting at its own point in the loop
+    const at = (i, n) => `style="--len:${f(len)}px;animation-delay:${(-i * 6.4 / n).toFixed(2)}s"`;
+    const bx = (i) => fx + (i % 5 - 2) * 3.4, by = fy + 8;
+    const bits = (n, cls, r) => Array.from({ length: n }, (_, i) => `<circle class="f-bit ${cls}" cx="${f(bx(i))}" cy="${f(by)}" r="${r}" ${at(i, n)}/>`).join("");
+    const sparkle = (x, y, r) => `M${f(x)},${f(y - r)}L${f(x + r * .3)},${f(y - r * .3)}L${f(x + r)},${f(y)}L${f(x + r * .3)},${f(y + r * .3)}L${f(x)},${f(y + r)}L${f(x - r * .3)},${f(y + r * .3)}L${f(x - r)},${f(y)}L${f(x - r * .3)},${f(y - r * .3)}Z`;
     const icicles = [-6, -2, 3, 7].map((dx, i) => `<path class="f-icicle" d="M${f(fx + dx - 1.6)},${f(fy + 3)}L${f(fx + dx)},${f(fy + 3 + [7, 11, 6, 9][i])}L${f(fx + dx + 1.6)},${f(fy + 3)}Z"/>`).join("");
-    const extra = { frozen: icicles, sand: bits(12, "grain", .6), dust: bits(10, "spark", .8), coins: bits(7, "coin", 1.8) }[kind.split(" ")[0]]
-      || (kind === "water glowing" ? bits(8, "spore", .9) : kind === "water sea" ? bits(6, "foam", 1.1) : "");
-    return `<g class="fall ${kind}">${kind === "coins" ? `<path class="f-base" d="${path}"/>` : stream}${extra}<ellipse class="f-splash" cx="${f(fx)}" cy="${f(fy + 9)}" rx="9" ry="1.8"/></g>`;
+    // treasure: coins, gems of four colours and pearls riding a stream of molten gold
+    const treasure = Array.from({ length: 14 }, (_, i) => {
+      const x = bx(i), t = i % 4;
+      return t === 0 || t === 2 ? `<circle class="f-bit coin" cx="${f(x)}" cy="${f(by)}" r="1.9" ${at(i, 14)}/>`
+        : t === 1 ? `<path class="f-bit gem g${i % 3}" d="M${f(x)},${f(by - 2.4)}l2 2.4l-2 2.4l-2 -2.4Z" ${at(i, 14)}/>`
+        : `<circle class="f-bit pearl" cx="${f(x)}" cy="${f(by)}" r="1.3" ${at(i, 14)}/>`;
+    }).join("");
+    // pixie dust: a faint glowing trail and pastel sparkles drifting down, swaying and twinkling
+    const pixie = `<path class="f-trail" d="${path}"/>` + Array.from({ length: 16 }, (_, i) =>
+      `<path class="f-bit pixie p${i % 4}" d="${sparkle(bx(i) + (i % 3 - 1) * 2, by, i % 3 ? 1.6 : 2.4)}" style="--len:${f(len)}px;--sway:${i % 2 ? 4 : -4}px;animation-delay:${(-i * 8 / 16).toFixed(2)}s"/>`).join("");
+    const body = { frozen: stream + icicles, pixie, treasure: `<path class="f-base" d="${path}"/>` + [[-4, ""], [3, " b"]].map(([dx, c]) => `<path class="f-flow${c}" transform="translate(${dx},0)" d="${path}"/>`).join("") + treasure }[kind]
+      || stream + (kind === "water glowing" ? bits(8, "spore", .9) : kind === "water sea" ? bits(6, "foam", 1.1) : "");
+    return `<g class="fall ${kind}">${body}${kind === "pixie" ? "" : `<ellipse class="f-splash" cx="${f(fx)}" cy="${f(fy + 9)}" rx="9" ry="1.8"/>`}</g>`;
   }
 
   // The summit clearing's bell, on a little post at the back.
